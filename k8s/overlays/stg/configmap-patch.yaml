@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: admin-ui-config
+data:
+  # Override staging-specific values
+  ENVIRONMENT: "staging"
+  NEXT_PUBLIC_APP_URL: "https://stg-admin.bbcloud.app"
+  NEXT_PUBLIC_API_BASE_URL: "http://api.bbapp-stg.svc.cluster.local:8080"
+  
+  # Staging Ory Stack URLs
+  NEXT_PUBLIC_KRATOS_PUBLIC_URL: "http://kratos-public.bbapp-stg.svc.cluster.local:4433"
+  NEXT_PUBLIC_HYDRA_PUBLIC_URL: "http://hydra-public.bbapp-stg.svc.cluster.local:4444"
+  NEXT_PUBLIC_OATHKEEPER_URL: "http://oathkeeper-proxy.bbapp-stg.svc.cluster.local:4455"
+  NEXT_PUBLIC_KETO_READ_URL: "http://keto-read.bbapp-stg.svc.cluster.local:4466"
+  NEXT_PUBLIC_KETO_WRITE_URL: "http://keto-write.bbapp-stg.svc.cluster.local:4467"

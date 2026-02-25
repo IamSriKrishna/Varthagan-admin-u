@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: admin-ui-config
+data:
+  # Production-specific values
+  ENVIRONMENT: "production"
+  NEXT_PUBLIC_APP_URL: "https://admin.bbapp.in"
+  NEXT_PUBLIC_API_BASE_URL: "https://auth.api.bbapp.in"
+  
+  # Environment variables from .env.production
+  NEXT_PUBLIC_LOGIN_DOMAIN: "https://auth.api.bbapp.in"
+  NEXT_PUBLIC_API_DOMAIN: "https://products.api.bbapp.in"
+  NEXT_PUBLIC_ORDER_DOMAIN: "https://orders.api.bbapp.in"
+  NEXT_PUBLIC_PARTNER_DOMAIN: "https://partners.api.bbapp.in"
+  NEXT_PUBLIC_VENDOR_DOMAIN: "https://vendors.api.bbapp.in"
+  NEXT_PUBLIC_CAMPAIGN_DOMAIN: "https://campaigns.api.bbapp.in"
+  
+  # Production API endpoints (legacy compatibility)
+  AUTH_SERVICE_URL: "https://auth.api.bbapp.in"
+  CUSTOMER_SERVICE_URL: "https://customers.api.bbapp.in"
+  PRODUCT_SERVICE_URL: "https://products.api.bbapp.in"
+  ORDER_SERVICE_URL: "https://orders.api.bbapp.in"
+  VENDOR_SERVICE_URL: "https://vendors.api.bbapp.in"
+  PARTNER_SERVICE_URL: "https://partners.api.bbapp.in"
+  CAMPAIGN_SERVICE_URL: "https://campaigns.api.bbapp.in"
+  NOTIFICATION_SERVICE_URL: "https://notifications.api.bbapp.in"

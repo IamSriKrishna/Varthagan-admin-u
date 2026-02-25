@@ -1,0 +1,55 @@
+# Individual Service Image Configurations
+# Each service has its own section for independent tracking
+
+---
+# Admin UI Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: admin-ui-images
+  namespace: bbapp-system
+  labels:
+    app: admin-ui
+    managed-by: flux
+data:
+  # FluxCD will update these automatically
+  dev-image: "asia-south1-docker.pkg.dev/bb-app-461714/bbapp-images/admin-ui-dev:latest"
+  staging-image: "asia-south1-docker.pkg.dev/bb-app-461714/bbapp-images/admin-ui-stg:25.06.0"
+  
+  # Image policy markers - DO NOT EDIT MANUALLY
+  # dev-tag: latest # {"$imagepolicy": "flux-system:admin-ui-dev-policy"}
+  # staging-tag: 25.06.0 # {"$imagepolicy": "flux-system:admin-ui-staging-policy"}
+
+---
+# User Service Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-service-images
+  namespace: bbapp-system
+  labels:
+    app: user-service
+    managed-by: flux
+data:
+  dev-image: "asia-south1-docker.pkg.dev/bb-app-461714/bbapp-images/user-service-dev:latest"
+  staging-image: "asia-south1-docker.pkg.dev/bb-app-461714/bbapp-images/user-service-stg:25.06.0"
+  
+  # dev-tag: latest # {"$imagepolicy": "flux-system:user-service-dev-policy"}
+  # staging-tag: 25.06.0 # {"$imagepolicy": "flux-system:user-service-staging-policy"}
+
+---
+# Auth Service Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-service-images
+  namespace: bbapp-system
+  labels:
+    app: auth-service
+    managed-by: flux
+data:
+  dev-image: "asia-south1-docker.pkg.dev/bb-app-461714/bbapp-images/auth-service-dev:latest"
+  staging-image: "asia-south1-docker.pkg.dev/bb-app-461714/bbapp-images/auth-service-stg:25.06.0"
+  
+  # dev-tag: latest # {"$imagepolicy": "flux-system:auth-service-dev-policy"}
+  # staging-tag: 25.06.0 # {"$imagepolicy": "flux-system:auth-service-staging-policy"}

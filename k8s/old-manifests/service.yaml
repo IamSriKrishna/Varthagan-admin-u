@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-ui-service
+  namespace: bbapp-dev
+  labels:
+    app: admin-ui
+spec:
+  selector:
+    app: admin-ui
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+    protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: admin-ui-ingress
+  namespace: bbapp-dev
+  labels:
+    app: admin-ui
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"  # If using cert-manager
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  tls:
+  - hosts:
+    - admin-ui.bbapp-dev.example.com  # Update with your domain
+    secretName: admin-ui-tls
+  rules:
+  - host: admin-ui.bbapp-dev.example.com  # Update with your domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: admin-ui-service
+            port:
+              number: 80

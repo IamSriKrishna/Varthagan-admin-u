@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: admin-ui-ingress
+spec:
+  rules:
+  - host: stg-admin.bbcloud.app
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: admin-ui-service
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - stg-admin.bbcloud.app
+    secretName: admin-ui-tls

@@ -1,0 +1,198 @@
+# Google Cloud Build Configuration
+# Triggered automatically on GitHub push/merge
+# Uses new CalVer tagging and organized scripts
+
+steps:
+  # Step 1: Create CalVer tag for staging builds (main branch only)
+  - name: 'gcr.io/cloud-builders/git'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ "${BRANCH_NAME}" = "main" ]; then
+          echo "Creating CalVer tag for staging build..."
+          chmod +x scripts/create-calver-tag.sh
+          VERSION_TAG=$(./scripts/create-calver-tag.sh)
+          echo "Created tag: $VERSION_TAG"
+          echo "$VERSION_TAG" > /workspace/version_tag.txt
+        else
+          echo "Skipping CalVer tag for non-main branch: ${BRANCH_NAME}"
+          echo "${BRANCH_NAME}-${SHORT_SHA}-${BUILD_ID}" > /workspace/version_tag.txt
+        fi
+
+  # Step 2: Build Docker image with proper tags
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args: 
+      - '-c'
+      - |
+        VERSION_TAG=$(cat /workspace/version_tag.txt)
+        
+        if [ "${BRANCH_NAME}" = "main" ]; then
+          # Staging build with CalVer and latest tag
+          docker build \
+            -t "asia-south1-docker.pkg.dev/$PROJECT_ID/bbapp/bbapp-admin-ui:$VERSION_TAG" \
+            -t "asia-south1-docker.pkg.dev/$PROJECT_ID/bbapp/bbapp-admin-ui:stg" \
+            -t "asia-south1-docker.pkg.dev/$PROJECT_ID/bbapp/bbapp-admin-ui:latest" \
+            --build-arg VERSION="$VERSION_TAG" \
+            --build-arg ENVIRONMENT="stg" \
+            --build-arg BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --build-arg GIT_COMMIT="${REVISION_ID}" \
+            .
+        else
+          # Development build
+          docker build \
+            -t "asia-south1-docker.pkg.dev/$PROJECT_ID/bbapp/bbapp-admin-ui:$VERSION_TAG" \
+            -t "asia-south1-docker.pkg.dev/$PROJECT_ID/bbapp/bbapp-admin-ui:dev" \
+            --build-arg VERSION="$VERSION_TAG" \
+            --build-arg ENVIRONMENT="dev" \
+            --build-arg BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --build-arg GIT_COMMIT="${REVISION_ID}" \
+            .
+        fi
+    timeout: '600s'
+
+  # Step 3: Push to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args: 
+      - '-c'
+      - |
+        VERSION_TAG=$(cat /workspace/version_tag.txt)
+        
+        docker push "asia-south1-docker.pkg.dev/$PROJECT_ID/bbapp/bbapp-admin-ui:$VERSION_TAG"
+        
+        if [ "${BRANCH_NAME}" = "main" ]; then
+          docker push "asia-south1-docker.pkg.dev/$PROJECT_ID/bbapp/bbapp-admin-ui:stg"
+          docker push "asia-south1-docker.pkg.dev/$PROJECT_ID/bbapp/bbapp-admin-ui:latest"
+        else
+          docker push "asia-south1-docker.pkg.dev/$PROJECT_ID/bbapp/bbapp-admin-ui:dev"
+        fi
+
+  # Step 4: Create deployment manifest
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        VERSION_TAG=$(cat /workspace/version_tag.txt)
+        ENVIRONMENT="dev"
+        if [ "${BRANCH_NAME}" = "main" ]; then
+          ENVIRONMENT="stg"
+        fi
+        
+        # Use the build-and-push script's deployment generation logic
+        chmod +x scripts/build-and-push.sh
+        
+        # Create k8s directory
+        mkdir -p k8s
+        
+        # Generate deployment manifest
+        cat > k8s/deployment.yaml << EOF
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: admin-ui
+          namespace: bbapp-${ENVIRONMENT}
+          labels:
+            app: admin-ui
+            version: $VERSION_TAG
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              app: admin-ui
+          template:
+            metadata:
+              labels:
+                app: admin-ui
+                version: $VERSION_TAG
+            spec:
+              containers:
+              - name: admin-ui
+                image: asia-south1-docker.pkg.dev/$PROJECT_ID/bbapp/bbapp-admin-ui:$VERSION_TAG
+                ports:
+                - containerPort: 3000
+                env:
+                - name: NODE_ENV
+                  value: "production"
+                - name: ENVIRONMENT
+                  value: "$ENVIRONMENT"
+                resources:
+                  requests:
+                    memory: "128Mi"
+                    cpu: "25m"
+                  limits:
+                    memory: "256Mi"
+                    cpu: "100m"
+                livenessProbe:
+                  httpGet:
+                    path: /api/health
+                    port: 3000
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                readinessProbe:
+                  httpGet:
+                    path: /api/health
+                    port: 3000
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: admin-ui-service
+          namespace: bbapp-${ENVIRONMENT}
+          labels:
+            app: admin-ui
+        spec:
+          selector:
+            app: admin-ui
+          ports:
+          - port: 80
+            targetPort: 3000
+            protocol: TCP
+          type: ClusterIP
+        ---
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: bbapp-${ENVIRONMENT}
+          labels:
+            name: bbapp-${ENVIRONMENT}
+        EOF
+
+  # Step 5: Deploy to GKE
+  - name: 'gcr.io/cloud-builders/gke-deploy'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        ENVIRONMENT="dev"
+        if [ "${BRANCH_NAME}" = "main" ]; then
+          ENVIRONMENT="stg"
+        fi
+        
+        gke-deploy run \
+          --filename=k8s/ \
+          --cluster=$_GKE_CLUSTER \
+          --location=$_GKE_ZONE \
+          --namespace=bbapp-${ENVIRONMENT}
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=$_GKE_ZONE'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=$_GKE_CLUSTER'
+
+# Substitutions (configure these in Cloud Build trigger)
+substitutions:
+  _GKE_CLUSTER: 'bbapp-gke'           # Your actual cluster name
+  _GKE_ZONE: 'asia-south1-a'          # Your actual cluster zone
+
+# Build options
+options:
+  # Use high-performance machine for faster builds
+  machineType: 'E2_HIGHCPU_8'
+  # Log streaming
+  logging: CLOUD_LOGGING_ONLY
+  
+# Timeout for entire build
+timeout: '1200s'

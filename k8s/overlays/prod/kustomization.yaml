@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base configuration
+bases:
+- ../../base
+
+# Namespace for production
+namespace: bbapp-prod
+
+# Patches for production-specific configuration
+patches:
+- path: deployment-patch.yaml
+  target:
+    kind: Deployment
+    name: admin-ui
+- path: configmap-patch.yaml
+  target:
+    kind: ConfigMap
+    name: admin-ui-config
+- path: ingress-patch.yaml
+  target:
+    kind: Ingress
+    name: admin-ui-ingress
+
+# Images configuration
+images:
+- name: admin-ui-image
+  newName: asia-south1-docker.pkg.dev/light-depot-471209-j7/bbapp-images/admin-ui
+  newTag: latest

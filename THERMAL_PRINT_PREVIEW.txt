@@ -1,0 +1,160 @@
+================================================================================
+              3-INCH THERMAL PRINTER PREVIEW (80mm width)
+================================================================================
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                                                                              │
+│                              [LOGO IMAGE]                                    │
+│                                                                              │
+│                     **Xpressions - Tirunelveli**                             │
+│                        Service Order Invoice                                 │
+│                                                                              │
+│══════════════════════════════════════════════════════════════════════════════│
+│                                                                              │
+│                          ┌─────────────────┐                                 │
+│                          │  █▀▀▀▀▀█ ▀▄█ ▄  │                                 │
+│                          │  █ ███ █ ▀ ▀█▀  │                                 │
+│                          │  █ ▀▀▀ █ █▄ ▄█  │      [QR CODE]                 │
+│                          │  ▀▀▀▀▀▀▀ █ ▀ █  │     Scan for Order            │
+│                          │  ▀█▄▀ ▄▀██▄ ▀█  │                                 │
+│                          │  █▀▀▀▀▀█ ▀█▄█▀  │                                 │
+│                          └─────────────────┘                                 │
+│                                                                              │
+│══════════════════════════════════════════════════════════════════════════════│
+│                                                                              │
+│  Order ID: **#ORD-2024-001**                                                │
+│  Date: 10 Oct 2025                                                          │
+│  Status: **DELIVERED**                                                       │
+│  Payment: **CAPTURED**                                                       │
+│                                                                              │
+│──────────────────────────────────────────────────────────────────────────────│
+│                                                                              │
+│  **VENDOR**                                                                  │
+│  **Xpressions Beauty Salon**                                                │
+│  Mumbai, Maharashtra                                                         │
+│  Phone: +91 98765 43210                                                      │
+│                                                                              │
+│──────────────────────────────────────────────────────────────────────────────│
+│                                                                              │
+│  **CUSTOMER**                                                                │
+│  **John Doe**                                                                │
+│  Phone: +91 98765 43210                                                      │
+│  Email: john.doe@example.com                                                 │
+│                                                                              │
+│──────────────────────────────────────────────────────────────────────────────│
+│                                                                              │
+│  **SERVICES**                                                                │
+│                                                                              │
+│ ┌────────────────────────────────────────────────────────────────────────┐  │
+│ │ Item                                          │ Price                  │  │
+│ ├────────────────────────────────────────────────────────────────────────┤  │
+│ │ **Hair Cut & Styling**                        │ **₹800.00**            │  │
+│ │ Qty: 1 × ₹800.00                              │                        │  │
+│ ├────────────────────────────────────────────────────────────────────────┤  │
+│ │ **Facial Treatment Premium**                  │ **₹750.00**            │  │
+│ │ Qty: 1 × ₹750.00                              │                        │  │
+│ └────────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│══════════════════════════════════════════════════════════════════════════════│
+│                                                                              │
+│  **PAYMENT SUMMARY**                                                         │
+│                                                                              │
+│  Subtotal:                                            ₹1,550.00             │
+│  BB Coins Used:                                          -₹50.00             │
+│  Membership Discount:                                   -₹100.00             │
+│                                                                              │
+│  ────────────────────────────────────────────────────────────────────       │
+│  CGST (2.5%):                                             ₹35.00             │
+│  SGST (2.5%):                                             ₹35.00             │
+│  ────────────────────────────────────────────────────────────────────       │
+│                                                                              │
+│  **TOTAL:                                             ₹1,470.00**           │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │ Amount in Words:                                                     │   │
+│  │ One Thousand Four Hundred Seventy Rupees Only                        │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│══════════════════════════════════════════════════════════════════════════════│
+│                                                                              │
+│  Payment Method: **Razorpay**                                               │
+│  Payment Status: **CAPTURED**                                                │
+│                                                                              │
+│  ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐    │
+│    This is a computer-generated digital invoice.                             │
+│    No signature required.                                                    │
+│  └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘    │
+│                                                                              │
+│                            **Thank You!**                                    │
+│                             Visit Again                                      │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                           KEY FEATURES OF THE DESIGN:
+================================================================================
+
+✓ Page Width: 80mm (3 inches)
+✓ Font Sizes:
+  - Headers (H1): 22px - BOLD, UPPERCASE, CENTERED
+  - Section Headers (H2): 18px - BOLD
+  - Subheaders (H3): 16px - BOLD
+  - Bold Text: 14px - BOLD
+  - Regular Text: 13px
+  - Small Text: 12px
+
+✓ Layout:
+  - Single column design optimized for narrow width
+  - All text left-aligned except headers (centered)
+  - Clear dividers between sections
+  - Compact table design with 2 columns for items
+
+✓ Typography:
+  - Arial/Helvetica font family (thermal printer compatible)
+  - Bold headings for better readability
+  - Proper line spacing (1.5 line height)
+  - Strong emphasis on important information (Order ID, Total, etc.)
+
+✓ Sections:
+  1. Logo & Business Name (centered)
+  2. Order Details (Order ID, Date, Status)
+  3. Vendor Information
+  4. Customer Information
+  5. Services/Items Table (simplified 2-column layout)
+  6. Payment Summary (with discounts)
+  7. Payment Information
+  8. Thank You Message
+
+✓ Print Optimization:
+  - Black text on white background (high contrast)
+  - Bold borders for tables
+  - Hidden screen elements (navigation, buttons, etc.)
+  - Auto-height for continuous paper feed
+  - Minimal margins (3mm sides, 2mm top/bottom)
+
+================================================================================
+                        ACTUAL PRINT DIMENSIONS:
+================================================================================
+
+Paper Width:  80mm (3 inches)
+Print Width:  76mm (80mm - 4mm margins)
+Font Sizes:   13px-22px (larger than standard for better legibility)
+Line Height:  1.5x (improved readability)
+Table Cells:  3-4px padding (compact but readable)
+
+================================================================================
+
+This format ensures:
+- Clear, legible text on thermal paper
+- Efficient use of 3-inch width
+- Professional invoice appearance
+- All critical information visible
+- Easy to read for customers and staff
+- Compatible with TVS-E RP 3230 graphics capabilities
+
+The actual thermal print will render with the same layout but with proper
+thermal printer fonts and may include enhanced features like:
+- QR codes (if needed in future)
+- Barcodes for order ID
+- Variable font weights supported by the printer

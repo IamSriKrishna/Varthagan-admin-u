@@ -1,0 +1,86 @@
+# Centralized Image Tag Tracking for All Microservices
+# This file is monitored by FluxCD Image Automation
+# When tags change, only the corresponding microservice deploys
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: microservice-image-tags
+  namespace: bbapp-system
+data:
+  # Frontend Services
+  admin-ui-dev: "latest"
+  admin-ui-staging: "25.06.0"
+  
+  # Backend Microservices
+  user-service-dev: "latest"
+  user-service-staging: "25.06.0"
+  
+  auth-service-dev: "latest"
+  auth-service-staging: "25.06.0"
+  
+  notification-service-dev: "latest"
+  notification-service-staging: "25.06.0"
+  
+  payment-service-dev: "latest"
+  payment-service-staging: "25.06.0"
+  
+  inventory-service-dev: "latest"
+  inventory-service-staging: "25.06.0"
+  
+  order-service-dev: "latest"
+  order-service-staging: "25.06.0"
+  
+  analytics-service-dev: "latest"
+  analytics-service-staging: "25.06.0"
+  
+  reporting-service-dev: "latest"
+  reporting-service-staging: "25.06.0"
+  
+  gateway-service-dev: "latest"
+  gateway-service-staging: "25.06.0"
+
+---
+# Image Policy Markers for FluxCD
+# These comments enable automatic image updates
+# Format: # {"$imagepolicy": "flux-system:service-env-policy"}
+
+# Admin UI
+# admin-ui-dev: latest # {"$imagepolicy": "flux-system:admin-ui-dev-policy"}
+# admin-ui-staging: 25.06.0 # {"$imagepolicy": "flux-system:admin-ui-staging-policy"}
+
+# User Service  
+# user-service-dev: latest # {"$imagepolicy": "flux-system:user-service-dev-policy"}
+# user-service-staging: 25.06.0 # {"$imagepolicy": "flux-system:user-service-staging-policy"}
+
+# Auth Service
+# auth-service-dev: latest # {"$imagepolicy": "flux-system:auth-service-dev-policy"}
+# auth-service-staging: 25.06.0 # {"$imagepolicy": "flux-system:auth-service-staging-policy"}
+
+# Notification Service
+# notification-service-dev: latest # {"$imagepolicy": "flux-system:notification-service-dev-policy"}
+# notification-service-staging: 25.06.0 # {"$imagepolicy": "flux-system:notification-service-staging-policy"}
+
+# Payment Service
+# payment-service-dev: latest # {"$imagepolicy": "flux-system:payment-service-dev-policy"}
+# payment-service-staging: 25.06.0 # {"$imagepolicy": "flux-system:payment-service-staging-policy"}
+
+# Inventory Service
+# inventory-service-dev: latest # {"$imagepolicy": "flux-system:inventory-service-dev-policy"}
+# inventory-service-staging: 25.06.0 # {"$imagepolicy": "flux-system:inventory-service-staging-policy"}
+
+# Order Service
+# order-service-dev: latest # {"$imagepolicy": "flux-system:order-service-dev-policy"}
+# order-service-staging: 25.06.0 # {"$imagepolicy": "flux-system:order-service-staging-policy"}
+
+# Analytics Service
+# analytics-service-dev: latest # {"$imagepolicy": "flux-system:analytics-service-dev-policy"}
+# analytics-service-staging: 25.06.0 # {"$imagepolicy": "flux-system:analytics-service-staging-policy"}
+
+# Reporting Service
+# reporting-service-dev: latest # {"$imagepolicy": "flux-system:reporting-service-dev-policy"}
+# reporting-service-staging: 25.06.0 # {"$imagepolicy": "flux-system:reporting-service-staging-policy"}
+
+# Gateway Service
+# gateway-service-dev: latest # {"$imagepolicy": "flux-system:gateway-service-dev-policy"}
+# gateway-service-staging: 25.06.0 # {"$imagepolicy": "flux-system:gateway-service-staging-policy"}

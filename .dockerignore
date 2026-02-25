@@ -1,0 +1,17 @@
+node_modules
+.next
+Dockerfile
+.dockerignore
+dist
+.git
+.gitignore
+npm-debug.log
+yarn-error.log
+.vscode
+coverage
+.env
+.husky
+*.md
+docs/
+scripts/test/
+README.md

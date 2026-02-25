@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-ui
+spec:
+  template:
+    metadata:
+      labels:
+        environment: production
+    spec:
+      containers:
+      - name: admin-ui
+        image: admin-ui-image
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: PORT
+          value: "80"
+        ports:
+        - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "25m"
+          limits:
+            memory: "256Mi"
+            cpu: "100m"
