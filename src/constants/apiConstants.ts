@@ -156,3 +156,14 @@ export const taxes = {
   updateTax: (id: string) => `/admin/taxes/${id}`,
   deleteTax: (id: string) => `/admin/taxes/${id}`,
 };
+
+export const dashboard = {
+  // Main dashboard endpoints
+  getDashboard: "/dashboard",
+  getActivity: "/dashboard/activity",
+  getStock: "/dashboard/stock",
+  getShipmentTracking: (shipment_id: string) => `/dashboard/shipment/${shipment_id}/tracking`,
+  addShipmentTracking: (shipment_id: string) => `/dashboard/shipment/${shipment_id}/tracking`,
+  getTrends: (entity_type: string) => `/dashboard/trends/${entity_type}`,
+  refreshDashboard: "/dashboard/refresh",
+};
