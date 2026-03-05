@@ -1,8 +1,9 @@
 import axios from "axios";
 import { localStorageAuthKey } from "@/constants/localStorageConstant";
 import { LoginResponse } from "@/models/IUser";
+import { config } from "@/config";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_BASE_URL = config.apiDomain || "http://127.0.0.1:8088";
 
 // Helper to get token from Redux persisted state
 const getToken = () => {
@@ -55,10 +56,10 @@ export interface UpsertCompanyAddressInput {
 }
 
 export interface CreateBankDetailInput {
-  bank_name: string;
+  bank_id: number;
   account_holder_name: string;
   account_number: string;
-  ifsc_code: string;
+  ifsc_code?: string;
   branch_name?: string;
   is_primary: boolean;
 }
@@ -131,6 +132,19 @@ export interface TaxType {
   description?: string;
 }
 
+export interface Bank {
+  id: number;
+  bank_name: string;
+  address: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Company List Types
 export interface CompanyData {
   company: {
@@ -169,11 +183,10 @@ export interface CompanyData {
   bank_details?: Array<{
     id: number;
     company_id: number;
-    bank_name: string;
+    bank_id: number;
+    bank?: Bank;
     account_holder_name: string;
     account_number: string;
-    ifsc_code: string;
-    branch_name?: string;
     is_primary: boolean;
     is_active: boolean;
     created_at: string;
@@ -254,6 +267,11 @@ export const companyApi = {
   getTaxTypes: async (): Promise<TaxType[]> => {
     const response = await axios.get(`${API_BASE_URL}/helpers/tax-types`);
     return response.data;
+  },
+
+  getBanks: async (): Promise<Bank[]> => {
+    const response = await axios.get(`${API_BASE_URL}/banks`);
+    return response.data.data.banks || [];
   },
 
   // Company setup - protected endpoint requiring authentication

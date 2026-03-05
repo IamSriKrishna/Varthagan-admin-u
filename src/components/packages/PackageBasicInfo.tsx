@@ -97,7 +97,6 @@ export default function PackageBasicInfo({
       formik.setFieldValue('customer', {
         id: value.id,
         display_name: value.display_name,
-        company_name: value.company_name,
         email: value.email_address,
         phone: value.work_phone,
       });
@@ -168,7 +167,6 @@ export default function PackageBasicInfo({
                     formik.setFieldValue('customer', {
                       id: found.id,
                       display_name: found.display_name,
-                      company_name: found.company_name,
                       email: found.email_address,
                       phone: found.work_phone,
                     });
@@ -194,7 +192,7 @@ export default function PackageBasicInfo({
               </MenuItem>
               {customers.map((customer: Customer) => (
                 <MenuItem key={customer.id} value={customer.id}>
-                  {customer.display_name || customer.company_name}
+                  {customer.display_name || 'Unnamed Customer'}
                 </MenuItem>
               ))}
             </Select>

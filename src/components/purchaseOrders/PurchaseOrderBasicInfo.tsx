@@ -157,7 +157,7 @@ export const PurchaseOrderBasicInfo: React.FC<PurchaseOrderBasicInfoProps> = ({
                   </MenuItem>
                   {vendors.map((vendor: any) => (
                     <MenuItem key={vendor.id} value={vendor.id}>
-                      {vendor.display_name || vendor.company_name}
+                      {vendor.display_name}
                     </MenuItem>
                   ))}
                 </Select>

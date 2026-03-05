@@ -157,8 +157,7 @@ export default function BillsPage() {
     .filter((bill) =>
       bill.bill_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       bill.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      bill.vendor?.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      bill.vendor?.company_name?.toLowerCase().includes(searchQuery.toLowerCase())
+      bill.vendor?.display_name?.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .filter((bill) => (filterTab === 'unpaid' ? isUnpaid(bill) : true));
 
@@ -330,7 +329,7 @@ export default function BillsPage() {
                   >
                     <TableCell sx={{ fontWeight: 600 }}>{bill.bill_number}</TableCell>
                     <TableCell>{bill.order_number}</TableCell>
-                    <TableCell>{bill.vendor?.company_name || bill.vendor?.display_name}</TableCell>
+                    <TableCell>{bill.vendor?.display_name || 'Not specified'}</TableCell>
                     <TableCell sx={{ textAlign: 'right' }}>
                       ₹ {(bill.total || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                     </TableCell>

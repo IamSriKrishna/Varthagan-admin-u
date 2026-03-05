@@ -5,7 +5,7 @@ export const customerValidationSchema = (isEdit: boolean) => {
     // Basic Information
     first_name: Yup.string().required("First name is required"),
     last_name: Yup.string().required("Last name is required"),
-    company_name: Yup.string().required("Company name is required"),
+    customer_type: Yup.string().required("Customer type is required"),
     display_name: Yup.string().required("Display name is required"),
     email_address: Yup.string().email("Invalid email").required("Email is required"),
     work_phone: Yup.string().required("Work phone is required"),

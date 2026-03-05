@@ -58,12 +58,12 @@ export const PHONE_CODE_OPTIONS = [
 ];
 
 export const VENDOR_ENDPOINTS = {
-  CREATE: "/vendors",
+  CREATE: "/auth/manage/vendors",
   GET_ALL: (page: number = 1, limit: number = 10, search?: string) =>
-    `/vendors?page=${page}&limit=${limit}${search ? `&search=${search}` : ""}`,
-  GET_BY_ID: (id: string | number) => `/vendors/${id}`,
-  UPDATE: (id: string | number) => `/vendors/${id}`,
-  DELETE: (id: string | number) => `/vendors/${id}`,
+    `/auth/manage/vendors?page=${page}&limit=${limit}${search ? `&search=${search}` : ""}`,
+  GET_BY_ID: (id: string | number) => `/auth/manage/vendors/${id}`,
+  UPDATE: (id: string | number) => `/auth/manage/vendors/${id}`,
+  DELETE: (id: string | number) => `/auth/manage/vendors/${id}`,
   SEARCH: (query: string, page: number = 1, limit: number = 10) =>
-    `/vendors/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`,
+    `/auth/manage/vendors/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`,
 } as const;

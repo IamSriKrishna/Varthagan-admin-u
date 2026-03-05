@@ -87,6 +87,13 @@ export const getAccessMapFromRole = (role?: Role): IAccessMap => {
     nav["customers"] = true;
     nav["orderreport"] = true;
     
+    // ============================================
+    // EMPLOYEE CHILDREN - ADMIN ACCESS
+    // ============================================
+    nav["employee"] = true;
+    nav["employees"] = true;
+    nav["employeeAttendance"] = true;
+    
     // Add parent menu access for regular users
     nav["purchases"] = true;       // ✅ Parent menu
     nav["vendors"] = true;         // ✅ Child menu

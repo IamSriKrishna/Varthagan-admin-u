@@ -109,11 +109,6 @@ export default function VendorsPage() {
       render: (row) => <HighlightedCell value={row.display_name || ""} search={filters.search} />,
     },
     {
-      key: "company_name" as keyof Vendor,
-      label: "Company Name",
-      render: (row) => <HighlightedCell value={row.company_name || ""} search={filters.search} />,
-    },
-    {
       key: "email_address" as keyof Vendor,
       label: "Email",
       render: (row) => <HighlightedCell value={row.email_address || "Not provided"} search={filters.search} />,

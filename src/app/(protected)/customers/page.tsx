@@ -108,11 +108,7 @@ export default function CustomersPage() {
       label: "Display Name",
       render: (row) => <HighlightedCell value={row.display_name || ""} search={filters.search} />,
     },
-    {
-      key: "company_name" as keyof Customer,
-      label: "Company Name",
-      render: (row) => <HighlightedCell value={row.company_name || ""} search={filters.search} />,
-    },
+    
     {
       key: "email_address" as keyof Customer,
       label: "Email",

@@ -1,10 +1,10 @@
 import { Customer } from "@/models/customer.model";
 
 export const initialCustomerValues: Customer = {
+  customer_type: "Business",
   salutation: "Mr.",
   first_name: "",
   last_name: "",
-  company_name: "",
   display_name: "",
   email_address: "",
   work_phone: "",
@@ -63,10 +63,10 @@ export const initialCustomerValues: Customer = {
 
 export const transformCustomerToPayload = (customer: Customer): any => {
   const payload = {
+    customer_type: customer.customer_type,
     salutation: customer.salutation,
     first_name: customer.first_name,
     last_name: customer.last_name,
-    company_name: customer.company_name,
     display_name: customer.display_name,
     email_address: customer.email_address,
     work_phone: customer.work_phone,

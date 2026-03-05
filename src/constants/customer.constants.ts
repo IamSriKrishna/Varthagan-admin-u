@@ -46,12 +46,12 @@ export const PHONE_CODE_OPTIONS = [
 ];
 
 export const CUSTOMER_ENDPOINTS = {
-  CREATE: "/customers",
+  CREATE: "/auth/manage/customers",
   GET_ALL: (page: number = 1, limit: number = 10, search?: string) =>
-    `/customers?page=${page}&limit=${limit}${search ? `&search=${search}` : ""}`,
-  GET_BY_ID: (id: string | number) => `/customers/${id}`,
-  UPDATE: (id: string | number) => `/customers/${id}`,
-  DELETE: (id: string | number) => `/customers/${id}`,
+    `/auth/manage/customers?page=${page}&limit=${limit}${search ? `&search=${search}` : ""}`,
+  GET_BY_ID: (id: string | number) => `/auth/manage/customers/${id}`,
+  UPDATE: (id: string | number) => `/auth/manage/customers/${id}`,
+  DELETE: (id: string | number) => `/auth/manage/customers/${id}`,
   SEARCH: (query: string, page: number = 1, limit: number = 10) =>
-    `/customers/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`,
+    `/auth/manage/customers/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`,
 } as const;

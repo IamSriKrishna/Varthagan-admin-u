@@ -689,7 +689,7 @@ export default function ItemForm({ item, onSave, loading = false }: ItemFormProp
               </MenuItem>
               {vendors.map((vendor) => (
                 <MenuItem key={vendor.id} value={String(vendor.id)}>
-                  {vendor.display_name || vendor.company_name}
+                  {vendor.display_name}}
                 </MenuItem>
               ))}
             </Select>

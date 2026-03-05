@@ -13,6 +13,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { companyApi, CompleteCompanySetupInput, CompanyData } from "@/lib/api/companyApi";
+import { formatErrorMessage } from "@/utils/companyErrorHandler";
 import CompanyDetailsStep from "./steps/CompanyDetailsStep";
 import ContactDetailsStep from "./steps/ContactDetailsStep";
 import AddressDetailsStep from "./steps/AddressDetailsStep";
@@ -286,11 +287,7 @@ export default function CompanySetupWizard({
         }
       }, 2000);
     } catch (err: any) {
-      const errorMessage =
-        err.message ||
-        err.response?.data?.error ||
-        err.response?.data?.message ||
-        "Failed to setup company";
+      const errorMessage = formatErrorMessage(err);
       setError(errorMessage);
       setLoading(false);
     }

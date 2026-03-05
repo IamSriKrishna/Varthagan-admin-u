@@ -66,7 +66,6 @@ interface InvoiceFormProps {
 interface CustomerOption {
   id: number;
   display_name: string;
-  company_name: string;
   email: string;
   phone: string;
 }
@@ -405,12 +404,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ initialData, onSuccess
                           onDropdownChange={(e, _name, val) => setFieldValue("customer_id", Number(val))}
                           options={customers.map((c) => ({
                             value: c.id,
-                            label: `${c.display_name || c.company_name} ${c.email ? `(${c.email})` : ""}`,
+                            label: `${c.display_name || 'Unnamed'} ${c.email ? `(${c.email})` : ""}`,
                           }))}
                           renderValue={(value: any) => {
                             const selected = customers.find((c) => c.id === value);
                             return selected 
-                              ? `${selected.display_name || selected.company_name} ${selected.email ? `(${selected.email})` : ""}`
+                              ? `${selected.display_name || 'Unnamed'} ${selected.email ? `(${selected.email})` : ""}`
                               : "";
                           }}
                           sx={{

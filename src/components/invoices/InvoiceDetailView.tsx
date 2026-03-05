@@ -155,12 +155,7 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
             </Typography>
             <Box sx={{ bgcolor: "#f9f9f9", p: 2, borderRadius: 1 }}>
               <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                {invoice.customer?.display_name ||
-                  invoice.customer?.company_name ||
-                  "Customer Name"}
-              </Typography>
-              <Typography variant="body2" sx={{ color: "text.secondary", mb: 0.5 }}>
-                {invoice.customer?.company_name || ""}
+                {invoice.customer?.display_name || "Customer Name"}
               </Typography>
               <Typography variant="body2" sx={{ color: "text.secondary", mb: 0.5 }}>
                 {invoice.customer?.email || ""}
@@ -180,12 +175,7 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
             </Typography>
             <Box sx={{ bgcolor: "#f9f9f9", p: 2, borderRadius: 1 }}>
               <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                {invoice.customer?.display_name ||
-                  invoice.customer?.company_name ||
-                  "Customer Name"}
-              </Typography>
-              <Typography variant="body2" sx={{ color: "text.secondary", mb: 0.5 }}>
-                {invoice.customer?.company_name || ""}
+                {invoice.customer?.display_name || "Customer Name"}
               </Typography>
               <Typography variant="body2" sx={{ color: "text.secondary", mb: 0.5 }}>
                 {invoice.customer?.email || ""}

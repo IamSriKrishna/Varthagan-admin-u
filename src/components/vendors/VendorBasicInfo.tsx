@@ -31,14 +31,6 @@ export const VendorBasicInfo: React.FC = () => {
         </Grid>
         
         <Grid size={{ xs: 12 }} component="div">
-          <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-            Company Name
-          </Typography>
-        </Grid>
-        <Grid size={{ xs: 12, md: 6 }} component="div">
-          <BBInput name="company_name" label="Company Name*" fullWidth />
-        </Grid>
-        <Grid size={{ xs: 12, md: 6 }} component="div">
           <BBInput name="display_name" label="Display Name*" fullWidth />
         </Grid>
         

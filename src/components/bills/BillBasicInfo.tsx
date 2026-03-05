@@ -173,7 +173,7 @@ export const BillBasicInfo: React.FC<BillBasicInfoProps> = ({ formik }) => {
                   </MenuItem>
                   {vendors.map((vendor: any) => (
                     <MenuItem key={vendor.id} value={vendor.id}>
-                      {vendor.display_name || vendor.company_name}
+                      {vendor.display_name || 'Not specified'}
                     </MenuItem>
                   ))}
                 </Select>

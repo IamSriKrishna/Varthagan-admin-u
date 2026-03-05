@@ -18,26 +18,25 @@ export const CustomerBasicInfo: React.FC = () => {
       <Grid container spacing={3} component="div">
         <Grid size={{ xs: 2 }} component="div">
           <BBDropdown 
+            name="customer_type" 
+            label="Customer Type" 
+            options={[{ label: "Business", value: "Business" }, { label: "Individual", value: "Individual" }]}
+          />
+        </Grid>
+        <Grid size={{ xs: 2 }} component="div">
+          <BBDropdown 
             name="salutation" 
             label="Salutation" 
             options={SALUTATION_OPTIONS}
           />
         </Grid>
-        <Grid size={{ xs: 5 }} component="div">
+        <Grid size={{ xs: 4 }} component="div">
           <BBInput name="first_name" label="First Name" fullWidth />
         </Grid>
-        <Grid size={{ xs: 5 }} component="div">
+        <Grid size={{ xs: 4 }} component="div">
           <BBInput name="last_name" label="Last Name" fullWidth />
         </Grid>
         
-        <Grid size={{ xs: 12 }} component="div">
-          <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-            Company Name
-          </Typography>
-        </Grid>
-        <Grid size={{ xs: 12, md: 6 }} component="div">
-          <BBInput name="company_name" label="Company Name*" fullWidth />
-        </Grid>
         <Grid size={{ xs: 12, md: 6 }} component="div">
           <BBInput name="display_name" label="Display Name*" fullWidth />
         </Grid>

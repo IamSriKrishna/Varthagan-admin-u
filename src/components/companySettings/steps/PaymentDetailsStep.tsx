@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   TextField,
@@ -9,10 +9,18 @@ import {
   Paper,
   Typography,
   Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import {
   CreateBankDetailInput,
   UpsertUPIDetailInput,
+  companyApi,
+  Bank,
 } from "@/lib/api/companyApi";
 
 interface PaymentDetailsStepProps {
@@ -28,8 +36,12 @@ export default function PaymentDetailsStep({
   onBankChange,
   onUPIChange,
 }: PaymentDetailsStepProps) {
+  const [banks, setBanks] = useState<Bank[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const bank = bankData || {
-    bank_name: "",
+    bank_id: 0,
     account_holder_name: "",
     account_number: "",
     ifsc_code: "",
@@ -40,6 +52,23 @@ export default function PaymentDetailsStep({
   const upi = upiData || {
     upi_id: "",
     upi_qr_url: "",
+  };
+
+  useEffect(() => {
+    fetchBanks();
+  }, []);
+
+  const fetchBanks = async () => {
+    try {
+      setLoading(true);
+      const banksData = await companyApi.getBanks();
+      setBanks(banksData);
+    } catch (err) {
+      setError("Failed to load banks");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBankChange = (field: string, value: any) => {
@@ -58,6 +87,8 @@ export default function PaymentDetailsStep({
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      {error && <Alert severity="error">{error}</Alert>}
+
       {/* Bank Details Section */}
       <Paper elevation={1} sx={{ p: 3 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>
@@ -65,61 +96,79 @@ export default function PaymentDetailsStep({
         </Typography>
         <Divider sx={{ mb: 3 }} />
 
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <TextField
-            label="Bank Name"
-            value={bank.bank_name}
-            onChange={(e) => handleBankChange("bank_name", e.target.value)}
-            fullWidth
-            placeholder="e.g., State Bank of India"
-          />
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <FormControl fullWidth>
+              <InputLabel id="bank-label">Bank</InputLabel>
+              <Select
+                labelId="bank-label"
+                id="bank-select"
+                value={bank.bank_id || 0}
+                label="Bank"
+                onChange={(e) => handleBankChange("bank_id", e.target.value as number)}
+              >
+                <MenuItem value={0} disabled>
+                  Select a bank
+                </MenuItem>
+                {banks.map((bankOption) => (
+                  <MenuItem key={bankOption.id} value={bankOption.id}>
+                    {bankOption.bank_name} - {bankOption.city}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-          <TextField
-            label="Account Holder Name"
-            value={bank.account_holder_name}
-            onChange={(e) =>
-              handleBankChange("account_holder_name", e.target.value)
-            }
-            fullWidth
-            placeholder="Name as per bank account"
-          />
+            <TextField
+              label="Account Holder Name"
+              value={bank.account_holder_name}
+              onChange={(e) =>
+                handleBankChange("account_holder_name", e.target.value)
+              }
+              fullWidth
+              placeholder="Name as per bank account"
+            />
 
-          <TextField
-            label="Account Number"
-            value={bank.account_number}
-            onChange={(e) => handleBankChange("account_number", e.target.value)}
-            fullWidth
-            placeholder="Bank account number"
-          />
+            <TextField
+              label="Account Number"
+              value={bank.account_number}
+              onChange={(e) => handleBankChange("account_number", e.target.value)}
+              fullWidth
+              placeholder="Bank account number"
+            />
 
-          <TextField
-            label="IFSC Code"
-            value={bank.ifsc_code}
-            onChange={(e) => handleBankChange("ifsc_code", e.target.value)}
-            fullWidth
-            placeholder="11-character IFSC code"
-          />
+            <TextField
+              label="IFSC Code"
+              value={bank.ifsc_code}
+              onChange={(e) => handleBankChange("ifsc_code", e.target.value)}
+              fullWidth
+              placeholder="11-character IFSC code"
+            />
 
-          <TextField
-            label="Branch Name"
-            value={bank.branch_name}
-            onChange={(e) => handleBankChange("branch_name", e.target.value)}
-            fullWidth
-            placeholder="Bank branch name (optional)"
-          />
+            <TextField
+              label="Branch Name"
+              value={bank.branch_name}
+              onChange={(e) => handleBankChange("branch_name", e.target.value)}
+              fullWidth
+              placeholder="Bank branch name (optional)"
+            />
 
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={bank.is_primary}
-                onChange={(e) =>
-                  handleBankChange("is_primary", e.target.checked)
-                }
-              />
-            }
-            label="Set as Primary Bank Account"
-          />
-        </Box>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={bank.is_primary}
+                  onChange={(e) =>
+                    handleBankChange("is_primary", e.target.checked)
+                  }
+                />
+              }
+              label="Set as Primary Bank Account"
+            />
+          </Box>
+        )}
       </Paper>
 
       {/* UPI Details Section */}

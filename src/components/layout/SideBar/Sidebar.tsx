@@ -232,6 +232,12 @@ export default function Sidebar({
         // Always show these items regardless of access control
         const alwaysShowItems = ['purchaseOrders', 'vendors',"bills", "invoices", "salesOrders", "packages"];
         
+        // Add employee items if user is admin
+        const isAdmin = userType === 'admin';
+        if (isAdmin) {
+          alwaysShowItems.push('employees', 'employeeAttendance');
+        }
+        
         const filteredChildren = item.children.filter((child) => {
           const hasAccess = (accessMap?.nav as Record<string, boolean | undefined>)?.[child.key];
           console.log(`    Child: ${child.key}, Access: ${hasAccess}`);
@@ -253,6 +259,13 @@ export default function Sidebar({
 
       const hasAccess = (accessMap?.nav as Record<string, boolean | undefined>)?.[item.key];
       const hasVisibleChildren = !!item.children && item.children.length > 0;
+
+      // Show employee menu only for admin users
+      if (item.key === 'employee') {
+        const shouldShow = userType === 'admin';
+        console.log(`  ${item.key}: Admin check - ${userType} === 'admin' = ${shouldShow}`);
+        return shouldShow;
+      }
 
       console.log(`  ${item.key}:`);
       console.log(`    - hasAccess: ${hasAccess}`);
