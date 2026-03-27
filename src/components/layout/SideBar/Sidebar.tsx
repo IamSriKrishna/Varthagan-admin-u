@@ -43,6 +43,7 @@ import {
   User2Icon,
   BoxesIcon,
   Receipt,
+  Plus,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -232,10 +233,10 @@ export default function Sidebar({
         // Always show these items regardless of access control
         const alwaysShowItems = ['purchaseOrders', 'vendors',"bills", "invoices", "salesOrders", "packages"];
         
-        // Add employee items if user is admin
+        // Add employee items and items menu children if user is admin
         const isAdmin = userType === 'admin';
         if (isAdmin) {
-          alwaysShowItems.push('employees', 'employeeAttendance');
+          alwaysShowItems.push('employees', 'employeeAttendance', 'item', 'itemGroups');
         }
         
         const filteredChildren = item.children.filter((child) => {
@@ -262,6 +263,13 @@ export default function Sidebar({
 
       // Show employee menu only for admin users
       if (item.key === 'employee') {
+        const shouldShow = userType === 'admin';
+        console.log(`  ${item.key}: Admin check - ${userType} === 'admin' = ${shouldShow}`);
+        return shouldShow;
+      }
+
+      // Show items menu only for admin users
+      if (item.key === 'items') {
         const shouldShow = userType === 'admin';
         console.log(`  ${item.key}: Admin check - ${userType} === 'admin' = ${shouldShow}`);
         return shouldShow;

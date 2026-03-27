@@ -86,6 +86,10 @@ export interface Item {
   opening_stock_rate_per_unit?: number;
   created_at: string;
   updated_at: string;
+  user_id?: string;
+  user_name?: string;
+  company_id?: number;
+  company_name?: string;
 }
 
 export interface ItemListResponse {

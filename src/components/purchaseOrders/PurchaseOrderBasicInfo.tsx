@@ -29,6 +29,8 @@ import { vendorService } from '@/lib/api/vendorService';
 import { customerService } from '@/lib/api/customerService';
 import { Vendor } from '@/models/vendor.model';
 import { Customer } from '@/models/customer.model';
+import { PAYMENT_TERMS, SHIPMENT_PREFERENCES } from '@/constants/purchaseOrder.constants';
+import { companyApi } from '@/lib/api/companyApi';
 
 interface PurchaseOrderBasicInfoProps {
   formik: FormikProps<PurchaseOrder>;
@@ -48,6 +50,28 @@ export const PurchaseOrderBasicInfo: React.FC<PurchaseOrderBasicInfoProps> = ({
   const [loadingVendors, setLoadingVendors] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [companyName, setCompanyName] = useState<string>('');
+
+  // Fetch authenticated user's company name from API
+  useEffect(() => {
+    const fetchCompanyName = async () => {
+      try {
+        const response = await companyApi.getCompaniesList(1, 100);
+        if (response.data && response.data.length > 0) {
+          // Get the first company (user's company)
+          const userCompany = response.data[0];
+          setCompanyName(userCompany.company?.company_name || 'Your Company');
+        } else {
+          setCompanyName('Your Company');
+        }
+      } catch (err) {
+        console.error('Failed to fetch company name:', err);
+        setCompanyName('Your Company');
+      }
+    };
+
+    fetchCompanyName();
+  }, []);
 
   // Fetch vendors and customers on component mount
   useEffect(() => {
@@ -80,13 +104,14 @@ export const PurchaseOrderBasicInfo: React.FC<PurchaseOrderBasicInfoProps> = ({
     fetchData();
   }, []);
 
-  // Clear customer fields when switching to organization address type
+  // Clear customer fields and auto-populate org name when switching to organization address type
   useEffect(() => {
-    if (formik.values.delivery_address_type === 'organization') {
+    if (formik.values.delivery_address_type === 'organization' && companyName) {
       formik.setFieldValue('customer_id', undefined);
+      formik.setFieldValue('organization_name', companyName);
       setSelectedCustomer(null);
     }
-  }, [formik.values.delivery_address_type]);
+  }, [formik.values.delivery_address_type, companyName]);
 
   const handleAddressTypeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value as 'organization' | 'customer';
@@ -305,7 +330,7 @@ export const PurchaseOrderBasicInfo: React.FC<PurchaseOrderBasicInfoProps> = ({
                               const customer = response.data;
                               setSelectedCustomer(customer);
                               // Set customer name
-                              formik.setFieldValue('organization_name', customer.display_name || customer.company_name || '');
+                              formik.setFieldValue('organization_name', customer.display_name || customer.first_name || '');
                               
                               // Populate address line 1 and line 2 from billing address or shipping address
                               const addressToUse = customer.billing_address || customer.shipping_address;
@@ -349,7 +374,7 @@ export const PurchaseOrderBasicInfo: React.FC<PurchaseOrderBasicInfoProps> = ({
                       </MenuItem>
                       {customers.map((customer: any) => (
                         <MenuItem key={customer.id} value={customer.id}>
-                          {customer.display_name || customer.company_name}
+                          {customer.display_name || customer.first_name}
                         </MenuItem>
                       ))}
                     </Select>
@@ -518,10 +543,11 @@ export const PurchaseOrderBasicInfo: React.FC<PurchaseOrderBasicInfoProps> = ({
                     },
                   }}
                 >
-                  <MenuItem value="net_30">Net 30</MenuItem>
-                  <MenuItem value="net_60">Net 60</MenuItem>
-                  <MenuItem value="immediate">Immediate</MenuItem>
-                  <MenuItem value="custom">Custom</MenuItem>
+                  {PAYMENT_TERMS.map((term) => (
+                    <MenuItem key={term.value} value={term.value}>
+                      {term.label}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
               {formik.touched.payment_terms && formik.errors.payment_terms && (
@@ -548,10 +574,11 @@ export const PurchaseOrderBasicInfo: React.FC<PurchaseOrderBasicInfoProps> = ({
                     },
                   }}
                 >
-                  <MenuItem value="standard_shipping">Standard Shipping</MenuItem>
-                  <MenuItem value="express_shipping">Express Shipping</MenuItem>
-                  <MenuItem value="overnight_shipping">Overnight Shipping</MenuItem>
-                  <MenuItem value="pickup">Pickup</MenuItem>
+                  {SHIPMENT_PREFERENCES.map((pref) => (
+                    <MenuItem key={pref.value} value={pref.value}>
+                      {pref.label}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
               {formik.touched.shipment_preference && formik.errors.shipment_preference && (

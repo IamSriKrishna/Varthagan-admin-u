@@ -40,7 +40,7 @@ export interface CreateItemPayload {
     mpn?: string;
     isbn?: string;
     description?: string;
-    attributes?: Array<{
+    attribute_definitions?: Array<{
       key: string;
       options: string[];
     }>;

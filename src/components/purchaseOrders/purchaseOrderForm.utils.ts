@@ -36,9 +36,10 @@ export const transformPOToPayload = (
   // Transform shipment preference to match backend format
   const shipmentPreferenceMap: Record<string, string> = {
     'standard_shipping': 'Standard Shipping',
-    'express_shipping': 'Express Shipping',
+    'express_delivery': 'Express Delivery',
+    'priority_delivery': 'Priority Delivery',
     'overnight_shipping': 'Overnight Shipping',
-    'pickup': 'Pickup',
+    'courier': 'Courier',
   };
 
   // Convert date to ISO format if it's just a date string

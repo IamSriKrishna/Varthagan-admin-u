@@ -1,19 +1,9 @@
-// app/components/vendor/VendorForm.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Formik, Form, FieldArray, FormikHelpers } from "formik";
 import { useSelector } from "react-redux";
-import { ArrowLeft } from "lucide-react";
-import {
-  Box,
-  Card,
-  Typography,
-  Button,
-  Alert,
-  AlertTitle,
-} from "@mui/material";
 
 // Local Components
 import { VendorBasicInfo } from "./VendorBasicInfo";
@@ -37,36 +27,428 @@ import { useVendor } from "@/hooks/useVendor";
 import { showToastMessage } from "@/utils/toastUtil";
 import { RootState } from "@/store";
 
-// Tab configuration
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const styles = {
+  // Layout
+  page: {
+    minHeight: "100vh",
+    background: "linear-gradient(145deg, #f8f6f2 0%, #f0ede8 50%, #ebe7e1 100%)",
+    fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
+    paddingBottom: "60px",
+  } as React.CSSProperties,
+
+  container: {
+    maxWidth: "980px",
+    margin: "0 auto",
+    padding: "0 24px",
+  } as React.CSSProperties,
+
+  // Header
+  header: {
+    background: "rgba(255,255,255,0.7)",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
+    borderBottom: "1px solid rgba(0,0,0,0.07)",
+    position: "sticky" as const,
+    top: 0,
+    zIndex: 100,
+    padding: "0",
+  },
+
+  headerInner: {
+    maxWidth: "980px",
+    margin: "0 auto",
+    padding: "0 24px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    height: "68px",
+  } as React.CSSProperties,
+
+  headerLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "16px",
+  } as React.CSSProperties,
+
+  backBtn: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "36px",
+    height: "36px",
+    borderRadius: "10px",
+    border: "1px solid rgba(0,0,0,0.1)",
+    background: "white",
+    cursor: "pointer",
+    transition: "all 0.18s ease",
+    color: "#4a4a4a",
+    flexShrink: 0,
+  } as React.CSSProperties,
+
+  badge: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "4px 10px",
+    borderRadius: "20px",
+    fontSize: "11px",
+    fontWeight: 600,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase" as const,
+  },
+
+  newBadge: {
+    background: "linear-gradient(135deg, #e8f5e9, #c8e6c9)",
+    color: "#2e7d32",
+    border: "1px solid rgba(46,125,50,0.2)",
+  },
+
+  editBadge: {
+    background: "linear-gradient(135deg, #e3f2fd, #bbdefb)",
+    color: "#1565c0",
+    border: "1px solid rgba(21,101,192,0.2)",
+  },
+
+  titleGroup: {} as React.CSSProperties,
+
+  pageTitle: {
+    fontSize: "18px",
+    fontWeight: 700,
+    color: "#1a1a1a",
+    margin: 0,
+    letterSpacing: "-0.3px",
+  } as React.CSSProperties,
+
+  pageSubtitle: {
+    fontSize: "12.5px",
+    color: "#888",
+    margin: 0,
+    marginTop: "1px",
+  } as React.CSSProperties,
+
+  headerActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  } as React.CSSProperties,
+
+  // Buttons
+  cancelBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "9px 18px",
+    borderRadius: "10px",
+    border: "1px solid rgba(0,0,0,0.12)",
+    background: "white",
+    cursor: "pointer",
+    fontSize: "13.5px",
+    fontWeight: 500,
+    color: "#4a4a4a",
+    transition: "all 0.18s ease",
+    fontFamily: "inherit",
+  } as React.CSSProperties,
+
+  submitBtn: (loading: boolean, disabled: boolean): React.CSSProperties => ({
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "9px 22px",
+    borderRadius: "10px",
+    border: "none",
+    background: disabled
+      ? "#e0e0e0"
+      : "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
+    cursor: disabled ? "not-allowed" : "pointer",
+    fontSize: "13.5px",
+    fontWeight: 600,
+    color: disabled ? "#aaa" : "white",
+    transition: "all 0.18s ease",
+    fontFamily: "inherit",
+    boxShadow: disabled ? "none" : "0 4px 14px rgba(26,26,46,0.3)",
+    letterSpacing: "0.01em",
+  }),
+
+  // Alert
+  alert: (type: "error" | "warning"): React.CSSProperties => ({
+    display: "flex",
+    gap: "12px",
+    padding: "14px 18px",
+    borderRadius: "12px",
+    marginBottom: "16px",
+    background: type === "error" ? "#fff5f5" : "#fffbf0",
+    border: `1px solid ${type === "error" ? "#ffcdd2" : "#ffe082"}`,
+  }),
+
+  alertIcon: (type: "error" | "warning"): React.CSSProperties => ({
+    flexShrink: 0,
+    width: "20px",
+    height: "20px",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "11px",
+    fontWeight: 700,
+    background: type === "error" ? "#ef5350" : "#ffa726",
+    color: "white",
+  }),
+
+  alertTitle: {
+    fontSize: "13px",
+    fontWeight: 700,
+    color: "#1a1a1a",
+    margin: 0,
+    marginBottom: "2px",
+  } as React.CSSProperties,
+
+  alertBody: {
+    fontSize: "13px",
+    color: "#555",
+    margin: 0,
+  } as React.CSSProperties,
+
+  // GST Card
+  gstCard: {
+    background: "linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%)",
+    border: "1px solid rgba(66,133,244,0.18)",
+    borderRadius: "14px",
+    padding: "16px 20px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "16px",
+    marginBottom: "20px",
+    flexWrap: "wrap" as const,
+  } as React.CSSProperties,
+
+  gstLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    flex: 1,
+  } as React.CSSProperties,
+
+  gstIconWrap: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "10px",
+    background: "linear-gradient(135deg, #4285f4, #1a73e8)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    boxShadow: "0 3px 10px rgba(66,133,244,0.3)",
+  } as React.CSSProperties,
+
+  gstText: {
+    fontSize: "13px",
+    color: "#3c4a6b",
+    margin: 0,
+    fontWeight: 500,
+    lineHeight: 1.5,
+  } as React.CSSProperties,
+
+  gstBtn: (disabled: boolean): React.CSSProperties => ({
+    padding: "8px 16px",
+    borderRadius: "9px",
+    border: "none",
+    background: disabled
+      ? "rgba(0,0,0,0.06)"
+      : "linear-gradient(135deg, #4285f4, #1a73e8)",
+    color: disabled ? "#aaa" : "white",
+    fontSize: "12.5px",
+    fontWeight: 600,
+    cursor: disabled ? "not-allowed" : "pointer",
+    transition: "all 0.18s ease",
+    fontFamily: "inherit",
+    whiteSpace: "nowrap" as const,
+    boxShadow: disabled ? "none" : "0 3px 10px rgba(66,133,244,0.3)",
+  }),
+
+  // Sections
+  section: {
+    background: "white",
+    borderRadius: "16px",
+    border: "1px solid rgba(0,0,0,0.07)",
+    marginBottom: "20px",
+    overflow: "hidden",
+    boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+  } as React.CSSProperties,
+
+  sectionHeader: {
+    padding: "18px 24px 0",
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    marginBottom: "20px",
+  } as React.CSSProperties,
+
+  sectionDot: (color: string): React.CSSProperties => ({
+    width: "8px",
+    height: "8px",
+    borderRadius: "50%",
+    background: color,
+    flexShrink: 0,
+  }),
+
+  sectionLabel: {
+    fontSize: "13px",
+    fontWeight: 700,
+    color: "#1a1a1a",
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.06em",
+  } as React.CSSProperties,
+
+  sectionLine: {
+    flex: 1,
+    height: "1px",
+    background: "linear-gradient(to right, rgba(0,0,0,0.07), transparent)",
+  } as React.CSSProperties,
+
+  sectionBody: {
+    padding: "0 24px 24px",
+  } as React.CSSProperties,
+
+  // Tabs
+  tabsWrap: {
+    background: "white",
+    borderRadius: "16px",
+    border: "1px solid rgba(0,0,0,0.07)",
+    marginBottom: "20px",
+    overflow: "hidden",
+    boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+  } as React.CSSProperties,
+
+  tabBar: {
+    display: "flex",
+    borderBottom: "1px solid rgba(0,0,0,0.07)",
+    overflowX: "auto" as const,
+    padding: "0 8px",
+    gap: "2px",
+    background: "#fafafa",
+  } as React.CSSProperties,
+
+  tab: (active: boolean): React.CSSProperties => ({
+    display: "flex",
+    alignItems: "center",
+    gap: "7px",
+    padding: "14px 18px",
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+    fontSize: "13px",
+    fontWeight: active ? 700 : 500,
+    color: active ? "#1a1a2e" : "#8a8a8a",
+    borderBottom: active ? "2px solid #1a1a2e" : "2px solid transparent",
+    transition: "all 0.18s ease",
+    whiteSpace: "nowrap" as const,
+    fontFamily: "inherit",
+    position: "relative" as const,
+    flexShrink: 0,
+  }),
+
+  tabDot: (active: boolean, color: string): React.CSSProperties => ({
+    width: "6px",
+    height: "6px",
+    borderRadius: "50%",
+    background: active ? color : "#ccc",
+    transition: "background 0.18s ease",
+  }),
+
+  tabContent: {
+    padding: "28px 24px",
+  } as React.CSSProperties,
+
+  // Footer
+  footer: {
+    background: "rgba(255,255,255,0.8)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    borderTop: "1px solid rgba(0,0,0,0.07)",
+    position: "sticky" as const,
+    bottom: 0,
+    zIndex: 100,
+    padding: "14px 24px",
+  },
+
+  footerInner: {
+    maxWidth: "980px",
+    margin: "0 auto",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+  } as React.CSSProperties,
+
+  footerHint: {
+    fontSize: "12px",
+    color: "#bbb",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+  } as React.CSSProperties,
+
+  footerActions: {
+    display: "flex",
+    gap: "10px",
+  } as React.CSSProperties,
+
+  // Content spacing
+  content: {
+    padding: "28px 24px 80px",
+  } as React.CSSProperties,
+};
+
+// ─── Tab Config ───────────────────────────────────────────────────────────────
 const TAB_CONFIGS = [
-  { label: "Other Details", index: 0 },
-  { label: "Address", index: 1 },
-  { label: "Contact Persons", index: 2 },
-  { label: "Bank Details", index: 3 },
+  { label: "Other Details",    index: 0, color: "#f59e0b", icon: "◆" },
+  { label: "Address",          index: 1, color: "#10b981", icon: "◉" },
+  { label: "Contact Persons",  index: 2, color: "#3b82f6", icon: "◎" },
+  { label: "Bank Details",     index: 3, color: "#8b5cf6", icon: "◈" },
 ];
 
+// ─── Icons ────────────────────────────────────────────────────────────────────
+const BackIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 12H5M12 5l-7 7 7 7"/>
+  </svg>
+);
+
+const SparkleIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+);
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export const VendorForm: React.FC = () => {
   const router = useRouter();
   const params = useParams();
-  
+
   const { loading: authLoading } = useSelector((state: RootState) => state.auth);
   const { createVendor, updateVendor, getVendor, loading: vendorLoading } = useVendor();
-  
+
   const vendorIdRaw = params?.vendorId;
   const vendorId = Array.isArray(vendorIdRaw) ? vendorIdRaw[0] : vendorIdRaw;
   const isEdit = !!vendorId && vendorId !== "new";
-  
+
   const [initialData, setInitialData] = useState<Vendor>(initialVendorValues);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [btnHover, setBtnHover] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isEdit && vendorId) {
-      loadVendorData();
-    }
+    if (isEdit && vendorId) loadVendorData();
   }, [vendorId, isEdit]);
 
   const loadVendorData = async () => {
@@ -76,9 +458,9 @@ export const VendorForm: React.FC = () => {
       const vendorData = await getVendor(vendorId);
       setInitialData(vendorData);
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || "Failed to load vendor details";
-      setError(errorMessage);
-      showToastMessage(errorMessage, "error");
+      const msg = err?.response?.data?.message || err?.message || "Failed to load vendor details";
+      setError(msg);
+      showToastMessage(msg, "error");
     } finally {
       setLoading(false);
     }
@@ -88,9 +470,7 @@ export const VendorForm: React.FC = () => {
     try {
       setSubmitError(null);
       setValidationErrors([]);
-      
       const payload = transformVendorToPayload(values);
-      
       if (isEdit && vendorId) {
         await updateVendor(vendorId, payload);
         showToastMessage("Vendor updated successfully!", "success");
@@ -98,45 +478,28 @@ export const VendorForm: React.FC = () => {
         await createVendor(payload);
         showToastMessage("Vendor created successfully!", "success");
       }
-      
       setTimeout(() => router.push("/vendors"), 100);
     } catch (error: any) {
-      // Handle different types of errors
       let errorMessage = "Something went wrong. Please try again.";
       let fieldErrors: string[] = [];
-
       if (error?.response?.data) {
-        const responseData = error.response.data;
-        
-        // Handle validation errors from backend
-        if (responseData.errors && Array.isArray(responseData.errors)) {
-          fieldErrors = responseData.errors.map((err: any) => 
-            typeof err === 'string' ? err : err.message || 'Validation error'
-          );
+        const d = error.response.data;
+        if (d.errors && Array.isArray(d.errors)) {
+          fieldErrors = d.errors.map((e: any) => typeof e === "string" ? e : e.message || "Validation error");
           errorMessage = "Please fix the validation errors below";
-        } 
-        // Handle single error message
-        else if (responseData.message) {
-          errorMessage = responseData.message;
-        }
-        // Handle field-specific errors
-        else if (responseData.field_errors) {
-          const errors = responseData.field_errors;
-          Object.keys(errors).forEach(field => {
-            formikHelpers.setFieldError(field, errors[field]);
-          });
+        } else if (d.message) {
+          errorMessage = d.message;
+        } else if (d.field_errors) {
+          Object.keys(d.field_errors).forEach(f => formikHelpers.setFieldError(f, d.field_errors[f]));
           errorMessage = "Please check the highlighted fields";
         }
       } else if (error?.message) {
         errorMessage = error.message;
       }
-
       setSubmitError(errorMessage);
       setValidationErrors(fieldErrors);
       showToastMessage(errorMessage, "error");
-      
-      // Scroll to top to show error
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -147,208 +510,267 @@ export const VendorForm: React.FC = () => {
       showToastMessage("Please enter a valid 15-digit GSTIN", "error");
       return;
     }
-
     try {
-      // TODO: Replace with actual API call to GST portal
-      setFieldValue('company_name', 'Demo Company Pvt Ltd');
-      setFieldValue('billing_address.city', 'Chennai');
-      setFieldValue('billing_address.state', 'Tamil Nadu');
-      setFieldValue('other_details.pan', 'AAAAA1234A');
+      setFieldValue("company_name", "Demo Company Pvt Ltd");
+      setFieldValue("billing_address.city", "Chennai");
+      setFieldValue("billing_address.state", "Tamil Nadu");
+      setFieldValue("other_details.pan", "AAAAA1234A");
       showToastMessage("Vendor details prefilled from GST portal", "success");
-    } catch (error) {
+    } catch {
       showToastMessage("Failed to prefill from GST portal. Please enter details manually.", "error");
     }
   };
 
-  // Validate current tab before allowing navigation
-  const validateAndSwitchTab = (newTab: number, validateForm: any) => {
-    validateForm().then((errors: any) => {
-      if (Object.keys(errors).length === 0) {
-        setActiveTab(newTab);
-      } else {
-        showToastMessage("Please fix errors in the current section", "error");
-      }
-    });
-  };
-
-  if (loading) {
-    return <BBLoader enabled={true} />;
-  }
+  if (loading) return <BBLoader enabled={true} />;
 
   return (
-    <Box>
+    <div style={styles.page}>
       <BBLoader enabled={authLoading || vendorLoading} />
-      
-      {/* Error Display */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          <AlertTitle>Error</AlertTitle>
-          {error}
-        </Alert>
-      )}
-
-      {/* Submit Error Display */}
-      {submitError && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitError(null)}>
-          <AlertTitle>Submission Failed</AlertTitle>
-          {submitError}
-          {validationErrors.length > 0 && (
-            <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
-              {validationErrors.map((error, index) => (
-                <li key={index}>{error}</li>
-              ))}
-            </Box>
-          )}
-        </Alert>
-      )}
 
       <Formik
         initialValues={initialData}
         validationSchema={vendorValidationSchema(isEdit)}
         onSubmit={handleSubmit}
         enableReinitialize
-        validateOnChange={true}
-        validateOnBlur={true}
+        validateOnChange
+        validateOnBlur
       >
-        {({ handleSubmit, dirty, values, setFieldValue, errors, touched, validateForm, isSubmitting }) => (
+        {({ handleSubmit, dirty, values, setFieldValue, errors, touched, isSubmitting }) => (
           <Form onSubmit={handleSubmit} noValidate>
-            {/* Header */}
-            <Box sx={{ mb: 3 }}>
-              <BBTitle
-                title={isEdit ? "Edit Vendor" : "New Vendor"}
-                subtitle={isEdit ? "Update vendor information" : "Add a new vendor to your system"}
-                rightContent={
-                  <Box sx={{ display: 'flex', gap: 2 }}>
-                    <BBButton 
-                      variant="outlined" 
-                      onClick={handleBack} 
-                      startIcon={<ArrowLeft size={20} />}
-                      disabled={isSubmitting}
-                    >
-                      Cancel
-                    </BBButton>
-                    <BBButton
-                      type="submit"
-                      variant="contained"
-                      disabled={vendorLoading || isSubmitting || (isEdit && !dirty)}
-                      loading={vendorLoading || isSubmitting}
-                    >
-                      {isEdit ? "Update Vendor" : "Create Vendor"}
-                    </BBButton>
-                  </Box>
-                }
-              />
-            </Box>
-            {/* Show validation summary if there are errors */}
-            {Object.keys(errors).length > 0 && Object.keys(touched).length > 0 && (
-              <Alert severity="warning" sx={{ mb: 3 }}>
-                <AlertTitle>Validation Errors</AlertTitle>
-                Please check and fix the errors in the form before submitting.
-              </Alert>
-            )}
 
-            {/* GST Prefill Section */}
-            <Card elevation={1} sx={{ borderRadius: "12px", p: 2, mb: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
-                  Prefill Vendor details from the GST portal using the Vendor's GSTIN.
-                </Typography>
-                <Button 
-                  variant="outlined" 
-                  size="small"
-                  onClick={() => handleGSTPrefill(values.gstin, setFieldValue)}
+            {/* ── Sticky Header ── */}
+            <header style={styles.header}>
+              <div style={styles.headerInner}>
+                <div style={styles.headerLeft}>
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    style={{
+                      ...styles.backBtn,
+                      ...(btnHover === "back" ? { background: "#f5f5f5", borderColor: "rgba(0,0,0,0.18)" } : {}),
+                    }}
+                    onMouseEnter={() => setBtnHover("back")}
+                    onMouseLeave={() => setBtnHover(null)}
+                    disabled={isSubmitting}
+                  >
+                    <BackIcon />
+                  </button>
+                  <div style={styles.titleGroup}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <h1 style={styles.pageTitle}>{isEdit ? "Edit Vendor" : "New Vendor"}</h1>
+                      <span style={{ ...styles.badge, ...(isEdit ? styles.editBadge : styles.newBadge) }}>
+                        {isEdit ? "Editing" : "New"}
+                      </span>
+                    </div>
+                    <p style={styles.pageSubtitle}>
+                      {isEdit ? "Update vendor information and settings" : "Add a new vendor to your system"}
+                    </p>
+                  </div>
+                </div>
+                <div style={styles.headerActions}>
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    style={{
+                      ...styles.cancelBtn,
+                      ...(btnHover === "cancel" ? { background: "#f9f9f9", borderColor: "rgba(0,0,0,0.18)" } : {}),
+                    }}
+                    onMouseEnter={() => setBtnHover("cancel")}
+                    onMouseLeave={() => setBtnHover(null)}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    style={{
+                      ...styles.submitBtn(vendorLoading || isSubmitting, vendorLoading || isSubmitting || (isEdit && !dirty)),
+                      ...(btnHover === "submit" && !(vendorLoading || isSubmitting || (isEdit && !dirty))
+                        ? { transform: "translateY(-1px)", boxShadow: "0 6px 18px rgba(26,26,46,0.38)" }
+                        : {}),
+                    }}
+                    onMouseEnter={() => setBtnHover("submit")}
+                    onMouseLeave={() => setBtnHover(null)}
+                    disabled={vendorLoading || isSubmitting || (isEdit && !dirty)}
+                  >
+                    {(vendorLoading || isSubmitting) ? (
+                      <span style={{ display: "inline-block", width: "14px", height: "14px", border: "2px solid rgba(255,255,255,0.3)", borderTop: "2px solid white", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                    ) : (
+                      <CheckIcon />
+                    )}
+                    {isEdit ? "Update Vendor" : "Create Vendor"}
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            {/* ── Main Content ── */}
+            <div style={styles.content}>
+
+              {/* Alerts */}
+              {error && (
+                <div style={styles.alert("error")}>
+                  <div style={styles.alertIcon("error")}>!</div>
+                  <div>
+                    <p style={styles.alertTitle}>Failed to load vendor</p>
+                    <p style={styles.alertBody}>{error}</p>
+                  </div>
+                </div>
+              )}
+              {submitError && (
+                <div style={styles.alert("error")}>
+                  <div style={styles.alertIcon("error")}>!</div>
+                  <div>
+                    <p style={styles.alertTitle}>Submission Failed</p>
+                    <p style={styles.alertBody}>{submitError}</p>
+                    {validationErrors.length > 0 && (
+                      <ul style={{ margin: "6px 0 0", paddingLeft: "16px", fontSize: "12.5px", color: "#d32f2f" }}>
+                        {validationErrors.map((e, i) => <li key={i}>{e}</li>)}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              )}
+              {Object.keys(errors).length > 0 && Object.keys(touched).length > 0 && (
+                <div style={styles.alert("warning")}>
+                  <div style={styles.alertIcon("warning")}>!</div>
+                  <div>
+                    <p style={styles.alertTitle}>Validation Errors</p>
+                    <p style={styles.alertBody}>Please check and fix the errors in the form before submitting.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* GST Prefill Banner */}
+              <div style={styles.gstCard}>
+                <div style={styles.gstLeft}>
+                  <div style={styles.gstIconWrap}>
+                    <SparkleIcon />
+                  </div>
+                  <div>
+                    <p style={{ ...styles.gstText, fontWeight: 600, color: "#1a2a5e", marginBottom: "2px" }}>
+                      Auto-fill from GST Portal
+                    </p>
+                    <p style={{ ...styles.gstText, fontSize: "12px", fontWeight: 400, color: "#607080" }}>
+                      Enter GSTIN below to prefill vendor details automatically
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleGSTPrefill(values.gstin!, setFieldValue)}
+                  style={styles.gstBtn(!values.gstin || values.gstin.length !== 15)}
                   disabled={!values.gstin || values.gstin.length !== 15}
                 >
-                  Prefill from GST
-                </Button>
-              </Box>
-              {values.gstin && values.gstin.length < 15 && (
-                <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
-                  GSTIN must be 15 characters long
-                </Typography>
-              )}
-            </Card>
+                  Prefill Details →
+                </button>
+              </div>
 
-            {/* Basic Information - Always visible */}
-            <VendorBasicInfo />
+              {/* Basic Info Section */}
+              <div style={styles.section}>
+                <div style={styles.sectionHeader}>
+                  <span style={styles.sectionDot("#f59e0b")} />
+                  <span style={styles.sectionLabel}>Basic Information</span>
+                  <div style={styles.sectionLine} />
+                </div>
+                <div style={styles.sectionBody}>
+                  <VendorBasicInfo />
+                </div>
+              </div>
 
-            
-
-            {/* Horizontal Tabs for Other Sections */}
-            <Card elevation={1} sx={{ borderRadius: "12px", p: 3, mb: 3 }}>
-              <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-                <Box sx={{ display: 'flex', overflowX: 'auto' }}>
+              {/* Tabbed Section */}
+              <div style={styles.tabsWrap}>
+                {/* Tab Bar */}
+                <div style={styles.tabBar}>
                   {TAB_CONFIGS.map((tab) => (
-                    <Button
+                    <button
                       key={tab.label}
+                      type="button"
                       onClick={() => setActiveTab(tab.index)}
-                      sx={{
-                        flex: 1,
-                        py: 2,
-                        borderBottom: activeTab === tab.index ? 2 : 'none',
-                        borderColor: 'primary.main',
-                        color: activeTab === tab.index ? 'primary.main' : 'text.secondary',
-                        fontWeight: activeTab === tab.index ? 600 : 400,
-                        borderRadius: 0,
-                        minWidth: 'fit-content',
-                        whiteSpace: 'nowrap',
-                      }}
+                      style={styles.tab(activeTab === tab.index)}
                     >
+                      <span style={styles.tabDot(activeTab === tab.index, tab.color)} />
                       {tab.label}
-                    </Button>
+                    </button>
                   ))}
-                </Box>
-              </Box>
+                </div>
 
-              {/* Tab Content */}
-              {activeTab === 0 && <VendorOtherDetails />}
-              {activeTab === 1 && <VendorAddress values={values} setFieldValue={setFieldValue} />}
-              {activeTab === 2 && (
-                <FieldArray name="contact_persons">
-                  {({ push, remove }) => (
-                    <VendorContactPersons 
-                      values={values} 
-                      push={push} 
-                      remove={remove} 
-                    />
+                {/* Tab Content */}
+                <div style={styles.tabContent}>
+                  {activeTab === 0 && <VendorOtherDetails />}
+                  {activeTab === 1 && <VendorAddress values={values} setFieldValue={setFieldValue} />}
+                  {activeTab === 2 && (
+                    <FieldArray name="contact_persons">
+                      {({ push, remove }) => (
+                        <VendorContactPersons values={values} push={push} remove={remove} />
+                      )}
+                    </FieldArray>
                   )}
-                </FieldArray>
-              )}
-              {activeTab === 3 && (
-                <FieldArray name="bank_details">
-                  {({ push, remove }) => (
-                    <VendorBankDetails 
-                      values={values} 
-                      push={push} 
-                      remove={remove} 
-                    />
+                  {activeTab === 3 && (
+                    <FieldArray name="bank_details">
+                      {({ push, remove }) => (
+                        <VendorBankDetails values={values} push={push} remove={remove} />
+                      )}
+                    </FieldArray>
                   )}
-                </FieldArray>
-              )}
-            </Card>
+                </div>
+              </div>
+            </div>
 
-            {/* Bottom Action Buttons */}
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
-              <BBButton 
-                variant="outlined" 
-                onClick={handleBack}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </BBButton>
-              <BBButton
-                type="submit"
-                variant="contained"
-                disabled={vendorLoading || isSubmitting || (isEdit && !dirty)}
-                loading={vendorLoading || isSubmitting}
-              >
-                {isEdit ? "Update Vendor" : "Create Vendor"}
-              </BBButton>
-            </Box>
+            {/* ── Sticky Footer ── */}
+            <footer style={styles.footer}>
+              <div style={styles.footerInner}>
+                <div style={styles.footerHint}>
+                  <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: dirty ? "#10b981" : "#ddd", display: "inline-block" }} />
+                  {dirty ? "Unsaved changes" : "No changes made"}
+                </div>
+                <div style={styles.footerActions}>
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    style={{
+                      ...styles.cancelBtn,
+                      ...(btnHover === "cancel2" ? { background: "#f9f9f9" } : {}),
+                    }}
+                    onMouseEnter={() => setBtnHover("cancel2")}
+                    onMouseLeave={() => setBtnHover(null)}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    style={{
+                      ...styles.submitBtn(vendorLoading || isSubmitting, vendorLoading || isSubmitting || (isEdit && !dirty)),
+                      ...(btnHover === "submit2" && !(vendorLoading || isSubmitting || (isEdit && !dirty))
+                        ? { transform: "translateY(-1px)", boxShadow: "0 6px 18px rgba(26,26,46,0.38)" }
+                        : {}),
+                    }}
+                    onMouseEnter={() => setBtnHover("submit2")}
+                    onMouseLeave={() => setBtnHover(null)}
+                    disabled={vendorLoading || isSubmitting || (isEdit && !dirty)}
+                  >
+                    {(vendorLoading || isSubmitting) ? (
+                      <span style={{ display: "inline-block", width: "14px", height: "14px", border: "2px solid rgba(255,255,255,0.3)", borderTop: "2px solid white", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                    ) : (
+                      <CheckIcon />
+                    )}
+                    {isEdit ? "Update Vendor" : "Create Vendor"}
+                  </button>
+                </div>
+              </div>
+            </footer>
+
           </Form>
         )}
       </Formik>
-    </Box>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        @keyframes spin { to { transform: rotate(360deg); } }
+        * { box-sizing: border-box; }
+      `}</style>
+    </div>
   );
 };
 
