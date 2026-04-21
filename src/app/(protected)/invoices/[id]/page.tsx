@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 import { useParams, useRouter } from "next/navigation";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Download, Edit2, Send, Trash2 } from "lucide-react";
 
 const statusColorMap: Record<string, "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning"> = {
@@ -34,6 +34,8 @@ export default function InvoiceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const invoiceId = params?.id as string;
+  const [companyData, setCompanyData] = useState<any>(null);
+  const [companyLoading, setCompanyLoading] = useState(true);
 
   const { data: result, loading, refetch } = useFetch<any>({
     url: invoices.getInvoiceById(invoiceId),
@@ -43,6 +45,50 @@ export default function InvoiceDetailPage() {
 
   // Handle both response formats: { data: invoice } and direct invoice object
   const invoice: IInvoice | undefined = result?.data || result;
+
+  // Fetch company data on component mount
+  useEffect(() => {
+    const fetchCompanyData = async () => {
+      try {
+        setCompanyLoading(true);
+        const apiDomain = config.apiDomain || config.customerDomain || "";
+        const response = await appFetch(`${apiDomain}/companies/me`, {
+          method: "GET",
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setCompanyData(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch company data:", error);
+      } finally {
+        setCompanyLoading(false);
+      }
+    };
+
+    fetchCompanyData();
+  }, []);
+
+  // Format address from company data
+  const formatAddress = (addressData: any) => {
+    if (!addressData) return "Address not available";
+    
+    const parts = [
+      addressData.address_line1,
+      addressData.address_line2,
+      addressData.city,
+      addressData.state?.state_name,
+      addressData.country?.country_name,
+      addressData.pincode,
+    ].filter(Boolean);
+    
+    return parts.join(", ");
+  };
+
+  // Get company details
+  const companyName = companyData?.company?.company_name || "Company Name";
+  const companyAddress = formatAddress(companyData?.address);
 
   // Debug logging
   React.useEffect(() => {
@@ -75,7 +121,7 @@ export default function InvoiceDetailPage() {
     }
   };
 
-  if (loading) {
+  if (loading || companyLoading) {
     return <BBLoader />;
   }
 
@@ -147,8 +193,8 @@ export default function InvoiceDetailPage() {
         <Paper sx={{ p: 0 }} className="printable-invoice">
           <InvoiceDetailView
             invoice={invoice}
-            companyName="Zitra"
-            companyAddress="Tamil Nadu, India"
+            companyName={companyName}
+            companyAddress={companyAddress}
           />
         </Paper>
       </Stack>

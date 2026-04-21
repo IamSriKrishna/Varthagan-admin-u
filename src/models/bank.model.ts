@@ -13,12 +13,9 @@ export interface Bank {
 
 export interface BankListResponse {
   success: boolean;
-  data: Bank[];
-  pagination: {
-    page: number;
-    limit: number;
+  data: {
+    banks: Bank[];
     total: number;
-    total_pages: number;
   };
   message: string;
 }

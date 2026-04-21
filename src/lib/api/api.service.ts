@@ -92,4 +92,15 @@ export const apiService = {
     });
     return handleResponse(response);
   },
+
+  async postFormData(url: string, formData: FormData) {
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getToken()}`,
+      },
+      body: formData,
+    });
+    return handleResponse(response);
+  },
 };

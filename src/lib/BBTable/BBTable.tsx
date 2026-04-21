@@ -39,6 +39,7 @@ type ITableProps<T> = {
   onPageChange?: (newPage: number) => void;
   onRowsPerPageChange?: (newRows: number) => void;
   renderAccordionContent?: (row: T) => React.ReactNode;
+  sx?: SxProps<Theme>;
 };
 
 export default function BBTable<T extends object>({
@@ -53,6 +54,7 @@ export default function BBTable<T extends object>({
   onPageChange,
   onRowsPerPageChange,
   renderAccordionContent,
+  sx,
 }: ITableProps<T>) {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const filteredData = useMemo(() => {
@@ -69,7 +71,7 @@ export default function BBTable<T extends object>({
     <Box>
       <TableContainer component={Paper} elevation={0} sx={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
         <Box sx={{ display: "block", overflowX: "auto" }}>
-          <Table>
+          <Table sx={sx}>
             <TableHead>
               <TableRow>
                 {renderAccordionContent && <TableCell sx={{ width: 40 }} />}

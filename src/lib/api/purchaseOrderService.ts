@@ -6,6 +6,7 @@ import {
   PurchaseOrdersListResponse,
   DeletePurchaseOrderResponse,
   SearchPurchaseOrdersResponse,
+  UpdatePurchaseOrderStatusRequest,
 } from '@/models/purchaseOrder.model';
 import { PURCHASE_ORDER_ENDPOINTS } from '@/constants/purchaseOrder.constants';
 import { apiService } from './api.service';
@@ -18,10 +19,8 @@ export const purchaseOrderService = {
     const response = await apiService.get(
       `${PURCHASE_ORDER_ENDPOINTS.GET_ALL}?page=${page}&limit=${limit}`
     );
-    return {
-      data: response.data || response,
-      success: true,
-    };
+    // Response structure: { purchase_orders: [...], total: number }
+    return response.data || response;
   },
 
   async getPurchaseOrder(id: string): Promise<PurchaseOrderResponse> {
@@ -61,13 +60,27 @@ export const purchaseOrderService = {
     };
   },
 
+  async updatePurchaseOrderStatus(
+    id: string,
+    data: UpdatePurchaseOrderStatusRequest
+  ): Promise<PurchaseOrderResponse> {
+    const response = await apiService.patch(
+      `${PURCHASE_ORDER_ENDPOINTS.UPDATE_STATUS(id)}`,
+      data
+    );
+    return {
+      data: response.data || response,
+      success: true,
+    };
+  },
+
   async deletePurchaseOrder(id: string): Promise<DeletePurchaseOrderResponse> {
     const response = await apiService.delete(
       PURCHASE_ORDER_ENDPOINTS.DELETE(id)
     );
     return {
-      data: response.data || response,
       success: true,
+      message: response?.message || 'Purchase order deleted successfully',
     };
   },
 
@@ -77,9 +90,14 @@ export const purchaseOrderService = {
     const response = await apiService.get(
       `${PURCHASE_ORDER_ENDPOINTS.SEARCH}?query=${encodeURIComponent(query)}`
     );
-    return {
-      data: response.data || response,
-      success: true,
-    };
+    // Response structure: { purchase_orders: [...], total: number }
+    return response.data || response;
+  },
+
+  async getPurchaseOrdersByCustomer(customerId: number) {
+    const response = await apiService.get(
+      `/purchase-orders/customer/${customerId}`
+    );
+    return response.data || response;
   },
 };

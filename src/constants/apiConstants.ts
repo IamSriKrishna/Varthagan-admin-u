@@ -11,15 +11,15 @@ export const usermangement = {
 };
 export const products = {
   //get by id
-  getProducts: "/public/products",
+  getProducts: "/products",
   //create,update,delete,get
-  postProduct: "/admin/products",
+  postProduct: "/products",
 };
 export const productsimage = {
   //update and delete and post
-  postProductimage: "/admin/products/images",
+  postProductimage: "/products/images",
   //update by id
-  getProductImagesByProductId: (id: string) => `/public/products/${id}/images`,
+  getProductImagesByProductId: (id: string) => `/products/${id}/images`,
 };
 
 export const categoryimage = {
@@ -119,7 +119,7 @@ export const customers = {
 
 export const bank = {
   getBanks: "/banks",
-  postBank: "/auth/admin/banks",
+  postBank: "/banks",
 };
 
 export const companySettings = {

@@ -1,7 +1,8 @@
 import {
   PurchaseOrder,
   CreatePurchaseOrderRequest,
-  LineItem,
+  PurchaseOrderLineItemOutput,
+  PurchaseOrderLineItemInput,
 } from '@/models/purchaseOrder.model';
 
 export const initialPurchaseOrderValues: PurchaseOrder = {
@@ -33,15 +34,6 @@ export const transformPOToPayload = (
     throw new Error('At least one line item is required');
   }
 
-  // Transform shipment preference to match backend format
-  const shipmentPreferenceMap: Record<string, string> = {
-    'standard_shipping': 'Standard Shipping',
-    'express_delivery': 'Express Delivery',
-    'priority_delivery': 'Priority Delivery',
-    'overnight_shipping': 'Overnight Shipping',
-    'courier': 'Courier',
-  };
-
   // Convert date to ISO format if it's just a date string
   const formatDateToISO = (dateStr: string): string => {
     if (!dateStr) return dateStr;
@@ -54,83 +46,90 @@ export const transformPOToPayload = (
   const payload: any = {
     vendor_id: po.vendor_id,
     delivery_address_type: po.delivery_address_type,
-    reference_no: po.reference_no,
     date: formatDateToISO(po.date),
     delivery_date: formatDateToISO(po.delivery_date),
     payment_terms: po.payment_terms,
-    shipment_preference: shipmentPreferenceMap[po.shipment_preference] || po.shipment_preference,
-    line_items: po.line_items.map((item, index) => {
-      // Validate required fields
-      if (!item.item_id) throw new Error(`Line item ${index + 1}: item_id is required`);
+    line_items: po.line_items.map((item: any, index: number) => {
+      // Validate required fields for line items
       if (!item.account) throw new Error(`Line item ${index + 1}: account is required`);
       if (item.quantity === undefined || item.quantity === null) throw new Error(`Line item ${index + 1}: quantity is required`);
       if (item.rate === undefined || item.rate === null) throw new Error(`Line item ${index + 1}: rate is required`);
 
-      const lineItem: any = {
-        item_id: item.item_id,
+      const lineItem: PurchaseOrderLineItemInput = {
         account: item.account,
         quantity: item.quantity,
         rate: item.rate,
       };
-      
-      // Only include optional fields if they have values
-      if (item.variant_id !== undefined && item.variant_id !== null) {
-        lineItem.variant_id = item.variant_id;
+
+      // Add product/item identifying fields
+      if (item.product_id) {
+        lineItem.product_id = item.product_id;
       }
-      if (item.variant_details && Object.keys(item.variant_details).length > 0) {
-        lineItem.variant_details = item.variant_details;
+      if (item.product_name) {
+        lineItem.product_name = item.product_name;
       }
-      
+      // Map variant_sku to sku for backend
+      if (item.variant_sku) {
+        lineItem.sku = item.variant_sku;
+      }
+
       return lineItem;
     }),
-    discount: po.discount,
-    discount_type: po.discount_type,
-    tax_type: po.tax_type,
-    tax_id: po.tax_id,
-    adjustment: po.adjustment,
-    notes: po.notes || '',
-    terms_and_conditions: po.terms_and_conditions || '',
   };
 
+  // Add optional fields only if they have values
+  if (po.reference_no) {
+    payload.reference_no = po.reference_no;
+  }
+  if (po.shipment_preference) {
+    payload.shipment_preference = po.shipment_preference;
+  }
+  if (po.discount !== undefined && po.discount !== null && po.discount > 0) {
+    payload.discount = po.discount;
+  }
+  if (po.discount_type && po.discount_type !== 'amount') {
+    payload.discount_type = po.discount_type;
+  }
+  if (po.tax_type) {
+    payload.tax_type = po.tax_type;
+  }
+  if (po.tax_id && po.tax_id > 0) {
+    payload.tax_id = po.tax_id;
+  }
+  if (po.adjustment !== undefined && po.adjustment !== null && po.adjustment > 0) {
+    payload.adjustment = po.adjustment;
+  }
+  if (po.notes) {
+    payload.notes = po.notes;
+  }
+  if (po.terms_and_conditions) {
+    payload.terms_and_conditions = po.terms_and_conditions;
+  }
+
+  // Handle delivery address based on type
   if (po.delivery_address_type === 'organization') {
     if (!po.organization_name) throw new Error('Organization name is required');
     if (!po.organization_address) throw new Error('Organization address is required');
-    
+
     payload.organization_name = po.organization_name;
     payload.organization_address = po.organization_address;
-    // Remove customer_id
-    delete payload.customer_id;
   } else if (po.delivery_address_type === 'customer') {
     if (!po.customer_id) throw new Error('Customer is required');
-    
+
     // Ensure customer_id is a number
-    payload.customer_id = typeof po.customer_id === 'string' 
-      ? parseInt(po.customer_id, 10) 
-      : po.customer_id;
-    // Remove organization fields
-    delete payload.organization_name;
-    delete payload.organization_address;
+    payload.customer_id =
+      typeof po.customer_id === 'string' ? parseInt(po.customer_id, 10) : po.customer_id;
   }
 
-  // Clean up the payload - remove any undefined values
-  const cleanPayload: any = {};
-  Object.keys(payload).forEach((key) => {
-    const value = payload[key];
-    // Include the field if it's not undefined (allow null, 0, empty string)
-    if (value !== undefined) {
-      cleanPayload[key] = value;
-    }
-  });
-
-  console.log('Final payload being sent:', cleanPayload);
-  return cleanPayload as CreatePurchaseOrderRequest;
+  console.log('Final payload being sent:', payload);
+  return payload as CreatePurchaseOrderRequest;
 };
 
 export const calculateLineItemAmount = (quantity: number, rate: number): number => {
   return quantity * rate;
 };
 
-export const calculateSubTotal = (lineItems: LineItem[]): number => {
+export const calculateSubTotal = (lineItems: PurchaseOrderLineItemOutput[]): number => {
   return lineItems.reduce((total, item) => total + (item.amount || 0), 0);
 };
 

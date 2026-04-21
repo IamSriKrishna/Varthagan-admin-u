@@ -56,7 +56,7 @@ export interface IInvoice {
   total: number;
   customer_notes?: string;
   terms_and_conditions?: string;
-  status: "draft" | "sent" | "partial" | "paid" | "overdue" | "void";
+  status: "draft" | "issued" | "sent" | "partial" | "paid" | "overdue" | "void";
   payment_received?: boolean;
   created_at?: string;
   updated_at?: string;

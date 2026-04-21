@@ -43,7 +43,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }, [selectedVendorId]);
 
   return (
-    <Box sx={{ display: "flex", position: "relative" }}>
+    <Box sx={{ display: "flex", position: "relative", minHeight: "100vh" }}>
       {/* <CssBaseline /> */}
 
       {/* <Navbar
@@ -60,6 +60,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           transition: "0.3s ease",
           display: "flex",
           width: "100%",
+          height: "100%",
         }}
       >
         <Sidebar

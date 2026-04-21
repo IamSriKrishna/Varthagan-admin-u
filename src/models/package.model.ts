@@ -46,7 +46,7 @@ export interface Package {
   customer_id: number;
   customer?: CustomerRef;
   package_date: string;
-  status?: 'created' | 'packed' | 'shipped' | 'delivered';
+  status?: 'created' | 'packed' | 'shipped' | 'delivered' | 'cancelled';
   items: PackageLineItem[];
   internal_notes?: string;
   created_at?: string;
@@ -69,7 +69,7 @@ export interface CreatePackageRequest {
 export interface UpdatePackageRequest extends CreatePackageRequest {}
 
 export interface UpdatePackageStatusRequest {
-  status: 'created' | 'packed' | 'shipped' | 'delivered';
+  status: 'created' | 'packed' | 'shipped' | 'delivered' | 'cancelled';
 }
 
 export interface PackageResponse {

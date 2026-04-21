@@ -6,10 +6,12 @@ import { activeTypes } from "@/constants/commonConstans";
 import useUserManagement, { IUserForm } from "@/hooks/services/useAddManagement";
 import useFetch from "@/hooks/useFetch";
 import { BBDialog, BBDropdown, BBInput, BBLoader } from "@/lib";
+import { companyApi } from "@/lib/api/companyApi";
 import { RootState } from "@/store";
 import { showToastMessage } from "@/utils/toastUtil";
 import { Alert, Box, Card, Grid, Stack } from "@mui/material";
 import { Form, Formik } from "formik";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import * as Yup from "yup";
 const userTypes = [
@@ -26,6 +28,9 @@ export interface Response {
   user_type: string;
   role: string;
   status: string;
+  name?: string;
+  company_id?: number;
+  company_name?: string;
 }
 type UserManagementFormProps = {
   open: boolean;
@@ -34,6 +39,7 @@ type UserManagementFormProps = {
   refetch: () => void;
 };
 const validationSchema = Yup.object().shape({
+  name: Yup.string().required("Full Name is required"),
   password: Yup.string().when("isEdit", {
     is: false,
     then: (schema) => schema.required("Password is required"),
@@ -49,12 +55,37 @@ const validationSchema = Yup.object().shape({
   username: Yup.string().required("UserName is required"),
   user_type: Yup.string().required("User Type is required"),
   role_name: Yup.string().required("Role is required"),
+  company_id: Yup.number().required("Company is required"),
 });
 
 export default function UserManagementForm({ open, setOpen, userId, refetch }: UserManagementFormProps) {
   const isEdit = userId != null;
+  const [companies, setCompanies] = useState<Array<{ label: string; value: number }>>([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
 
   const { loading: authLoading, error: authError } = useSelector((state: RootState) => state.auth);
+
+  // Fetch companies on mount
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        setLoadingCompanies(true);
+        const response = await companyApi.getCompaniesList(1, 100);
+        const companyOptions = response.data.map((item) => ({
+          label: item.company.company_name,
+          value: item.company.id,
+        }));
+        setCompanies(companyOptions);
+      } catch (error) {
+        console.error("Failed to fetch companies:", error);
+        showToastMessage("Failed to fetch companies", "error");
+      } finally {
+        setLoadingCompanies(false);
+      }
+    };
+
+    fetchCompanies();
+  }, []);
 
   const {
     formattedData: userData,
@@ -68,6 +99,7 @@ export default function UserManagementForm({ open, setOpen, userId, refetch }: U
         phone = phone.slice(3);
       }
       return {
+        name: res?.name ?? "",
         email: res?.email ?? "",
         username: res?.username ?? "",
         password: "",
@@ -75,6 +107,8 @@ export default function UserManagementForm({ open, setOpen, userId, refetch }: U
         user_type: res?.user_type ?? "",
         role_name: res?.role ?? "",
         status: res?.status ?? "",
+        company_id: res?.company_id ?? undefined,
+        company_name: res?.company_name ?? "",
       };
     },
     options: { skip: !isEdit },
@@ -95,7 +129,8 @@ export default function UserManagementForm({ open, setOpen, userId, refetch }: U
   ) => {
     const payload = {
       ...values,
-      phone: `+91${values?.phone}`,
+      number: values?.phone,
+      phone: undefined,
     };
     try {
       const response = await submitUser(payload, isEdit ? String(userId) : undefined);
@@ -114,19 +149,21 @@ export default function UserManagementForm({ open, setOpen, userId, refetch }: U
 
   return (
     <Box>
-      <BBLoader enabled={authLoading || userLoading} />
+      <BBLoader enabled={authLoading || userLoading || loadingCompanies} />
 
       <Formik
         initialValues={
           isEdit && userData
             ? userData
             : {
+                name: "",
                 email: "",
                 username: "",
                 password: "",
                 user_type: "",
                 phone: "",
                 role_name: "",
+                company_id: undefined,
                 status: isEdit ? "" : null,
               }
         }
@@ -159,6 +196,9 @@ export default function UserManagementForm({ open, setOpen, userId, refetch }: U
 
                     <Grid container spacing={3} component="div">
                       <Grid size={{ xs: 12, md: 6 }} component="div">
+                        <BBInput name="name" label="Full Name" />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 6 }} component="div">
                         <BBInput name="email" label="Email" />
                       </Grid>
                       <Grid size={{ xs: 12, md: 6 }} component="div">
@@ -166,6 +206,14 @@ export default function UserManagementForm({ open, setOpen, userId, refetch }: U
                       </Grid>
                       <Grid size={{ xs: 12, md: 6 }} component="div">
                         <BBInput name="phone" label="Phone" />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 6 }} component="div">
+                        <BBDropdown 
+                          name="company_id" 
+                          label="Company" 
+                          options={companies}
+                          disabled={loadingCompanies}
+                        />
                       </Grid>
                       {!isEdit && (
                         <>

@@ -5,6 +5,7 @@ export const mainLayoutBox: SxProps<Theme> = {
   p: 3,
   width: "100%",
   minHeight: "calc(100vh - 64px)",
+  overflow: "auto",
   backgroundColor: "#F5F5F5",
 };
 export const overlayTextStyle = {

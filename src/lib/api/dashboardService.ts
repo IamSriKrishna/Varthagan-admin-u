@@ -34,25 +34,40 @@ const normalizeResponse = <T>(response: any): DashboardResponse<T> => {
 export const dashboardService = {
   /**
    * Get all dashboard metrics in one comprehensive response
+   * @param viewUserId - Optional user ID for superadmin to view another user's dashboard
    */
-  async getDashboardMetrics(): Promise<DashboardResponse<DashboardMetrics>> {
-    const response = await apiService.get(dashboard.getDashboard);
+  async getDashboardMetrics(viewUserId?: number): Promise<DashboardResponse<DashboardMetrics>> {
+    let url = dashboard.getDashboard;
+    if (viewUserId) {
+      url += `?view_user_id=${viewUserId}`;
+    }
+    const response = await apiService.get(url);
     return normalizeResponse<DashboardMetrics>(response);
   },
 
   /**
    * Get today's activity including new items created, shipments, orders, etc.
+   * @param viewUserId - Optional user ID for superadmin to view another user's activity
    */
-  async getActivitySummary(): Promise<DashboardResponse<ActivitySummary>> {
-    const response = await apiService.get(dashboard.getActivity);
+  async getActivitySummary(viewUserId?: number): Promise<DashboardResponse<ActivitySummary>> {
+    let url = dashboard.getActivity;
+    if (viewUserId) {
+      url += `?view_user_id=${viewUserId}`;
+    }
+    const response = await apiService.get(url);
     return normalizeResponse<ActivitySummary>(response);
   },
 
   /**
    * Get detailed stock information across all items
+   * @param viewUserId - Optional user ID for superadmin to view another user's stock
    */
-  async getStockInfo(): Promise<DashboardResponse<StockInfo>> {
-    const response = await apiService.get(dashboard.getStock);
+  async getStockInfo(viewUserId?: number): Promise<DashboardResponse<StockInfo>> {
+    let url = dashboard.getStock;
+    if (viewUserId) {
+      url += `?view_user_id=${viewUserId}`;
+    }
+    const response = await apiService.get(url);
     return normalizeResponse<StockInfo>(response);
   },
 
@@ -90,14 +105,17 @@ export const dashboardService = {
    * Get historical trend data for a specific entity
    * @param entityType - Entity type (customer, vendor, item, etc.)
    * @param days - Number of days to look back (optional, default: 30)
+   * @param viewUserId - Optional user ID for superadmin to view another user's trends
    */
   async getEntityTrends(
     entityType: string,
-    days?: number
+    days?: number,
+    viewUserId?: number
   ): Promise<DashboardResponse<EntityTrends>> {
     const url = dashboard.getTrends(entityType);
     const params = new URLSearchParams();
     if (days) params.append("days", days.toString());
+    if (viewUserId) params.append("view_user_id", viewUserId.toString());
     const finalUrl = params.toString() ? `${url}?${params}` : url;
     const response = await apiService.get(finalUrl);
     return normalizeResponse<EntityTrends>(response);

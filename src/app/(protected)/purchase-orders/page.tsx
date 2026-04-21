@@ -2,80 +2,203 @@
 
 import React, { useEffect, useState } from 'react';
 import {
+  Avatar,
   Box,
-  Container,
-  Button,
-  TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  Paper,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Chip,
-  Card,
-  CardContent,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Grid,
-  Tooltip,
   IconButton,
-  InputAdornment,
-  alpha,
-  useTheme,
-  Fade,
-  Skeleton,
-  Typography,
-  Menu,
   MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Divider,
+  Paper,
+  Select,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import SearchIcon from '@mui/icons-material/Search';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import WidgetsIcon from '@mui/icons-material/Widgets';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import FilterListIcon from '@mui/icons-material/FilterList';
+import {
+  CheckCircle2,
+  ClipboardList,
+  Edit,
+  Eye,
+  FileX,
+  Filter,
+  Package,
+  Plus,
+  Search,
+  ShoppingCart,
+  Trash2,
+  TrendingUp,
+  XCircle,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { usePurchaseOrder } from '@/hooks/usePurchaseOrder';
 import { useDebounce } from '@/hooks/useDebounce';
-import BBButton from '@/lib/BBButton/BBButton';
-import BBTitle from '@/lib/BBTitle/BBTitle';
+import { showToastMessage } from '@/utils/toastUtil';
+import { BBButton, BBDialog, BBInputBase, BBLoader, BBTable } from '@/lib';
+import { ITableColumn } from '@/lib/BBTable/BBTable';
+import HighlightedCell from '@/lib/BBTable/HighlightedCell';
+import dayjs from 'dayjs';
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+const AVATAR_PALETTE = [
+  { bg: '#e8edff', color: '#3d52c7' },
+  { bg: '#fce7f3', color: '#be185d' },
+  { bg: '#d1fae5', color: '#065f46' },
+  { bg: '#fff3cd', color: '#92400e' },
+  { bg: '#ede9fe', color: '#6d28d9' },
+  { bg: '#fee2e2', color: '#991b1b' },
+  { bg: '#e0f2fe', color: '#0369a1' },
+];
+
+function getAvatarStyle(name: string) {
+  const idx = (name || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_PALETTE.length;
+  return AVATAR_PALETTE[idx];
+}
+
+function getInitials(name: string): string {
+  return (name || '').split(' ').filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+}
+
+// ── Status config ──────────────────────────────────────────────────────────────
+
+const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; border: string; icon: React.ReactNode }> = {
+  draft: {
+    label: 'Draft',
+    bg: '#f8f9fc',
+    color: '#6b7280',
+    border: '#e5e7eb',
+    icon: <ClipboardList size={11} />,
+  },
+  sent: {
+    label: 'Sent',
+    bg: '#eff6ff',
+    color: '#0369a1',
+    border: '#bae6fd',
+    icon: <CheckCircle2 size={11} />,
+  },
+  partially_received: {
+    label: 'Partially Received',
+    bg: '#fef3c7',
+    color: '#92400e',
+    border: '#fcd34d',
+    icon: <Package size={11} />,
+  },
+  received: {
+    label: 'Received',
+    bg: '#f0fdf4',
+    color: '#065f46',
+    border: '#bbf7d0',
+    icon: <CheckCircle2 size={11} />,
+  },
+  cancelled: {
+    label: 'Cancelled',
+    bg: '#fff5f5',
+    color: '#991b1b',
+    border: '#fee2e2',
+    icon: <XCircle size={11} />,
+  },
+};
+
+function StatusChip({ status }: { status?: string }) {
+  const cfg = STATUS_CONFIG[status || 'draft'] || STATUS_CONFIG.draft;
+  return (
+    <Chip
+      label={
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          {cfg.icon}
+          {cfg.label}
+        </Box>
+      }
+      size="small"
+      sx={{
+        fontSize: '0.7rem',
+        fontWeight: 700,
+        fontFamily: "'DM Sans', sans-serif",
+        height: 22,
+        borderRadius: '6px',
+        bgcolor: cfg.bg,
+        color: cfg.color,
+        border: `1px solid ${cfg.border}`,
+        '& .MuiChip-label': { px: 1 },
+      }}
+    />
+  );
+}
+
+// ── Stat card ──────────────────────────────────────────────────────────────────
+
+function StatCard({ label, value, icon: Icon, accent, sub }: {
+  label: string; value: string | number; icon: any; accent: string; sub?: string;
+}) {
+  return (
+    <Box
+      sx={{
+        bgcolor: '#ffffff',
+        border: '1px solid #eeeff5',
+        borderRadius: '14px',
+        p: 2.5,
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 1.5,
+        boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+        transition: 'box-shadow 0.15s ease, transform 0.15s ease',
+        '&:hover': { boxShadow: '0 6px 24px rgba(0,0,0,0.08)', transform: 'translateY(-2px)' },
+      }}
+    >
+      <Box
+        sx={{
+          width: 40,
+          height: 40,
+          borderRadius: '11px',
+          bgcolor: accent + '18',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          mt: 0.25,
+        }}
+      >
+        <Icon size={18} color={accent} />
+      </Box>
+      <Box>
+        <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9ca3af', fontFamily: "'DM Sans', sans-serif", mb: 0.5 }}>
+          {label}
+        </Typography>
+        <Typography sx={{ fontSize: '1.4rem', fontWeight: 800, color: '#1a1d2e', fontFamily: "'DM Sans', sans-serif", letterSpacing: '-0.5px', lineHeight: 1 }}>
+          {value}
+        </Typography>
+        {sub && (
+          <Typography sx={{ fontSize: '0.72rem', color: '#9ca3af', fontFamily: "'DM Sans', sans-serif", mt: 0.5 }}>
+            {sub}
+          </Typography>
+        )}
+      </Box>
+    </Box>
+  );
+}
+
+// ── Component ──────────────────────────────────────────────────────────────────
 
 const PurchaseOrderList: React.FC = () => {
   const router = useRouter();
-  const theme = useTheme();
-  const {
-    purchaseOrders,
-    totalPOs,
-    loading,
-    getPurchaseOrders,
-    searchPurchaseOrders,
-    deletePurchaseOrder,
-  } = usePurchaseOrder();
+  const { purchaseOrders, totalPOs, loading, getPurchaseOrders, searchPurchaseOrders, deletePurchaseOrder, updatePurchaseOrderStatus } = usePurchaseOrder();
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedPO, setSelectedPO] = useState<any>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
+  const [statusDialogError, setStatusDialogError] = useState<string | null>(null);
+  const [selectedPO, setSelectedPO] = useState<any | null>(null);
+  const [newStatus, setNewStatus] = useState<string>('');
+
   const debouncedSearch = useDebounce(searchQuery, 500);
 
   useEffect(() => {
@@ -85,39 +208,6 @@ const PurchaseOrderList: React.FC = () => {
       getPurchaseOrders(page + 1, rowsPerPage);
     }
   }, [debouncedSearch, page, rowsPerPage, getPurchaseOrders, searchPurchaseOrders]);
-
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const handleEdit = (id: string) => {
-    router.push(`/purchase-orders/purchase-order/${id}`);
-  };
-
-  const handleAddNew = () => {
-    router.push('/purchase-orders/purchase-order/new');
-  };
-
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, po: any) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedPO(po);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setSelectedPO(null);
-  };
-
-  const handleDeleteClick = (id: string) => {
-    setSelectedId(id);
-    setDeleteConfirmOpen(true);
-    handleMenuClose();
-  };
 
   const handleDeleteConfirm = async () => {
     if (selectedId) {
@@ -130,580 +220,588 @@ const PurchaseOrderList: React.FC = () => {
     }
   };
 
-  const getStatusConfig = (status: string | undefined) => {
-    const configs: Record<string, any> = {
-      draft: {
-        color: '#94a3b8',
-        bg: alpha('#94a3b8', 0.1),
-        icon: <AssignmentIcon fontSize="small" />,
-        label: 'Draft'
-      },
-      confirmed: {
-        color: '#22c55e',
-        bg: alpha('#22c55e', 0.1),
-        icon: <CheckCircleIcon fontSize="small" />,
-        label: 'Confirmed'
-      },
-      cancelled: {
-        color: '#ef4444',
-        bg: alpha('#ef4444', 0.1),
-        icon: <CancelIcon fontSize="small" />,
-        label: 'Cancelled'
-      },
-    };
-    return configs[status || 'draft'] || configs.draft;
+  const handleStatusUpdate = (po: any) => {
+    setSelectedPO(po);
+    setNewStatus(po.status || 'draft');
+    setStatusDialogError(null);
+    setStatusDialogOpen(true);
   };
 
-  const filteredPurchaseOrders = statusFilter === 'all' 
-    ? purchaseOrders 
-    : purchaseOrders.filter(po => po.status === statusFilter);
+  const handleStatusUpdateConfirm = async () => {
+    if (selectedPO && newStatus && newStatus !== selectedPO.status) {
+      setStatusUpdateLoading(true);
+      setStatusDialogError(null);
+      try {
+        await updatePurchaseOrderStatus(selectedPO.id, newStatus);
+        showToastMessage(
+          `Purchase order status updated to ${newStatus.replace('_', ' ').toUpperCase()} successfully`,
+          'success'
+        );
+        setStatusDialogOpen(false);
+        setSelectedPO(null);
+        setNewStatus('');
+        setStatusDialogError(null);
+        // Refresh the list
+        setTimeout(() => getPurchaseOrders(page + 1, rowsPerPage), 500);
+      } catch (err: any) {
+        const errorMessage = err?.response?.data?.message || err?.message || 'Failed to update purchase order status';
+        setStatusDialogError(errorMessage);
+        showToastMessage(errorMessage, 'error');
+        console.error('Status update error:', err);
+      } finally {
+        setStatusUpdateLoading(false);
+      }
+    }
+  };
 
-  const stats = [
+  const filteredPOs = statusFilter === 'all'
+    ? purchaseOrders
+    : purchaseOrders.filter((po) => po.status === statusFilter);
+
+  const totalValue = purchaseOrders.reduce((sum, po) => sum + (po.total || 0), 0);
+
+  // ── Columns ────────────────────────────────────────────────────────────────
+
+  const columns: ITableColumn<any>[] = [
     {
-      title: 'Total Orders',
-      value: totalPOs,
-      icon: <AssignmentIcon />,
-      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      trend: '+12%',
+      key: 'purchase_order_no',
+      label: 'PO Number',
+      render: (row) => {
+        const vendorName = row.vendor?.display_name || row.vendor?.company_name || 'Unknown Vendor';
+        const style = getAvatarStyle(vendorName);
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }} onClick={() => router.push(`/purchase-orders/purchase-order/${row.id}`)}>
+            <Avatar sx={{ width: 34, height: 34, fontSize: '0.75rem', fontWeight: 700, bgcolor: style.bg, color: style.color, fontFamily: "'DM Sans', sans-serif", border: '1.5px solid', borderColor: style.color + '33', flexShrink: 0 }}>
+              {getInitials(vendorName)}
+            </Avatar>
+            <Box>
+              <Typography sx={{ fontSize: '0.8125rem', fontWeight: 700, color: '#4f63d2', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.3, '&:hover': { textDecoration: 'underline' } }}>
+                <HighlightedCell value={row.purchase_order_no || '—'} search={searchQuery} />
+              </Typography>
+              <Typography sx={{ fontSize: '0.7rem', color: '#9ca3af', fontFamily: "'DM Sans', sans-serif", mt: 0.1 }}>
+                {dayjs(row.date).format('DD MMM YYYY')}
+              </Typography>
+            </Box>
+          </Box>
+        );
+      },
     },
     {
-      title: 'Draft',
-      value: purchaseOrders.filter((po) => po.status === 'draft').length,
-      icon: <EditIcon />,
-      gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      key: 'vendor',
+      label: 'Vendor',
+      render: (row) => {
+        const name = row.vendor?.display_name || row.vendor?.company_name || '—';
+        return (
+          <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1a1d2e', fontFamily: "'DM Sans', sans-serif" }}>
+            <HighlightedCell value={name} search={searchQuery} />
+          </Typography>
+        );
+      },
     },
     {
-      title: 'Confirmed',
-      value: purchaseOrders.filter((po) => po.status === 'confirmed').length,
-      icon: <CheckCircleIcon />,
-      gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      key: 'reference_no',
+      label: 'Reference',
+      render: (row) => (
+        <Typography sx={{ fontSize: '0.8rem', fontFamily: "'DM Mono', monospace", color: row.reference_no ? '#374151' : '#d1d5db', letterSpacing: '0.02em' }}>
+          {row.reference_no || '—'}
+        </Typography>
+      ),
     },
     {
-      title: 'Total Value',
-      value: `₹${purchaseOrders.reduce((sum, po) => sum + (po.total || 0), 0).toLocaleString('en-IN')}`,
-      icon: <TrendingUpIcon />,
-      gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-      subtitle: 'Current Month',
+      key: 'delivery_address_type',
+      label: 'Deliver To',
+      render: (row) => {
+        const dest = row.delivery_address_type === 'organization'
+          ? row.organization_name
+          : row.customer?.display_name;
+        return (
+          <Typography sx={{ fontSize: '0.8rem', color: dest ? '#374151' : '#d1d5db', fontFamily: "'DM Sans', sans-serif" }}>
+            {dest || '—'}
+          </Typography>
+        );
+      },
+    },
+    {
+      key: 'total',
+      label: 'Total',
+      render: (row) => (
+        <Chip
+          label={`₹${(row.total || 0).toLocaleString('en-IN')}`}
+          size="small"
+          sx={{
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            fontFamily: "'DM Mono', monospace",
+            height: 22,
+            borderRadius: '6px',
+            bgcolor: '#f0fdf4',
+            color: '#065f46',
+            border: '1px solid #bbf7d0',
+          }}
+        />
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => <StatusChip status={row.status} />,
+    },
+    {
+      key: 'action' as any,
+      label: '',
+      render: (row) => (
+        <Box sx={{ display: 'flex', gap: 0.5, opacity: 0, transition: 'opacity 0.15s ease', '.MuiTableRow-root:hover &': { opacity: 1 } }}>
+          {row.status === 'draft' && (
+            <Tooltip title="Update Status" arrow>
+              <IconButton size="small" onClick={() => handleStatusUpdate(row)}
+                sx={{ width: 30, height: 30, borderRadius: '8px', color: '#7c3aed', bgcolor: '#ede9fe', '&:hover': { bgcolor: '#ddd6fe', transform: 'scale(1.05)' }, transition: 'all 0.15s ease' }}>
+                <Package size={14} />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Tooltip title="View details" arrow>
+            <IconButton size="small" onClick={() => router.push(`/purchase-orders/purchase-order/${row.id}`)}
+              sx={{ width: 30, height: 30, borderRadius: '8px', color: '#0369a1', bgcolor: '#e0f2fe', '&:hover': { bgcolor: '#bae6fd', transform: 'scale(1.05)' }, transition: 'all 0.15s ease' }}>
+              <Eye size={14} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Edit" arrow>
+            <IconButton size="small" onClick={() => router.push(`/purchase-orders/purchase-order/${row.id}`)}
+              sx={{ width: 30, height: 30, borderRadius: '8px', color: '#4f63d2', bgcolor: '#f0f4ff', '&:hover': { bgcolor: '#e0e7ff', transform: 'scale(1.05)' }, transition: 'all 0.15s ease' }}>
+              <Edit size={14} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete" arrow>
+            <IconButton size="small" onClick={() => { setSelectedId(row.id); setDeleteConfirmOpen(true); }}
+              sx={{ width: 30, height: 30, borderRadius: '8px', color: '#ef4444', bgcolor: '#fef2f2', '&:hover': { bgcolor: '#fee2e2', transform: 'scale(1.05)' }, transition: 'all 0.15s ease' }}>
+              <Trash2 size={14} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      ),
     },
   ];
 
+  // ── Render ─────────────────────────────────────────────────────────────────
+
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Enhanced Header */}
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
-              Purchase Orders
-            </Typography>
-            <Typography variant="body2" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <LocalShippingIcon sx={{ fontSize: 16 }} />
-              Manage and track all your purchase orders
-            </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#f8f9fc' }}>
+      <BBLoader enabled={loading} />
+
+      {/* ── Page header ────────────────────────────────────────────────── */}
+      <Box sx={{ px: 3, pt: 3, pb: 2.5, bgcolor: '#ffffff', borderBottom: '1px solid #f0f0f5' }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ width: 46, height: 46, borderRadius: '13px', background: 'linear-gradient(135deg, #4f63d2 0%, #7c3aed 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(79,99,210,0.3)', flexShrink: 0 }}>
+              <ShoppingCart size={22} color="white" />
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1d2e', fontFamily: "'DM Sans', sans-serif", letterSpacing: '-0.4px', lineHeight: 1.15 }}>
+                Purchase Orders
+              </Typography>
+              <Typography sx={{ fontSize: '0.8rem', color: '#9ca3af', fontFamily: "'DM Sans', sans-serif", mt: 0.25 }}>
+                {totalPOs} order{totalPOs !== 1 ? 's' : ''} total
+              </Typography>
+            </Box>
           </Box>
+
           <BBButton
             variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleAddNew}
+            onClick={() => router.push('/purchase-orders/purchase-order/new')}
+            startIcon={<Plus size={16} />}
             sx={{
-              boxShadow: 3,
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 3,
-              py: 1.5,
-              borderRadius: 2,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              '&:hover': {
-                boxShadow: 6,
-                transform: 'translateY(-2px)',
-                transition: 'all 0.3s ease',
-              },
+              px: 2.5, py: 1.1, borderRadius: '11px',
+              background: 'linear-gradient(135deg, #4f63d2 0%, #7c3aed 100%)',
+              boxShadow: '0 4px 14px rgba(79,99,210,0.35)',
+              fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: '0.875rem', textTransform: 'none',
+              '&:hover': { background: 'linear-gradient(135deg, #3d52c7 0%, #6d28d9 100%)', boxShadow: '0 6px 20px rgba(79,99,210,0.45)', transform: 'translateY(-1px)' },
+              transition: 'all 0.2s ease',
             }}
           >
-            New Purchase Order
+            New PO
           </BBButton>
+        </Stack>
+      </Box>
+
+      <Box sx={{ px: 3, pt: 2.5, pb: 0 }}>
+        {/* ── Stat cards ───────────────────────────────────────────────── */}
+        {purchaseOrders.length > 0 && (
+          <Grid container spacing={2} sx={{ mb: 2.5 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <StatCard label="Total Orders" value={totalPOs} icon={ClipboardList} accent="#4f63d2" />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <StatCard label="Draft" value={purchaseOrders.filter((po) => po.status === 'draft').length} icon={Package} accent="#6b7280" />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <StatCard label="Received" value={purchaseOrders.filter((po) => po.status === 'received').length} icon={CheckCircle2} accent="#065f46" />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <StatCard label="Total Value" value={`₹${totalValue.toLocaleString('en-IN')}`} icon={TrendingUp} accent="#7c3aed" sub="All orders" />
+            </Grid>
+          </Grid>
+        )}
+
+        {/* ── Toolbar ──────────────────────────────────────────────────── */}
+        <Box
+          component={Paper}
+          elevation={0}
+          sx={{
+            borderRadius: '14px 14px 0 0',
+            border: '1px solid #eeeff5',
+            borderBottom: 'none',
+            bgcolor: '#ffffff',
+            px: 2.5,
+            py: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            flexWrap: 'wrap',
+          }}
+        >
+          {/* Search */}
+          <Box sx={{ position: 'relative', flexGrow: 1, maxWidth: 380 }}>
+            <Box sx={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
+              <Search size={15} />
+            </Box>
+            <BBInputBase
+              label=""
+              name="search"
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
+              placeholder="Search by PO number, vendor, or reference…"
+              sx={{ pl: 4.5 }}
+            />
+          </Box>
+
+          {/* Status filter */}
+          <TextField
+            select
+            size="small"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            sx={{
+              minWidth: 150,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '10px',
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: '0.875rem',
+                bgcolor: '#fafbff',
+                '& fieldset': { borderColor: '#e8eaf0' },
+                '&:hover fieldset': { borderColor: '#c7d2fe' },
+                '&.Mui-focused fieldset': { borderColor: '#4f63d2', borderWidth: '1.5px' },
+              },
+              '& .MuiSelect-select': { fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem', py: '8.5px' },
+            }}
+            InputProps={{
+              startAdornment: (
+                <Box sx={{ mr: 0.5, display: 'flex', alignItems: 'center', color: '#9ca3af' }}>
+                  <Filter size={14} />
+                </Box>
+              ),
+            }}
+          >
+            <MenuItem value="all" sx={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem' }}>All Status</MenuItem>
+            <MenuItem value="draft" sx={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem' }}>Draft</MenuItem>
+            <MenuItem value="sent" sx={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem' }}>Sent</MenuItem>
+            <MenuItem value="partially_received" sx={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem' }}>Partially Received</MenuItem>
+            <MenuItem value="received" sx={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem' }}>Received</MenuItem>
+            <MenuItem value="cancelled" sx={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem' }}>Cancelled</MenuItem>
+          </TextField>
+
+          {/* Active filter chip */}
+          {(searchQuery || statusFilter !== 'all') && (
+            <Chip
+              label={`${filteredPOs.length} result${filteredPOs.length !== 1 ? 's' : ''}`}
+              size="small"
+              sx={{ fontSize: '0.75rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif", bgcolor: '#f0f4ff', color: '#4f63d2', border: '1px solid #c7d2fe', borderRadius: '8px' }}
+            />
+          )}
+        </Box>
+
+        {/* ── Table ────────────────────────────────────────────────────── */}
+        <Box
+          sx={{
+            borderRadius: '0 0 14px 14px',
+            border: '1px solid #eeeff5',
+            borderTop: 'none',
+            bgcolor: '#ffffff',
+            overflow: 'hidden',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
+            mb: 3,
+          }}
+        >
+          {filteredPOs.length === 0 && !loading ? (
+            /* ── Empty state ── */
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 9, gap: 2 }}>
+              <Box sx={{ width: 56, height: 56, borderRadius: '16px', background: 'linear-gradient(135deg, #4f63d2 0%, #7c3aed 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(79,99,210,0.25)' }}>
+                <FileX size={26} color="white" />
+              </Box>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: '#1a1d2e', fontFamily: "'DM Sans', sans-serif", mb: 0.5 }}>
+                  {searchQuery || statusFilter !== 'all' ? 'No matching orders' : 'No purchase orders yet'}
+                </Typography>
+                <Typography sx={{ fontSize: '0.8rem', color: '#9ca3af', fontFamily: "'DM Sans', sans-serif" }}>
+                  {searchQuery || statusFilter !== 'all'
+                    ? 'Try adjusting your search or filter'
+                    : 'Create your first purchase order to get started'}
+                </Typography>
+              </Box>
+              {!searchQuery && statusFilter === 'all' && (
+                <BBButton
+                  variant="contained"
+                  onClick={() => router.push('/purchase-orders/purchase-order/new')}
+                  startIcon={<Plus size={15} />}
+                  sx={{ mt: 1, borderRadius: '10px', textTransform: 'none', fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: '0.875rem', background: 'linear-gradient(135deg, #4f63d2 0%, #7c3aed 100%)', boxShadow: '0 4px 14px rgba(79,99,210,0.3)', '&:hover': { background: 'linear-gradient(135deg, #3d52c7 0%, #6d28d9 100%)' } }}
+                >
+                  New Purchase Order
+                </BBButton>
+              )}
+            </Box>
+          ) : (
+            <BBTable
+              columns={columns}
+              data={filteredPOs}
+              pagination
+              page={page}
+              rowsPerPage={rowsPerPage}
+              totalCount={totalPOs}
+              onPageChange={(newPage) => setPage(newPage)}
+              onRowsPerPageChange={(newRowsPerPage) => { setRowsPerPage(newRowsPerPage); setPage(0); }}
+              sx={{
+                '& .MuiTableHead-root .MuiTableCell-root': { bgcolor: '#fafbff', color: '#6b7280', fontWeight: 600, fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'DM Sans', sans-serif", borderBottom: '1px solid #eeeff5', py: 1.5 },
+                '& .MuiTableBody-root .MuiTableRow-root': { cursor: 'pointer', transition: 'background 0.12s ease', '&:hover': { bgcolor: '#fafbff' } },
+                '& .MuiTableBody-root .MuiTableCell-root': { borderBottom: '1px solid #f5f5fa', py: 1.5, fontFamily: "'DM Sans', sans-serif" },
+              }}
+            />
+          )}
         </Box>
       </Box>
 
-      {/* Enhanced Statistics Cards */}
-      {purchaseOrders.length > 0 && (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {stats.map((stat, index) => (
-            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
-              <Fade in timeout={300 + index * 100}>
-                <Card
-                  sx={{
-                    background: stat.gradient,
-                    color: 'white',
-                    borderRadius: 3,
-                    boxShadow: 3,
-                    position: 'relative',
-                    overflow: 'hidden',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: 6,
-                    },
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      right: 0,
-                      width: '100px',
-                      height: '100px',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      borderRadius: '50%',
-                      transform: 'translate(30%, -30%)',
-                    },
-                  }}
-                >
-                  <CardContent sx={{ position: 'relative', zIndex: 1 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
-                      <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 500 }}>
-                        {stat.title}
-                      </Typography>
-                      <Box sx={{ opacity: 0.8 }}>{stat.icon}</Box>
-                    </Box>
-                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-                      {stat.value}
-                    </Typography>
-                    {stat.trend && (
-                      <Chip
-                        label={stat.trend}
-                        size="small"
-                        sx={{
-                          backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                          color: 'white',
-                          fontWeight: 600,
-                          height: 20,
-                        }}
-                      />
-                    )}
-                    {stat.subtitle && (
-                      <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                        {stat.subtitle}
-                      </Typography>
-                    )}
-                  </CardContent>
-                </Card>
-              </Fade>
-            </Grid>
-          ))}
-        </Grid>
-      )}
+      {/* ── Delete dialog ─────────────────────────────────────────────── */}
+      <BBDialog
+        open={deleteConfirmOpen}
+        onClose={() => { setDeleteConfirmOpen(false); setSelectedId(null); }}
+        title="Delete Purchase Order"
+        maxWidth="sm"
+        content={
+          <Box sx={{ pt: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, p: 2, bgcolor: '#fff5f5', border: '1px solid #fee2e2', borderRadius: '10px', mb: 2 }}>
+              <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, mt: 0.25 }}>
+                <Trash2 size={16} color="#ef4444" />
+              </Box>
+              <Box>
+                <Typography sx={{ fontWeight: 700, fontSize: '0.875rem', color: '#991b1b', fontFamily: "'DM Sans', sans-serif", mb: 0.5 }}>
+                  This action cannot be undone
+                </Typography>
+                <Typography sx={{ fontSize: '0.8125rem', color: '#b91c1c', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>
+                  This purchase order and all associated line items, attachments, and approval history will be permanently removed.
+                </Typography>
+              </Box>
+            </Box>
+            <Typography sx={{ fontSize: '0.875rem', color: '#6b7280', fontFamily: "'DM Sans', sans-serif" }}>
+              Are you sure you want to permanently delete this purchase order?
+            </Typography>
+          </Box>
+        }
+        onConfirm={handleDeleteConfirm}
+        confirmText="Delete Order"
+        cancelText="Keep Order"
+        confirmColor="error"
+      />
 
-      {/* Enhanced Search and Filter Bar */}
-      <Paper
-        elevation={0}
-        sx={{
-          p: 2.5,
-          mb: 2,
-          borderRadius: 3,
-          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-          backgroundColor: alpha(theme.palette.background.paper, 0.6),
-          backdropFilter: 'blur(10px)',
+      {/* ── Status Update Dialog ─────────────────────────────────────── */}
+      <Dialog
+        open={statusDialogOpen}
+        onClose={() => {
+          setStatusDialogOpen(false);
+          setSelectedPO(null);
+          setNewStatus('');
+          setStatusDialogError(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '14px',
+            border: '1px solid #eeeff5',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+          },
         }}
       >
-        <Grid container spacing={2} alignItems="center">
-          <Grid size={{ xs: 12, md: 8 }}>
-            <TextField
-              fullWidth
-              placeholder="Search by PO number, vendor name, or reference..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setPage(0);
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: 'action.active' }} />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  backgroundColor: 'background.paper',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    boxShadow: 1,
-                  },
-                  '&.Mui-focused': {
-                    boxShadow: 2,
-                  },
-                },
-              }}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TextField
-              fullWidth
-              select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <FilterListIcon sx={{ color: 'action.active' }} />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  backgroundColor: 'background.paper',
-                },
-              }}
-            >
-              <MenuItem value="all">All Status</MenuItem>
-              <MenuItem value="draft">Draft</MenuItem>
-              <MenuItem value="confirmed">Confirmed</MenuItem>
-              <MenuItem value="cancelled">Cancelled</MenuItem>
-            </TextField>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      {/* Enhanced Table */}
-      {loading ? (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} variant="rectangular" height={60} sx={{ borderRadius: 2 }} />
-          ))}
-        </Box>
-      ) : (
-        <>
-          <TableContainer
-            component={Paper}
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            fontSize: '1rem',
+            fontWeight: 700,
+            fontFamily: "'DM Sans', sans-serif",
+            color: '#1a1d2e',
+            borderBottom: '1px solid #eeeff5',
+            pb: 2,
+            pt: 2.5,
+            px: 2.5,
+          }}
+        >
+          <Box
             sx={{
-              borderRadius: 3,
-              boxShadow: 2,
-              overflow: 'hidden',
-              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              width: 36,
+              height: 36,
+              borderRadius: '10px',
+              bgcolor: '#f0f4ff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#4f63d2',
             }}
           >
-            <Table>
-              <TableHead>
-                <TableRow
-                  sx={{
-                    background: `linear-gradient(135deg, ${alpha('#667eea', 0.1)} 0%, ${alpha('#764ba2', 0.1)} 100%)`,
-                    borderBottom: `2px solid ${theme.palette.divider}`,
-                  }}
-                >
-                  <TableCell sx={{ fontWeight: 700, color: 'text.primary', py: 2 }}>PO Number</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>Vendor</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>Reference</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>Delivery To</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700, color: 'text.primary' }}>Total</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>Date</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 700, color: 'text.primary' }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredPurchaseOrders.length > 0 ? (
-                  filteredPurchaseOrders.map((po, index) => {
-                    const statusConfig = getStatusConfig(po.status);
-                    return (
-                      <Fade in timeout={200 + index * 50} key={po.id}>
-                        <TableRow
-                          sx={{
-                            '&:hover': {
-                              backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                              transition: 'all 0.2s ease',
-                            },
-                            borderBottom: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
-                          }}
-                        >
-                          <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Box
-                                sx={{
-                                  width: 4,
-                                  height: 36,
-                                  borderRadius: 1,
-                                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                }}
-                              />
-                              <Typography variant="body2" sx={{ fontWeight: 600, color: '#667eea' }}>
-                                {po.purchase_order_no}
-                              </Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                              {po.vendor?.display_name || po.vendor?.company_name}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                              {po.reference_no || '-'}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
-                              {po.delivery_address_type === 'organization'
-                                ? po.organization_name
-                                : po.customer?.display_name}
-                            </Typography>
-                          </TableCell>
-                          <TableCell align="right">
-                            <Chip
-                              label={`₹${(po.total || 0).toLocaleString('en-IN')}`}
-                              sx={{
-                                fontWeight: 700,
-                                backgroundColor: alpha('#22c55e', 0.1),
-                                color: '#22c55e',
-                                borderRadius: 2,
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              icon={statusConfig.icon}
-                              label={statusConfig.label}
-                              size="small"
-                              sx={{
-                                fontWeight: 600,
-                                backgroundColor: statusConfig.bg,
-                                color: statusConfig.color,
-                                border: `1px solid ${alpha(statusConfig.color, 0.2)}`,
-                                borderRadius: 2,
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                              {new Date(po.date).toLocaleDateString('en-IN', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                              })}
-                            </Typography>
-                          </TableCell>
-                          <TableCell align="center">
-                            <Box sx={{ display: 'flex', gap: 0.75, justifyContent: 'center' }}>
-                              <Tooltip title="View Details" arrow>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleEdit(po.id!)}
-                                  sx={{
-                                    color: 'primary.main',
-                                    '&:hover': {
-                                      backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                      transform: 'scale(1.1)',
-                                    },
-                                    transition: 'all 0.2s ease',
-                                  }}
-                                >
-                                  <VisibilityIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="More Actions" arrow>
-                                <IconButton
-                                  size="small"
-                                  onClick={(e) => handleMenuOpen(e, po)}
-                                  sx={{
-                                    color: 'text.secondary',
-                                    '&:hover': {
-                                      backgroundColor: alpha(theme.palette.text.secondary, 0.1),
-                                      transform: 'scale(1.1)',
-                                    },
-                                    transition: 'all 0.2s ease',
-                                  }}
-                                >
-                                  <MoreVertIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                      </Fade>
-                    );
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
-                        <Box
-                          sx={{
-                            width: 80,
-                            height: 80,
-                            borderRadius: '50%',
-                            background: alpha(theme.palette.primary.main, 0.1),
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <WidgetsIcon sx={{ fontSize: 40, color: 'primary.main', opacity: 0.5 }} />
-                        </Box>
-                        <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                          No purchase orders found
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'text.disabled', maxWidth: 400, textAlign: 'center' }}>
-                          {searchQuery || statusFilter !== 'all'
-                            ? 'Try adjusting your search or filter criteria to find what you\'re looking for'
-                            : 'Get started by creating your first purchase order'}
-                        </Typography>
-                        {!searchQuery && statusFilter === 'all' && (
-                          <Button
-                            variant="contained"
-                            startIcon={<AddIcon />}
-                            onClick={handleAddNew}
-                            sx={{
-                              mt: 2,
-                              borderRadius: 2,
-                              textTransform: 'none',
-                              fontWeight: 600,
-                            }}
-                          >
-                            Create Purchase Order
-                          </Button>
-                        )}
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {/* Enhanced Pagination */}
-          {filteredPurchaseOrders.length > 0 && (
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mt: 2,
-                p: 2,
-                borderRadius: 2,
-                backgroundColor: alpha(theme.palette.background.paper, 0.6),
-              }}
-            >
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Showing {page * rowsPerPage + 1} to {Math.min((page + 1) * rowsPerPage, totalPOs)} of {totalPOs} orders
-              </Typography>
-              <TablePagination
-                rowsPerPageOptions={[5, 10, 25, 50]}
-                component="div"
-                count={totalPOs}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                sx={{
-                  border: 'none',
-                  '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
-                    margin: 0,
-                  },
-                }}
-              />
-            </Box>
-          )}
-        </>
-      )}
-
-      {/* Context Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: 3,
-            minWidth: 180,
-          },
-        }}
-      >
-        <MenuItem onClick={() => { handleEdit(selectedPO?.id); handleMenuClose(); }}>
-          <ListItemIcon>
-            <EditIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Edit</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => { handleEdit(selectedPO?.id); handleMenuClose(); }}>
-          <ListItemIcon>
-            <VisibilityIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>View Details</ListItemText>
-        </MenuItem>
-        <Divider />
-        <MenuItem onClick={() => handleDeleteClick(selectedPO?.id)} sx={{ color: 'error.main' }}>
-          <ListItemIcon>
-            <DeleteIcon fontSize="small" color="error" />
-          </ListItemIcon>
-          <ListItemText>Delete</ListItemText>
-        </MenuItem>
-      </Menu>
-
-      {/* Enhanced Delete Dialog */}
-      <Dialog
-        open={deleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            boxShadow: 6,
-            minWidth: 400,
-          },
-        }}
-      >
-        <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                backgroundColor: alpha(theme.palette.error.main, 0.1),
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <DeleteIcon sx={{ color: 'error.main' }} />
-            </Box>
-            Delete Purchase Order
+            <Package size={18} />
           </Box>
+          Update Purchase Order Status
         </DialogTitle>
-        <DialogContent sx={{ mt: 2 }}>
-          <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-            Are you sure you want to delete this purchase order? This action cannot be undone and all associated data will be permanently removed.
-          </Typography>
+
+        <DialogContent sx={{ px: 2.5, py: 2.5 }}>
+          <Stack spacing={2.5} sx={{ mt: 1 }}>
+            {/* Error Alert */}
+            {statusDialogError && (
+              <Box sx={{ p: 2, bgcolor: '#fff5f5', border: '1px solid #fed7d7', borderRadius: '10px' }}>
+                <Stack direction="row" gap={1.5}>
+                  <Box sx={{ width: 20, height: 20, color: '#ef4444', flexShrink: 0 }}>
+                    <FileX size={20} />
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#991b1b', fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.25 }}>
+                      Error
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.8rem', color: '#b91c1c', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.4 }}>
+                      {statusDialogError}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Box>
+            )}
+
+            {selectedPO && (
+              <>
+                <Box sx={{ p: 2, bgcolor: '#fafbff', border: '1px solid #e8eaf0', borderRadius: '10px' }}>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#9ca3af', fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>
+                    PO Number
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1d2e', fontFamily: "'DM Sans', sans-serif" }}>
+                    {selectedPO.purchase_order_no}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ p: 2, bgcolor: '#fafbff', border: '1px solid #e8eaf0', borderRadius: '10px' }}>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#9ca3af', fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>
+                    Current Status
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <StatusChip status={selectedPO.status} />
+                    <Typography sx={{ fontSize: '0.75rem', color: '#6b7280', fontFamily: "'DM Sans', sans-serif" }}>
+                      {dayjs(selectedPO.date).format('DD MMM YYYY')}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Box>
+                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1a1d2e', fontFamily: "'DM Sans', sans-serif", mb: 1 }}>
+                    Update Status To
+                  </Typography>
+                  <Select
+                    value={newStatus}
+                    onChange={(e) => {
+                      setNewStatus(e.target.value);
+                      setStatusDialogError(null); // Clear error when user changes selection
+                    }}
+                    fullWidth
+                    size="small"
+                    disabled={statusUpdateLoading}
+                    sx={{
+                      fontFamily: "'DM Sans', sans-serif",
+                      borderRadius: '10px',
+                      '& .MuiOutlinedInput-root': {
+                        borderColor: '#e8eaf0',
+                        '&:hover fieldset': { borderColor: '#c7d2fe' },
+                        '&.Mui-focused fieldset': { borderColor: '#4f63d2', borderWidth: '1.5px' },
+                      },
+                    }}
+                  >
+                    <MenuItem value="draft" sx={{ fontFamily: "'DM Sans', sans-serif" }}>Draft</MenuItem>
+                    <MenuItem value="sent" sx={{ fontFamily: "'DM Sans', sans-serif" }}>Sent</MenuItem>
+                    <MenuItem value="partially_received" sx={{ fontFamily: "'DM Sans', sans-serif" }}>Partially Received</MenuItem>
+                    <MenuItem value="received" sx={{ fontFamily: "'DM Sans', sans-serif" }}>Received</MenuItem>
+                    <MenuItem value="cancelled" sx={{ fontFamily: "'DM Sans', sans-serif" }}>Cancelled</MenuItem>
+                  </Select>
+                </Box>
+
+                {newStatus === 'received' && (
+                  <Box sx={{ p: 2, bgcolor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px' }}>
+                    <Stack direction="row" gap={1.5}>
+                      <Box sx={{ width: 20, height: 20, color: '#065f46', flexShrink: 0 }}>
+                        <CheckCircle2 size={20} />
+                      </Box>
+                      <Typography sx={{ fontSize: '0.8rem', color: '#065f46', fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>
+                        Marking as received will record this purchase order and update inventory stock levels accordingly.
+                      </Typography>
+                    </Stack>
+                  </Box>
+                )}
+              </>
+            )}
+          </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 2 }}>
-          <Button
-            onClick={() => setDeleteConfirmOpen(false)}
+
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1.25,
+            justifyContent: 'flex-end',
+            px: 2.5,
+            py: 2,
+            borderTop: '1px solid #eeeff5',
+          }}
+        >
+          <BBButton
+            variant="outlined"
+            onClick={() => {
+              setStatusDialogOpen(false);
+              setSelectedPO(null);
+              setNewStatus('');
+              setStatusDialogError(null);
+            }}
+            disabled={statusUpdateLoading}
             sx={{
+              borderRadius: '10px',
               textTransform: 'none',
+              fontFamily: "'DM Sans', sans-serif",
               fontWeight: 600,
-              borderRadius: 2,
-              px: 3,
+              fontSize: '0.875rem',
             }}
           >
             Cancel
-          </Button>
-          <Button
-            onClick={handleDeleteConfirm}
+          </BBButton>
+          <BBButton
             variant="contained"
-            color="error"
+            onClick={handleStatusUpdateConfirm}
+            disabled={statusUpdateLoading || newStatus === selectedPO?.status}
+            loading={statusUpdateLoading}
             sx={{
+              borderRadius: '10px',
               textTransform: 'none',
+              fontFamily: "'DM Sans', sans-serif",
               fontWeight: 600,
-              borderRadius: 2,
-              px: 3,
-              boxShadow: 2,
+              fontSize: '0.875rem',
+              background: newStatus === 'received' ? 'linear-gradient(135deg, #065f46 0%, #047857 100%)' : undefined,
+              '&:hover': newStatus === 'received' ? { background: 'linear-gradient(135deg, #064e3b 0%, #036346 100%)' } : undefined,
             }}
           >
-            Delete
-          </Button>
-        </DialogActions>
+            {statusUpdateLoading ? 'Updating...' : 'Update Status'}
+          </BBButton>
+        </Box>
       </Dialog>
-    </Container>
+    </Box>
   );
 };
 

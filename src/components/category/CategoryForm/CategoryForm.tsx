@@ -68,13 +68,27 @@ function CategoryForm(props: CategoryFormProps) {
     refetch,
   } = useFetch<{ data: ICategory }, CategoryResponse>({
     url: isEdit ? `${category.getCategory}/${categoryId}` : "",
-    formatter: (res) => ({
-      category_name: res.data.category_name ?? "",
-      description: res.data.description ?? "",
-      is_active: Boolean(res.data.is_active) ?? "",
-      is_bb_coins_enabled: String(res.data.is_bb_coins_enabled) ?? "",
-      images: res.data.images ?? [],
-    }),
+    formatter: (res) => {
+      // Handle both response structures: { data: ICategory } or ICategory directly
+      const cat = res?.data || (res as any);
+      
+      if (!cat) {
+        return {
+          category_name: "",
+          description: "",
+          is_active: "",
+          is_bb_coins_enabled: "",
+          images: [],
+        };
+      }
+      return {
+        category_name: cat.category_name ?? "",
+        description: cat.description ?? "",
+        is_active: Boolean(cat.is_active) ?? "",
+        is_bb_coins_enabled: String(cat.is_bb_coins_enabled) ?? "",
+        images: cat.images ?? [],
+      };
+    },
     options: {
       skip: !isEdit,
     },

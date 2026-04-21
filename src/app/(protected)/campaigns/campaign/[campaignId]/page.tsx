@@ -91,7 +91,10 @@ const AddCampaign = () => {
     error: campaignError,
   } = useFetch<{ data: ICampaignForm }, ICampaignForm>({
     url: isEdit ? campagin.getCampaginDetails(campaignId) : "",
-    formatter: (res) => res.data,
+    formatter: (res) => {
+      // Handle both response structures: { data: ICampaignForm } or ICampaignForm directly
+      return res?.data || (res as any) || {};
+    },
     options: { skip: !isEdit },
     baseUrl: config.campaginDomain,
   });

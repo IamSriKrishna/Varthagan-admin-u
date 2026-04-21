@@ -66,6 +66,7 @@ export interface User {
   role: string;
   status: "active" | "inactive";
   company_id?: number;
+  company_name?: string;
   company?: {
     id: number;
     company_name: string;

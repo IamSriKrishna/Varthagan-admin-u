@@ -44,6 +44,7 @@ import {
   BoxesIcon,
   Receipt,
   Plus,
+  Truck,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -77,8 +78,6 @@ const baseMenuItems: Array<{
     type: "section",
     label: "APPS & PAGES",
   },
-  { key: "orderreport", icon: ShoppingCart, label: "Order Report", path: "/report/order" },
-  { key: "orders", icon: ShoppingCart, label: "Orders", path: "/orders" },
   {
     key: "employee",
     icon: User,
@@ -106,6 +105,24 @@ const baseMenuItems: Array<{
       { key: "itemGroups", icon: Boxes, label: "Item Groups", path: "/item-groups" },
     ],
   },
+  {
+    key: "products",
+    icon: Package,
+    label: "Products",
+    children: [
+      { key: "productList", icon: Package, label: "Products", path: "/products" },
+      { key: "productGroups", icon: Boxes, label: "Product Groups", path: "/products/product-groups" },
+    ],
+  },
+  {
+    key: "shipments",
+    icon: Truck,
+    label: "Shipments",
+    children: [
+      { key: "shipments", icon: Truck, label: "Shipments", path: "/shipments" },
+      { key: "tracking", icon: Truck, label: "Tracking", path: "/shipments/tracking" },
+    ],
+  },
   // {
   //   key: "sales",
   //   icon: BoxesIcon,
@@ -131,6 +148,7 @@ const baseMenuItems: Array<{
     label: "Inventory",
     children: [
       { key: "inventory", icon: Boxes, label: "Product Management", path: "/inventory" },
+      { key: "stock", icon: Boxes, label: "Stock Management", path: "/stock" },
     ],
   },
   {
@@ -231,12 +249,12 @@ export default function Sidebar({
         console.log(`  Item has ${item.children.length} children`);
         
         // Always show these items regardless of access control
-        const alwaysShowItems = ['purchaseOrders', 'vendors',"bills", "invoices", "salesOrders", "packages"];
+        const alwaysShowItems = ['purchaseOrders', 'vendors',"bills", "invoices", "salesOrders", "packages", "shipments"];
         
         // Add employee items and items menu children if user is admin
         const isAdmin = userType === 'admin';
         if (isAdmin) {
-          alwaysShowItems.push('employees', 'employeeAttendance', 'item', 'itemGroups');
+          alwaysShowItems.push('employees', 'employeeAttendance', 'item', 'itemGroups', 'productList', 'productGroups');
         }
         
         const filteredChildren = item.children.filter((child) => {
@@ -272,6 +290,26 @@ export default function Sidebar({
       if (item.key === 'items') {
         const shouldShow = userType === 'admin';
         console.log(`  ${item.key}: Admin check - ${userType} === 'admin' = ${shouldShow}`);
+        return shouldShow;
+      }
+
+      // Show products menu only for admin users
+      if (item.key === 'products') {
+        const shouldShow = userType === 'admin';
+        console.log(`  ${item.key}: Admin check - ${userType} === 'admin' = ${shouldShow}`);
+        return shouldShow;
+      }
+
+      // Show shipments menu for all users
+      if (item.key === 'shipments') {
+        console.log(`  ${item.key}: Showing for all users`);
+        return true;
+      }
+
+      // Hide settings menu for admin users
+      if (item.key === 'settings') {
+        const shouldShow = userType !== 'admin';
+        console.log(`  ${item.key}: Hiding from admin - ${userType} !== 'admin' = ${shouldShow}`);
         return shouldShow;
       }
 

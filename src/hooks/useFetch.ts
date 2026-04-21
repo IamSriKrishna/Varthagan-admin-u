@@ -1,13 +1,13 @@
 import { config } from "@/config";
 import { appFetch } from "@/utils/fetchInterceptor";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface UseFetchResult<T, F> {
   data: T | null;
   formattedData?: F;
   loading: boolean;
   error: string | null;
-  refetch: () => void;
+  refetch: () => Promise<void>;
 }
 
 function useFetch<T = unknown, F = unknown>({
@@ -27,7 +27,8 @@ function useFetch<T = unknown, F = unknown>({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadFlag, setReloadFlag] = useState(0);
-  // const fetchData = async () => {
+  const refetchResolveRef = useRef<(() => void) | null>(null);
+  
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -59,6 +60,11 @@ function useFetch<T = unknown, F = unknown>({
       }
     } finally {
       setLoading(false);
+      // Resolve any pending refetch promises
+      if (refetchResolveRef.current) {
+        refetchResolveRef.current();
+        refetchResolveRef.current = null;
+      }
     }
   }, [url, baseUrl, options, onFetched]);
 
@@ -67,7 +73,12 @@ function useFetch<T = unknown, F = unknown>({
     fetchData();
   }, [url, reloadFlag, options?.skip]);
 
-  const refetch = () => setReloadFlag((f) => f + 1);
+  const refetch = async (): Promise<void> => {
+    return new Promise<void>((resolve) => {
+      refetchResolveRef.current = resolve;
+      setReloadFlag((f) => f + 1);
+    });
+  };
 
   const formattedData = useMemo(() => {
     if (formatter && data) {

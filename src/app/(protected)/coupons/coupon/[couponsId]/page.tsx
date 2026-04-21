@@ -119,11 +119,18 @@ const CouponForm = () => {
     { label: string; value: string }[]
   >({
     url: category.getCategory,
-    formatter: (res) =>
-      res.data.categories.map((cat) => ({
+    formatter: (res) => {
+      // Handle both response structures
+      const data = res?.data || (res as any);
+      
+      if (!data || !Array.isArray(data.categories)) {
+        return [];
+      }
+      return data.categories.map((cat) => ({
         label: cat.category_name,
         value: cat.id,
-      })),
+      }));
+    },
     options: {
       skip: selectedScope !== "category",
     },
@@ -162,24 +169,48 @@ const CouponForm = () => {
     url: isEdit ? coupon.getCouponById(couponId) : "",
     baseUrl: config.orderDomain,
     formatter: (res) => {
+      // Handle both response structures
+      const coupon = res as any;
+      
+      if (!coupon) {
+        return {
+          code: "",
+          title: "",
+          description: "",
+          terms_and_conditions: "",
+          expires_at: null,
+          starts_at: null,
+          coupon_type: undefined,
+          scope: undefined,
+          discount_value: undefined,
+          min_order_value: undefined,
+          max_usage_total: undefined,
+          max_usage_per_customer: undefined,
+          max_discount: "",
+          vendor_id: "",
+          category_id: "",
+          customer_id: "",
+          is_active: false,
+        };
+      }
       return {
-        code: res.code ?? "",
-        title: res.title ?? "",
-        description: res.description ?? "",
-        terms_and_conditions: res.terms_and_conditions ?? "",
-        expires_at: res.expires_at ? dayjs(res.expires_at) : null,
-        starts_at: res.starts_at ? dayjs(res.starts_at) : null,
-        coupon_type: res.coupon_type ?? undefined,
-        scope: res.scope ?? undefined,
-        discount_value: res.discount_value ? Number(res.discount_value) : undefined,
-        min_order_value: res.min_order_value ? Number(res.min_order_value) : undefined,
-        max_usage_total: res.max_usage_total ? Number(res.max_usage_total) : undefined,
-        max_usage_per_customer: res.max_usage_per_customer ? Number(res.max_usage_per_customer) : undefined,
-        max_discount: res.max_discount ?? "",
-        vendor_id: res.vendor_id ?? "",
-        category_id: res.category_id ?? "",
-        customer_id: res.customer_id ?? "",
-        is_active: res.is_active ?? false,
+        code: coupon.code ?? "",
+        title: coupon.title ?? "",
+        description: coupon.description ?? "",
+        terms_and_conditions: coupon.terms_and_conditions ?? "",
+        expires_at: coupon.expires_at ? dayjs(coupon.expires_at) : null,
+        starts_at: coupon.starts_at ? dayjs(coupon.starts_at) : null,
+        coupon_type: coupon.coupon_type ?? undefined,
+        scope: coupon.scope ?? undefined,
+        discount_value: coupon.discount_value ? Number(coupon.discount_value) : undefined,
+        min_order_value: coupon.min_order_value ? Number(coupon.min_order_value) : undefined,
+        max_usage_total: coupon.max_usage_total ? Number(coupon.max_usage_total) : undefined,
+        max_usage_per_customer: coupon.max_usage_per_customer ? Number(coupon.max_usage_per_customer) : undefined,
+        max_discount: coupon.max_discount ?? "",
+        vendor_id: coupon.vendor_id ?? "",
+        category_id: coupon.category_id ?? "",
+        customer_id: coupon.customer_id ?? "",
+        is_active: coupon.is_active ?? false,
       };
     },
     options: {

@@ -1,5 +1,14 @@
 // Dashboard Models - Business Analytics and Metrics
 
+export interface UserInfo {
+  user_id: number;
+  user_name: string;
+  user_role: "superadmin" | "admin" | "user";
+  company_id: number;
+  company_name: string;
+  email: string;
+}
+
 export interface CustomerMetrics {
   total: number;
   active: number;
@@ -70,6 +79,7 @@ export interface PackageMetrics {
 }
 
 export interface DashboardMetrics {
+  user_info?: UserInfo;
   customer_metrics: CustomerMetrics;
   vendor_metrics: VendorMetrics;
   item_metrics: ItemMetrics;
@@ -93,18 +103,23 @@ export interface ActivitySummary {
 }
 
 export interface StockItem {
-  item_id: string;
-  item_name: string;
-  current_quantity: number;
-  available_quantity: number;
-  reserved_quantity: number;
-  in_transit_quantity: number;
+  product_id: string;
+  product_name: string;
+  current_stock: number;
+  available_stock: number;
+  reserved_stock: number;
+  purchased_stock: number;
+  sold_stock: number;
+  average_cost: number;
+  revaluation_amount: number;
+  last_purchased_date: string;
+  last_sold_date: string;
   status: 'in_stock' | 'low_stock' | 'out_of_stock';
 }
 
 export interface StockInfo {
   data: StockItem[];
-  total_items: number;
+  total_products: number;
   in_stock_count: number;
   low_stock_count: number;
   out_of_stock_count: number;

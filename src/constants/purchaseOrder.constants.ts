@@ -33,7 +33,8 @@ export const PO_STATUS = [
   { label: 'Draft', value: 'draft' },
   { label: 'Confirmed', value: 'confirmed' },
   { label: 'Cancelled', value: 'cancelled' },
-];
+  { label: 'Partially Received', value: 'partially_received' },
+  { label: 'Received', value: 'received' },];
 
 // API Endpoints
 export const PURCHASE_ORDER_ENDPOINTS = {
@@ -42,5 +43,6 @@ export const PURCHASE_ORDER_ENDPOINTS = {
   CREATE: '/purchase-orders',
   UPDATE: (id: string) => `/purchase-orders/${id}`,
   DELETE: (id: string) => `/purchase-orders/${id}`,
+  UPDATE_STATUS: (id: string) => `/purchase-orders/${id}/status`, 
   SEARCH: '/purchase-orders/search',
 };

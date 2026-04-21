@@ -1,61 +1,35 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress,
-  Alert,
-} from "@mui/material";
-import {
-  UpsertCompanyAddressInput,
-  companyApi,
-  Country,
-  State,
-} from "@/lib/api/companyApi";
+import { Box, MenuItem, Alert } from "@mui/material";
+import { UpsertCompanyAddressInput, companyApi, Country, State } from "@/lib/api/companyApi";
+import { StyledField, StyledSelect, FieldRow, LoadingPane } from "./shared";
+import { dt } from "../designTokens";
 
 interface AddressDetailsStepProps {
   data: UpsertCompanyAddressInput;
   onChange: (data: UpsertCompanyAddressInput) => void;
 }
 
-export default function AddressDetailsStep({
-  data,
-  onChange,
-}: AddressDetailsStepProps) {
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [states, setStates] = useState<State[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function AddressDetailsStep({ data, onChange }: AddressDetailsStepProps) {
+  const [countries, setCountries]       = useState<Country[]>([]);
+  const [states, setStates]             = useState<State[]>([]);
+  const [loading, setLoading]           = useState(true);
   const [statesLoading, setStatesLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError]               = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCountries();
-  }, []);
-
-  useEffect(() => {
-    if (data.country_id) {
-      fetchStates(data.country_id);
-    }
-  }, [data.country_id]);
+  useEffect(() => { fetchCountries(); }, []);
+  useEffect(() => { if (data.country_id) fetchStates(data.country_id); }, [data.country_id]);
 
   const fetchCountries = async () => {
     try {
       setLoading(true);
-      const countries = await companyApi.getCountries();
-      setCountries(countries);
-      
-      // Set India as default if available
-      const india = countries.find(c => c.country_code === 'IN');
-      if (india && !data.country_id) {
-        onChange({ ...data, country_id: india.id });
-      }
-    } catch (err) {
-      setError("Failed to load countries");
+      const list = await companyApi.getCountries();
+      setCountries(list);
+      const india = list.find((c) => c.country_code === "IN");
+      if (india && !data.country_id) onChange({ ...data, country_id: india.id });
+    } catch {
+      setError("Failed to load countries. Please refresh.");
     } finally {
       setLoading(false);
     }
@@ -64,108 +38,161 @@ export default function AddressDetailsStep({
   const fetchStates = async (countryId: number) => {
     try {
       setStatesLoading(true);
-      const states = await companyApi.getStatesByCountry(countryId);
-      setStates(states);
-    } catch (err) {
-      setError("Failed to load states");
+      setStates(await companyApi.getStatesByCountry(countryId));
+    } catch {
+      setError("Failed to load states.");
     } finally {
       setStatesLoading(false);
     }
   };
 
-  const handleChange = (field: string, value: any) => {
-    onChange({
-      ...data,
-      [field]: value,
-    });
-  };
+  const set = (field: string, value: any) => onChange({ ...data, [field]: value });
 
-  if (loading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const selectedCountry = countries.find((c) => c.id === data.country_id);
+  const selectedState   = states.find((s) => s.id === data.state_id);
+
+  if (loading) return <LoadingPane />;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      {error && <Alert severity="error">{error}</Alert>}
 
-      <TextField
-        label="Address Line 1"
+      {error && (
+        <Alert severity="warning" onClose={() => setError(null)} sx={{ borderRadius: dt.radiusSm, fontFamily: dt.font }}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Map visual hint */}
+      <Box
+        sx={{
+          p: 2.5,
+          borderRadius: dt.radiusSm,
+          background: `linear-gradient(135deg, ${dt.navy}06 0%, ${dt.gold}08 100%)`,
+          border: `1px solid ${dt.border}`,
+          display: "flex",
+          alignItems: "center",
+          gap: 2,
+        }}
+      >
+        <Box sx={{ fontSize: 36, lineHeight: 1 }}>📍</Box>
+        <Box>
+          <Box sx={{ fontFamily: dt.font, fontWeight: 600, fontSize: 13.5, color: dt.navy }}>
+            Registered Business Address
+          </Box>
+          <Box sx={{ fontFamily: dt.font, fontSize: 12, color: dt.textMuted, mt: 0.3 }}>
+            This will appear on all your invoices and official documents.
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Street */}
+      <StyledField
+        label="Address Line 1 *"
         value={data.address_line1}
-        onChange={(e) => handleChange("address_line1", e.target.value)}
-        required
-        fullWidth
-        placeholder="Street address"
+        onChange={(e) => set("address_line1", e.target.value)}
+        placeholder="Building/House No., Street Name"
+        helperText="Your primary street address"
       />
 
-      <TextField
+      <StyledField
         label="Address Line 2"
-        value={data.address_line2}
-        onChange={(e) => handleChange("address_line2", e.target.value)}
-        fullWidth
-        placeholder="Apartment, suite, etc. (optional)"
+        value={data.address_line2 ?? ""}
+        onChange={(e) => set("address_line2", e.target.value)}
+        placeholder="Floor, Landmark, Area (optional)"
       />
 
-      <TextField
-        label="City"
-        value={data.city}
-        onChange={(e) => handleChange("city", e.target.value)}
-        required
-        fullWidth
-        placeholder="City name"
-      />
+      {/* City + Pincode */}
+      <FieldRow>
+        <StyledField
+          label="City *"
+          value={data.city}
+          onChange={(e) => set("city", e.target.value)}
+          placeholder="e.g., Mumbai"
+        />
+        <StyledField
+          label="Pincode *"
+          value={data.pincode}
+          onChange={(e) => set("pincode", e.target.value.replace(/\D/g, "").slice(0, 10))}
+          placeholder="e.g., 400001"
+          inputProps={{ inputMode: "numeric", maxLength: 10 }}
+          helperText="6-digit postal code"
+        />
+      </FieldRow>
 
-      <FormControl fullWidth required error={data.country_id === 0}>
-        <InputLabel id="country-label">Country *</InputLabel>
-        <Select
-          labelId="country-label"
-          id="country-select"
-          value={data.country_id || 0}
+      {/* Country + State */}
+      <FieldRow>
+        <StyledSelect
           label="Country *"
-          onChange={(e) => handleChange("country_id", e.target.value as number)}
+          value={data.country_id || 0}
+          error={data.country_id === 0}
+          onChange={(e) => {
+            set("country_id", e.target.value as number);
+            set("state_id", 0);
+            setStates([]);
+          }}
         >
-          <MenuItem value={0} disabled>
-            Select a country
+          <MenuItem value={0} disabled sx={{ fontFamily: dt.font, color: dt.textMuted }}>
+            Select country…
           </MenuItem>
-          {countries.map((country) => (
-            <MenuItem key={country.id} value={country.id}>
-              {country.country_name} {country.country_code && `(${country.country_code})`}
+          {countries.map((c) => (
+            <MenuItem key={c.id} value={c.id} sx={{ fontFamily: dt.font, fontSize: 14 }}>
+              {c.country_name} {c.country_code && <span style={{ color: dt.textMuted, fontSize: 12 }}>({c.country_code})</span>}
             </MenuItem>
           ))}
-        </Select>
-      </FormControl>
+        </StyledSelect>
 
-      <FormControl fullWidth required disabled={statesLoading || !data.country_id} error={data.state_id === 0 && data.country_id !== 0}>
-        <InputLabel id="state-label">State/Province *</InputLabel>
-        <Select
-          labelId="state-label"
-          id="state-select"
+        <StyledSelect
+          label="State / Province *"
           value={data.state_id || 0}
-          label="State/Province *"
-          onChange={(e) => handleChange("state_id", e.target.value as number)}
+          error={data.state_id === 0 && data.country_id !== 0}
+          onChange={(e) => set("state_id", e.target.value as number)}
+          disabled={statesLoading || !data.country_id}
+          helperText={statesLoading ? "Loading states…" : ""}
         >
-          <MenuItem value={0} disabled>
-            {statesLoading ? "Loading states..." : "Select a state"}
+          <MenuItem value={0} disabled sx={{ fontFamily: dt.font, color: dt.textMuted }}>
+            {statesLoading ? "Loading…" : "Select state…"}
           </MenuItem>
-          {states.map((state) => (
-            <MenuItem key={state.id} value={state.id}>
-              {state.state_name} {state.state_code && `(${state.state_code})`}
+          {states.map((s) => (
+            <MenuItem key={s.id} value={s.id} sx={{ fontFamily: dt.font, fontSize: 14 }}>
+              {s.state_name} {s.state_code && <span style={{ color: dt.textMuted, fontSize: 12 }}>({s.state_code})</span>}
             </MenuItem>
           ))}
-        </Select>
-      </FormControl>
+        </StyledSelect>
+      </FieldRow>
 
-      <TextField
-        label="Pincode"
-        value={data.pincode}
-        onChange={(e) => handleChange("pincode", e.target.value)}
-        required
-        fullWidth
-        placeholder="Postal code"
-      />
+      {/* Address preview */}
+      {(data.address_line1 || selectedCity(data)) && (
+        <Box
+          sx={{
+            p: 2,
+            borderRadius: dt.radiusSm,
+            bgcolor: dt.cream,
+            border: `1px dashed ${dt.border}`,
+            fontFamily: dt.font,
+            fontSize: 13,
+            color: dt.textSecondary,
+            lineHeight: 1.8,
+          }}
+        >
+          <Box sx={{ fontWeight: 700, fontSize: 11, color: dt.textMuted, letterSpacing: "0.06em", mb: 0.5 }}>
+            ADDRESS PREVIEW
+          </Box>
+          {[
+            data.address_line1,
+            data.address_line2,
+            [data.city, selectedState?.state_name].filter(Boolean).join(", "),
+            [selectedCountry?.country_name, data.pincode].filter(Boolean).join(" – "),
+          ]
+            .filter(Boolean)
+            .map((line, i) => (
+              <Box key={i}>{line}</Box>
+            ))}
+        </Box>
+      )}
     </Box>
   );
+}
+
+function selectedCity(data: UpsertCompanyAddressInput) {
+  return data.city || data.pincode;
 }

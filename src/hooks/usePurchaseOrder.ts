@@ -5,6 +5,7 @@ import {
   CreatePurchaseOrderRequest,
   UpdatePurchaseOrderRequest,
   PurchaseOrdersListResponse,
+  UpdatePurchaseOrderStatusRequest,
 } from '@/models/purchaseOrder.model';
 
 interface UsePurchaseOrderReturn {
@@ -15,6 +16,7 @@ interface UsePurchaseOrderReturn {
   totalPOs: number;
   createPurchaseOrder: (data: CreatePurchaseOrderRequest) => Promise<PurchaseOrder>;
   updatePurchaseOrder: (id: string, data: UpdatePurchaseOrderRequest) => Promise<PurchaseOrder>;
+  updatePurchaseOrderStatus: (id: string, status: string) => Promise<PurchaseOrder>;
   deletePurchaseOrder: (id: string) => Promise<boolean>;
   getPurchaseOrder: (id: string) => Promise<PurchaseOrder>;
   getPurchaseOrders: (page: number, limit: number) => Promise<void>;
@@ -106,8 +108,8 @@ export const usePurchaseOrder = (): UsePurchaseOrderReturn => {
       setError(null);
       try {
         const response = await purchaseOrderService.getPurchaseOrders(page, limit);
-        setPurchaseOrders(response.data.purchase_orders);
-        setTotalPOs(response.data.total);
+        setPurchaseOrders(response.purchase_orders || []);
+        setTotalPOs(response.total || 0);
       } catch (err: any) {
         const errorMessage =
           err?.response?.data?.message || err?.message || 'Failed to fetch purchase orders';
@@ -124,8 +126,8 @@ export const usePurchaseOrder = (): UsePurchaseOrderReturn => {
     setError(null);
     try {
       const response = await purchaseOrderService.searchPurchaseOrders(query);
-      setPurchaseOrders(response.data.purchase_orders);
-      setTotalPOs(response.data.total);
+      setPurchaseOrders(response.purchase_orders || []);
+      setTotalPOs(response.total || 0);
     } catch (err: any) {
       const errorMessage =
         err?.response?.data?.message || err?.message || 'Failed to search purchase orders';
@@ -135,6 +137,28 @@ export const usePurchaseOrder = (): UsePurchaseOrderReturn => {
     }
   }, []);
 
+  const updatePurchaseOrderStatus = useCallback(
+    async (id: string, status: string): Promise<PurchaseOrder> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await purchaseOrderService.updatePurchaseOrderStatus(id, { status: status as any });
+        setPurchaseOrders((prev) =>
+          prev.map((po) => (po.id === id ? { ...po, status: status as any } : po))
+        );
+        return response.data;
+      } catch (err: any) {
+        const errorMessage =
+          err?.response?.data?.message || err?.message || 'Failed to update purchase order status';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   return {
     loading,
     error,
@@ -143,6 +167,7 @@ export const usePurchaseOrder = (): UsePurchaseOrderReturn => {
     totalPOs,
     createPurchaseOrder,
     updatePurchaseOrder,
+    updatePurchaseOrderStatus,
     deletePurchaseOrder,
     getPurchaseOrder,
     getPurchaseOrders,

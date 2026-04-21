@@ -20,714 +20,738 @@ import {
   Box,
   Autocomplete,
   CircularProgress,
-  Card,
-  CardContent,
-  Divider,
-  Chip,
   Tooltip,
-  Alert,
-  alpha,
   Fade,
   Typography,
   Select,
   MenuItem,
+  Alert,
+  alpha,
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import AddIcon from '@mui/icons-material/Add';
-import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
 import InventoryIcon from '@mui/icons-material/Inventory';
-import { PurchaseOrder, LineItem } from '@/models/purchaseOrder.model';
+import CloseIcon from '@mui/icons-material/Close';
+import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
+import { PurchaseOrder, PurchaseOrderLineItemInput } from '@/models/purchaseOrder.model';
+import { Product } from '@/models/product';
 import { calculateLineItemAmount } from './purchaseOrderForm.utils';
-import { itemService } from '@/lib/api/itemService';
+import { productService } from '@/lib/api/productService';
 
-interface PurchaseOrderLineItemsProps {
-  formik: FormikProps<PurchaseOrder>;
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const T = {
+  brand: '#2563EB', brandLight: '#EFF6FF', brandBorder: '#BFDBFE',
+  bg: '#FFFFFF', bgMuted: '#F8FAFC', bgHover: '#F1F5F9',
+  border: '#E2E8F0', borderMd: '#CBD5E1',
+  text: '#0F172A', textSub: '#475569', textMuted: '#64748B', textHint: '#94A3B8', textMd: '#1F2937',
+  success: '#15803D', successBg: '#F0FDF4', successBdr: '#86EFAC',
+  error: '#DC2626', errorBg: '#FEF2F2', errorBdr: '#FCA5A5',
+  radius: '10px', radiusSm: '7px',
+  shadow: '0 1px 2px rgba(15,23,42,0.06), 0 2px 6px rgba(15,23,42,0.04)',
+};
+
+const inputSx = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: T.radiusSm, fontSize: '0.875rem', background: T.bg,
+    '& fieldset': { borderColor: T.border, borderWidth: '0.5px' },
+    '&:hover fieldset': { borderColor: T.borderMd },
+    '&.Mui-focused fieldset': { borderColor: '#93C5FD', borderWidth: '1.5px' },
+  },
+  '& .MuiInputLabel-root': { fontSize: '0.8rem', color: T.textMuted },
+  '& .MuiInputLabel-root.Mui-focused': { color: T.brand },
+};
+
+const selectSx = {
+  borderRadius: T.radiusSm, fontSize: '0.875rem',
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: T.border, borderWidth: '0.5px', borderRadius: T.radiusSm },
+  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: T.borderMd },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#93C5FD', borderWidth: '1.5px' },
+};
+
+// ─── Field wrapper ────────────────────────────────────────────────────────────
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+      <Typography sx={{ fontSize: '0.72rem', fontWeight: 600, color: T.textSub, letterSpacing: '0.2px' }}>
+        {label}{required && <Box component="span" sx={{ color: T.error, ml: '2px' }}>*</Box>}
+      </Typography>
+      {children}
+    </Box>
+  );
 }
 
-interface LineItemFormData extends LineItem {
-  variant_details?: Record<string, any>;
-}
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface LineItemFormData extends PurchaseOrderLineItemInput { }
+interface ProductOption { id: string; name: string; }
+interface PurchaseOrderLineItemsProps { formik: FormikProps<PurchaseOrder>; }
 
-interface ItemOption {
-  id: string;
-  name: string;
-}
-
-export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({
-  formik,
-}) => {
+// ─── Component ────────────────────────────────────────────────────────────────
+export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ formik }) => {
   const [openDialog, setOpenDialog] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState<LineItemFormData>({
-    item_id: '',
+    product_id: '',
+    product_name: '',
+    sku: '',
+    variant_sku: '',
+    variant_name: '',
     account: 'Cost of Goods Sold',
     quantity: 1,
     rate: 0,
-    variant_details: {},
   });
-  const [items, setItems] = useState<ItemOption[]>([]);
-  const [loadingItems, setLoadingItems] = useState(false);
-  const [selectedItemDetails, setSelectedItemDetails] = useState<any>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
 
   useEffect(() => {
-    const fetchItems = async () => {
-      setLoadingItems(true);
-      try {
-        const response = await itemService.getItems(1, 100);
-        if (response.items) {
-          setItems(response.items);
-        }
-      } catch (error) {
-        console.error('Failed to fetch items:', error);
-      } finally {
-        setLoadingItems(false);
-      }
-    };
-    fetchItems();
+    setLoadingProducts(true);
+    productService.getProducts(1, 100)
+      .then((r) => { if (r.products) setProducts(r.products); })
+      .catch(console.error)
+      .finally(() => setLoadingProducts(false));
   }, []);
 
-  const handleOpenDialog = (index?: number) => {
+  const handleOpen = (index?: number) => {
     if (index !== undefined) {
-      const item = formik.values.line_items[index];
+      const item = formik.values.line_items[index] as any;
       setFormData(item);
       setEditingIndex(index);
-      // Fetch item details if item_id exists
-      if (item.item_id) {
-        const itemData = items.find((i) => i.id === item.item_id);
-        if (itemData) {
-          itemService.getItem(item.item_id).then((details) => {
-            setSelectedItemDetails(details);
-            // If variant details exist, try to find the variant
-            if (item.variant_details && Object.keys(item.variant_details).length > 0) {
-              const variant = details.item_details?.variants?.find(
-                (v: any) => v.sku === item.variant_details?.sku
-              );
-              setSelectedVariant(variant || null);
-            }
-          });
+      if (item.product_id) {
+        const product = products.find(p => p.id === item.product_id);
+        if (product) {
+          setSelectedProduct(product);
+          if (item.variant_sku || item.sku) {
+            setSelectedVariant(product.product_details?.variants?.find((v: any) => v.sku === (item.variant_sku || item.sku)) || null);
+          }
         }
       }
     } else {
       setFormData({
-        item_id: '',
+        product_id: '',
+        product_name: '',
+        sku: '',
+        variant_sku: '',
+        variant_name: '',
         account: 'Cost of Goods Sold',
         quantity: 1,
         rate: 0,
-        variant_details: {},
       });
       setEditingIndex(null);
-      setSelectedItemDetails(null);
+      setSelectedProduct(null);
       setSelectedVariant(null);
     }
     setOpenDialog(true);
   };
 
-  const handleCloseDialog = () => {
+  const handleClose = () => {
     setOpenDialog(false);
     setEditingIndex(null);
-    setSelectedItemDetails(null);
+    setSelectedProduct(null);
     setSelectedVariant(null);
   };
 
-  const handleSaveLineItem = () => {
-    if (!formData.item_id || formData.quantity <= 0 || formData.rate < 0) {
-      alert('Please fill all required fields');
+  const handleSave = () => {
+    if (!formData.product_id || formData.quantity <= 0 || formData.rate < 0) {
+      alert('Please fill all required fields correctly');
       return;
     }
-
-    const lineItems = [...formik.values.line_items];
+    if (!formData.account) {
+      alert('Please select an account');
+      return;
+    }
+    const items_ = [...formik.values.line_items];
     const amount = calculateLineItemAmount(formData.quantity, formData.rate);
+    
+    const lineItem: any = {
+      ...formData,
+      amount,
+    };
 
     if (editingIndex !== null) {
-      lineItems[editingIndex] = {
-        ...formData,
-        amount,
-      };
+      items_[editingIndex] = lineItem;
     } else {
-      lineItems.push({
-        ...formData,
-        amount,
-      });
+      items_.push(lineItem);
     }
-
-    formik.setFieldValue('line_items', lineItems);
-    handleCloseDialog();
+    formik.setFieldValue('line_items', items_);
+    handleClose();
   };
 
-  const handleDeleteLineItem = (index: number) => {
-    const lineItems = formik.values.line_items.filter((_, i) => i !== index);
-    formik.setFieldValue('line_items', lineItems);
+  const handleDelete = (index: number) => {
+    formik.setFieldValue('line_items', formik.values.line_items.filter((_, i) => i !== index));
   };
 
-  const selectedItem = items.find((i) => i.id === formData.item_id);
-  const totalLineItemsAmount = formik.values.line_items.reduce(
-    (sum, item) => sum + (item.amount || 0),
-    0
-  );
+  const selectedProductOption = products.find((p) => p.id === formData.product_id);
+  const total = formik.values.line_items.reduce((s: number, i: any) => s + (i.amount || 0), 0);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+
+      {/* Header row */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box
-              sx={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-              }}
-            >
-              <ShoppingBasketIcon fontSize="small" />
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Line Items
-            </Typography>
-          </Box>
-          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5, ml: 5 }}>
-            Add products to your purchase order
+          <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: T.text }}>
+            Line items
+            {formik.values.line_items.length > 0 && (
+              <Box
+                component="span"
+                sx={{
+                  ml: 1, px: 1, py: '1px', borderRadius: '99px',
+                  background: T.brandLight, color: T.brand,
+                  fontSize: '0.72rem', fontWeight: 700, border: `0.5px solid ${T.brandBorder}`,
+                }}
+              >
+                {formik.values.line_items.length}
+              </Box>
+            )}
+          </Typography>
+          <Typography sx={{ fontSize: '0.75rem', color: T.textMuted, mt: '2px' }}>
+            Add products or services to this order
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
+        <Box
+          onClick={() => handleOpen()}
           sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            boxShadow: 2,
-            borderRadius: 2,
-            px: 3,
-            py: 1.2,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            '&:hover': {
-              boxShadow: 4,
-              transform: 'translateY(-2px)',
-              transition: 'all 0.3s ease',
-            },
+            display: 'flex', alignItems: 'center', gap: 0.75,
+            px: 2, py: 0.875, borderRadius: T.radiusSm, cursor: 'pointer',
+            background: T.brand, color: '#FFF',
+            fontSize: '0.8rem', fontWeight: 600,
+            boxShadow: '0 1px 3px rgba(37,99,235,0.25)',
+            transition: 'all 0.15s',
+            '&:hover': { background: '#1D4ED8', transform: 'translateY(-1px)', boxShadow: '0 4px 12px rgba(37,99,235,0.3)' },
+            '&:active': { transform: 'none' },
           }}
         >
-          Add Item
-        </Button>
+          <AddIcon sx={{ fontSize: 15 }} />
+          Line Items
+        </Box>
       </Box>
 
-      {/* Error Message */}
-      {formik.touched.line_items && formik.errors.line_items && (
-        <Fade in>
-          <Alert
-            severity="error"
-            sx={{
-              borderRadius: 2,
-              borderLeft: '4px solid #d32f2f',
-            }}
-          >
-            {typeof formik.errors.line_items === 'string' &&
-              formik.errors.line_items}
-          </Alert>
-        </Fade>
+      {/* Error */}
+      {formik.touched.line_items && typeof formik.errors.line_items === 'string' && (
+        <Alert severity="error" sx={{ borderRadius: T.radiusSm, border: `0.5px solid ${T.errorBdr}`, background: T.errorBg, '& .MuiAlert-icon': { color: T.error } }}>
+          <Typography sx={{ fontSize: '0.8rem' }}>{formik.errors.line_items}</Typography>
+        </Alert>
       )}
 
-      {/* Table Card */}
+      {/* Table */}
       {formik.values.line_items.length > 0 ? (
-        <Fade in timeout={300}>
-          <Card
+        <Fade in timeout={250}>
+          <Box
             sx={{
-              boxShadow: 2,
-              borderRadius: 3,
-              border: `1px solid ${alpha('#667eea', 0.1)}`,
+              background: T.bg, border: `0.5px solid ${T.border}`,
+              borderRadius: T.radius, overflow: 'hidden',
+              boxShadow: T.shadow,
             }}
           >
-            <CardContent sx={{ p: 0 }}>
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow
-                      sx={{
-                        background: `linear-gradient(135deg, ${alpha('#f8f9fa', 1)} 0%, ${alpha('#e9ecef', 1)} 100%)`,
-                        borderBottom: `2px solid ${alpha('#667eea', 0.2)}`,
-                      }}
-                    >
-                      <TableCell sx={{ fontWeight: 700, color: '#333', py: 2 }}>Item</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#333' }}>Account</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 700, color: '#333' }}>
-                        Quantity
-                      </TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700, color: '#333' }}>
-                        Rate
-                      </TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700, color: '#333' }}>
-                        Amount
-                      </TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 700, color: '#333' }}>
-                        Actions
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {formik.values.line_items.map((item, index) => (
-                      <TableRow
-                        key={index}
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ background: T.bgMuted }}>
+                    {['Item', 'Account', 'Qty', 'Rate (₹)', 'Amount (₹)', ''].map((h) => (
+                      <TableCell
+                        key={h}
+                        align={['Qty', 'Rate (₹)', 'Amount (₹)'].includes(h) ? 'right' : h === '' ? 'center' : 'left'}
                         sx={{
-                          '&:hover': {
-                            backgroundColor: alpha('#667eea', 0.04),
-                          },
-                          transition: 'background-color 0.2s ease',
-                          borderBottom: `1px solid ${alpha('#e0e0e0', 0.5)}`,
+                          fontSize: '0.67rem', fontWeight: 700, color: T.textMuted,
+                          textTransform: 'uppercase', letterSpacing: '0.6px',
+                          py: 1.25, borderBottom: `0.5px solid ${T.border}`,
+                          whiteSpace: 'nowrap',
                         }}
                       >
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, flexDirection: 'column' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Box
-                                sx={{
-                                  width: 32,
-                                  height: 32,
-                                  borderRadius: 1,
-                                  backgroundColor: alpha('#667eea', 0.1),
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  color: '#667eea',
-                                }}
-                              >
-                                <InventoryIcon fontSize="small" />
-                              </Box>
-                              <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                  {item.item_id}
-                                </Typography>
-                                {item.variant_details && Object.keys(item.variant_details).length > 0 && (
-                                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.25 }}>
-                                    {item.variant_details.sku && (
-                                      <>
-                                        SKU: {item.variant_details.sku}
-                                        {Object.entries(item.variant_details)
-                                          .filter(([key]) => key !== 'sku')
-                                          .length > 0 && ', '}
-                                      </>
-                                    )}
-                                    {Object.entries(item.variant_details)
-                                      .filter(([key]) => key !== 'sku')
-                                      .map(([key, value]) => `${key}: ${value}`)
-                                      .join(', ')}
-                                  </Typography>
-                                )}
-                              </Box>
-                            </Box>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={item.account}
-                            size="small"
-                            sx={{
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              backgroundColor: alpha('#667eea', 0.1),
-                              color: '#667eea',
-                              borderRadius: 1.5,
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          <Chip
-                            label={item.quantity}
-                            size="small"
-                            sx={{
-                              fontWeight: 700,
-                              minWidth: 48,
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            ₹ {item.rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="body2" sx={{ fontWeight: 700, color: '#22c55e' }}>
-                            ₹ {(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-                            <Tooltip title="Edit" arrow>
-                              <IconButton
-                                size="small"
-                                onClick={() => handleOpenDialog(index)}
-                                sx={{
-                                  color: 'primary.main',
-                                  '&:hover': {
-                                    backgroundColor: alpha('#667eea', 0.1),
-                                    transform: 'scale(1.1)',
-                                  },
-                                  transition: 'all 0.2s ease',
-                                }}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete" arrow>
-                              <IconButton
-                                size="small"
-                                onClick={() => handleDeleteLineItem(index)}
-                                sx={{
-                                  color: 'error.main',
-                                  '&:hover': {
-                                    backgroundColor: alpha('#d32f2f', 0.1),
-                                    transform: 'scale(1.1)',
-                                  },
-                                  transition: 'all 0.2s ease',
-                                }}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
+                        {h}
+                      </TableCell>
                     ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              <Divider />
-              <Box
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {formik.values.line_items.map((item, idx) => (
+                    <TableRow
+                      key={idx}
+                      sx={{
+                        '&:hover': { background: T.bgMuted },
+                        transition: 'background 0.15s',
+                        borderBottom: idx < formik.values.line_items.length - 1 ? `0.5px solid ${T.border}` : 'none',
+                      }}
+                    >
+                      {/* Item */}
+                      <TableCell sx={{ py: 1.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box
+                            sx={{
+                              width: 28, height: 28, borderRadius: '7px', flexShrink: 0,
+                              background: T.brandLight, display: 'flex', alignItems: 'center',
+                              justifyContent: 'center', color: T.brand,
+                            }}
+                          >
+                            <InventoryIcon sx={{ fontSize: 13 }} />
+                          </Box>
+                          <Box>
+                            <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: T.text }}>
+                              {(item as any).product_name || (item as any).product_id || '—'}
+                            </Typography>
+                            {/* Show variant name if available */}
+                            {(item as any).variant_name && (
+                              <Typography sx={{ fontSize: '0.68rem', color: T.brand, mt: '1px', fontWeight: 500 }}>
+                                {(item as any).variant_name}
+                              </Typography>
+                            )}
+                            {/* Show variant SKU if available, otherwise show SKU */}
+                            {(item as any).variant_sku && (
+                              <Typography sx={{ fontSize: '0.68rem', color: T.textMuted, mt: '1px' }}>
+                                SKU: {(item as any).variant_sku}
+                              </Typography>
+                            )}
+                            {!(item as any).variant_sku && (item as any).sku && (
+                              <Typography sx={{ fontSize: '0.68rem', color: T.textMuted, mt: '1px' }}>
+                                SKU: {(item as any).sku}
+                              </Typography>
+                            )}
+                            {/* Show attributes if available */}
+                            {(item as any).variant_details && Object.keys((item as any).variant_details).length > 0 && (
+                              <Box sx={{ display: 'flex', gap: 0.5, mt: '4px' }}>
+                                {Object.entries((item as any).variant_details).map(([k, v]) => (
+                                  <Box
+                                    key={k}
+                                    sx={{
+                                      px: 0.75, py: '2px',
+                                      background: T.brandLight, color: T.brand,
+                                      borderRadius: '3px', fontSize: '0.6rem', fontWeight: 500,
+                                    }}
+                                  >
+                                    {k}: {v}
+                                  </Box>
+                                ))}
+                              </Box>
+                            )}
+                          </Box>
+                        </Box>
+                      </TableCell>
+
+                      {/* Account */}
+                      <TableCell>
+                        <Box
+                          sx={{
+                            display: 'inline-flex', px: 1.25, py: '3px',
+                            borderRadius: '99px', background: '#F5F3FF',
+                            border: '0.5px solid #DDD6FE', color: '#7C3AED',
+                            fontSize: '0.7rem', fontWeight: 600, whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {item.account}
+                        </Box>
+                      </TableCell>
+
+                      {/* Qty */}
+                      <TableCell align="right">
+                        <Box
+                          sx={{
+                            display: 'inline-flex', px: 1.25, py: '2px',
+                            borderRadius: '99px', background: T.bgMuted,
+                            border: `0.5px solid ${T.border}`, color: T.textMd,
+                            fontSize: '0.78rem', fontWeight: 700, minWidth: 36, justifyContent: 'center',
+                          }}
+                        >
+                          {item.quantity}
+                        </Box>
+                      </TableCell>
+
+                      {/* Rate */}
+                      <TableCell align="right">
+                        <Typography sx={{ fontSize: '0.8rem', fontWeight: 500, color: T.textMd, fontVariantNumeric: 'tabular-nums' }}>
+                          {item.rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </Typography>
+                      </TableCell>
+
+                      {/* Amount */}
+                      <TableCell align="right">
+                        <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: T.success, fontVariantNumeric: 'tabular-nums' }}>
+                          {(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </Typography>
+                      </TableCell>
+
+                      {/* Actions */}
+                      <TableCell align="center">
+                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                          <Tooltip title="Edit" arrow>
+                            <IconButton
+                              size="small" onClick={() => handleOpen(idx)}
+                              sx={{
+                                width: 28, height: 28, borderRadius: '6px',
+                                color: T.textMuted,
+                                '&:hover': { background: T.brandLight, color: T.brand },
+                              }}
+                            >
+                              <EditOutlinedIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Remove" arrow>
+                            <IconButton
+                              size="small" onClick={() => handleDelete(idx)}
+                              sx={{
+                                width: 28, height: 28, borderRadius: '6px',
+                                color: T.textMuted,
+                                '&:hover': { background: T.errorBg, color: T.error },
+                              }}
+                            >
+                              <DeleteOutlineIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            {/* Subtotal footer */}
+            <Box
+              sx={{
+                display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1.5,
+                px: 2.5, py: 1.5,
+                background: T.bgMuted, borderTop: `0.5px solid ${T.border}`,
+              }}
+            >
+              <Typography sx={{ fontSize: '0.75rem', color: T.textMuted, fontWeight: 500 }}>Subtotal</Typography>
+              <Typography
                 sx={{
-                  p: 3,
-                  background: `linear-gradient(135deg, ${alpha('#f8f9fa', 1)} 0%, ${alpha('#e9ecef', 1)} 100%)`,
-                  display: 'flex',
-                  justifyContent: 'flex-end',
+                  fontSize: '0.95rem', fontWeight: 700, color: T.text,
+                  fontVariantNumeric: 'tabular-nums',
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    Subtotal:
-                  </Typography>
-                  <Chip
-                    label={`₹ ${totalLineItemsAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: '1rem',
-                      height: 36,
-                      px: 2,
-                      backgroundColor: alpha('#22c55e', 0.1),
-                      color: '#22c55e',
-                      borderRadius: 2,
-                    }}
-                  />
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
+                ₹ {total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </Typography>
+            </Box>
+          </Box>
         </Fade>
       ) : (
-        <Fade in timeout={300}>
-          <Card
+        <Fade in timeout={250}>
+          <Box
             sx={{
-              boxShadow: 1,
-              borderRadius: 3,
-              border: `2px dashed ${alpha('#667eea', 0.3)}`,
-              backgroundColor: alpha('#f8f9fa', 0.5),
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', py: 6,
+              background: T.bg, border: `1px dashed ${T.borderMd}`,
+              borderRadius: T.radius, textAlign: 'center',
             }}
           >
-            <CardContent sx={{ py: 8, textAlign: 'center' }}>
-              <Box
-                sx={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: '50%',
-                  backgroundColor: alpha('#667eea', 0.1),
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto',
-                  mb: 3,
-                }}
-              >
-                <ShoppingBasketIcon
-                  sx={{
-                    fontSize: 40,
-                    color: '#667eea',
-                    opacity: 0.6,
-                  }}
-                />
-              </Box>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}>
-                No items added yet
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'text.disabled', mb: 3 }}>
-                Add line items to your purchase order to get started
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => handleOpenDialog()}
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  px: 3,
-                  py: 1.2,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                }}
-              >
-                Add Your First Item
-              </Button>
-            </CardContent>
-          </Card>
+            <Box
+              sx={{
+                width: 52, height: 52, borderRadius: '14px',
+                background: T.bgMuted, display: 'flex',
+                alignItems: 'center', justifyContent: 'center', mb: 1.5,
+                border: `0.5px solid ${T.border}`,
+              }}
+            >
+              <ShoppingBagOutlinedIcon sx={{ fontSize: 22, color: T.textHint }} />
+            </Box>
+            <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: T.textMd, mb: '4px' }}>
+              No items yet
+            </Typography>
+            <Typography sx={{ fontSize: '0.78rem', color: T.textMuted, mb: 2 }}>
+              Add products or services to get started
+            </Typography>
+            <Box
+              onClick={() => handleOpen()}
+              sx={{
+                display: 'inline-flex', alignItems: 'center', gap: 0.75,
+                px: 2, py: 0.875, borderRadius: T.radiusSm, cursor: 'pointer',
+                background: T.brandLight, color: T.brand,
+                border: `0.5px solid ${T.brandBorder}`,
+                fontSize: '0.78rem', fontWeight: 600, transition: 'all 0.15s',
+                '&:hover': { background: '#DBEAFE' },
+              }}
+            >
+              <AddIcon sx={{ fontSize: 14 }} />
+              Add first item
+            </Box>
+          </Box>
         </Fade>
       )}
 
-      {/* Enhanced Line Item Dialog */}
+      {/* ── Dialog ────────────────────────────────────────────────────────── */}
       <Dialog
         open={openDialog}
-        onClose={handleCloseDialog}
+        onClose={handleClose}
         maxWidth="sm"
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: 3,
-            boxShadow: 6,
+            borderRadius: '14px',
+            boxShadow: '0 8px 40px rgba(15,23,42,0.12), 0 2px 8px rgba(15,23,42,0.06)',
+            border: `0.5px solid ${T.border}`,
           },
         }}
       >
-        <DialogTitle
+        {/* Dialog header */}
+        <Box
           sx={{
-            fontWeight: 700,
-            background: `linear-gradient(135deg, ${alpha('#f8f9fa', 1)} 0%, ${alpha('#e9ecef', 1)} 100%)`,
-            borderBottom: `2px solid ${alpha('#667eea', 0.2)}`,
-            pb: 2,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            px: 2.5, py: 2,
+            background: T.bgMuted, borderBottom: `0.5px solid ${T.border}`,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
             <Box
               sx={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
+                width: 30, height: 30, borderRadius: '8px',
+                background: T.brandLight, color: T.brand,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
-              {editingIndex !== null ? <EditIcon fontSize="small" /> : <AddIcon fontSize="small" />}
+              {editingIndex !== null ? <EditOutlinedIcon sx={{ fontSize: 15 }} /> : <AddIcon sx={{ fontSize: 15 }} />}
             </Box>
-            {editingIndex !== null ? 'Edit Line Item' : 'Add New Line Item'}
+            <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: T.text }}>
+              {editingIndex !== null ? 'Edit line item' : 'Add line item'}
+            </Typography>
           </Box>
-        </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 4 }}>
-          {loadingItems ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
-              <CircularProgress size={48} />
+          <IconButton
+            size="small" onClick={handleClose}
+            sx={{ color: T.textMuted, '&:hover': { background: T.bgHover } }}
+          >
+            <CloseIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        </Box>
+
+        {/* Dialog body */}
+        <DialogContent sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {loadingProducts ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={32} sx={{ color: T.brand }} />
             </Box>
           ) : (
             <>
-              <Autocomplete
-                options={items}
-                getOptionLabel={(option) => `${option.name || ''} (${option.id})`}
-                value={selectedItem || null}
-                onChange={async (_, value) => {
-                  setFormData({ ...formData, item_id: value?.id || '' });
-                  if (value?.id) {
-                    try {
-                      const itemDetails = await itemService.getItem(value.id);
-                      setSelectedItemDetails(itemDetails);
+              <Field label="Product" required>
+                <Autocomplete
+                  size="small"
+                  options={products}
+                  getOptionLabel={(o) => `${o.name || ''}`}
+                  value={selectedProductOption || null}
+                  onChange={async (_, val) => {
+                    setFormData({ ...formData, product_id: val?.id || '', product_name: val?.name || '' });
+                    if (val) {
+                      setSelectedProduct(val);
                       setSelectedVariant(null);
-                      // If item has single variant, auto-select it
-                      if (
-                        itemDetails.item_details?.structure === 'variants' &&
-                        itemDetails.item_details?.variants?.length === 1
-                      ) {
-                        const variant = itemDetails.item_details.variants[0];
-                        setSelectedVariant(variant);
-                        const attrStr = Object.entries(variant.attribute_map || {})
-                          .map(([k, v]) => `${k}: ${v}`)
-                          .join(', ');
+                      // Auto-select cost_price from purchase_info if available
+                      if (val.product_details?.variants?.length === 1) {
+                        const v = val.product_details.variants[0];
+                        setSelectedVariant(v);
                         setFormData(prev => ({
                           ...prev,
-                          rate: variant.cost_price || 0,
-                          variant_details: {
-                            sku: variant.sku,
-                            ...variant.attribute_map,
-                          },
+                          rate: v.cost_price || 0,
+                          sku: v.sku,
+                          variant_sku: v.sku,
+                          variant_name: `${val.name} - ${Object.values(v.attribute_map || {}).join(' - ')}`,
+                          variant_details: v.attribute_map || {},
                         }));
-                      } else if (itemDetails.purchase_info?.cost_price) {
-                        setFormData(prev => ({
-                          ...prev,
-                          rate: itemDetails.purchase_info?.cost_price || 0,
-                        }));
+                      } else if (val.purchase_info?.cost_price) {
+                        setFormData(prev => ({ ...prev, rate: val.purchase_info.cost_price }));
                       }
-                    } catch (error) {
-                      console.error('Error fetching item details:', error);
-                    }
-                  } else {
-                    setSelectedItemDetails(null);
-                    setSelectedVariant(null);
-                  }
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Item *"
-                    placeholder="Select an item"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                      },
-                    }}
-                  />
-                )}
-              />
-              {selectedItemDetails?.item_details?.structure === 'variants' && (
-                <Select
-                  fullWidth
-                  value={selectedVariant?.sku || ''}
-                  onChange={(e) => {
-                    const variant = selectedItemDetails.item_details.variants.find(
-                      (v: any) => v.sku === e.target.value
-                    );
-                    if (variant) {
-                      setSelectedVariant(variant);
-                      const attrStr = Object.entries(variant.attribute_map || {})
-                        .map(([k, v]) => `${k}: ${v}`)
-                        .join(', ');
-                      setFormData(prev => ({
-                        ...prev,
-                        rate: variant.cost_price || 0,
-                        variant_details: {
-                          sku: variant.sku,
-                          ...variant.attribute_map,
-                        },
-                      }));
+                    } else {
+                      setSelectedProduct(null);
+                      setSelectedVariant(null);
                     }
                   }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                >
-                  <MenuItem value="">Select Variant *</MenuItem>
-                  {selectedItemDetails.item_details.variants.map((variant: any, idx: number) => {
-                    const attrStr = Object.entries(variant.attribute_map || {})
-                      .map(([k, v]) => `${k}: ${v}`)
-                      .join(', ');
-                    return (
-                      <MenuItem key={idx} value={variant.sku}>
-                        {variant.sku} - {attrStr} (₹{variant.cost_price})
-                      </MenuItem>
-                    );
-                  })}
-                </Select>
-              )}
-              <TextField
-                label="Account *"
-                value={formData.account}
-                onChange={(e) =>
-                  setFormData({ ...formData, account: e.target.value })
-                }
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
-              />
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 6 }} component="div">
-                  <TextField
-                    fullWidth
-                    label="Quantity *"
-                    type="number"
-                    value={formData.quantity}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        quantity: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                      },
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Search products…"
+                      sx={inputSx}
+                    />
+                  )}
+                  noOptionsText="No products found"
+                />
+              </Field>
+
+              {selectedProduct?.product_details?.variants && selectedProduct.product_details.variants.length > 0 && (
+                <Field label={selectedProduct.product_details.variants.length > 1 ? "Variant" : "Product Variant"} required={selectedProduct.product_details.variants.length > 1}>
+                  <Select
+                    size="small" fullWidth
+                    value={(formData as any).variant_sku || (formData as any).sku || ''}
+                    displayEmpty
+                    onChange={(e) => {
+                      const v = selectedProduct.product_details?.variants?.find((x: any) => x.sku === e.target.value);
+                      if (v) {
+                        setSelectedVariant(v);
+                        const attrs = v.attribute_map || {};
+                        const variantName = `${selectedProduct.name} - ${Object.values(attrs).join(' - ')}`;
+                        setFormData(prev => ({
+                          ...prev,
+                          rate: v.cost_price || 0,
+                          sku: v.sku,
+                          variant_sku: v.sku,
+                          variant_name: variantName,
+                          variant_details: attrs,
+                        }));
+                      }
                     }}
-                  />
+                    sx={selectSx}
+                  >
+                    <MenuItem value="" disabled><em style={{ color: T.textHint, fontStyle: 'normal' }}>Select variant…</em></MenuItem>
+                    {selectedProduct.product_details?.variants?.map((v: any, i: number) => {
+                      const attrs = Object.entries(v.attribute_map || {}).map(([k, val]) => `${k}: ${val}`).join(', ');
+                      return (
+                        <MenuItem key={i} value={v.sku} sx={{ fontSize: '0.875rem' }}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography component="span" sx={{ fontWeight: 600 }}>{v.sku}</Typography>
+                              {attrs && <Typography component="span" sx={{ fontSize: '0.8rem', color: T.textMuted }}>— {attrs}</Typography>}
+                            </Box>
+                            <Typography component="span" sx={{ fontSize: '0.75rem', color: T.textMuted }}>
+                              ₹{v.cost_price?.toFixed(2) || '0.00'} (cost)
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                      );
+                    })}
+                  </Select>
+                </Field>
+              )}
+
+              {(formData as any).variant_sku && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  {/* Variant Name */}
+                  {(formData as any).variant_name && (
+                    <Field label="Variant name">
+                      <Box
+                        sx={{
+                          px: 2, py: 1.25,
+                          background: T.bgMuted, borderRadius: T.radiusSm,
+                          border: `0.5px solid ${T.border}`,
+                          display: 'flex', flexDirection: 'column', gap: 0.75,
+                        }}
+                      >
+                        <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: T.text }}>
+                          {(formData as any).variant_name}
+                        </Typography>
+                        {selectedVariant?.attribute_map && Object.keys(selectedVariant.attribute_map).length > 0 && (
+                          <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+                            {Object.entries(selectedVariant.attribute_map).map(([k, v]) => (
+                              <Box
+                                key={k}
+                                sx={{
+                                  px: 1, py: 0.25,
+                                  background: T.brandLight, color: T.brand,
+                                  borderRadius: T.radiusSm, fontSize: '0.7rem', fontWeight: 600,
+                                }}
+                              >
+                                {k}: {v}
+                              </Box>
+                            ))}
+                          </Box>
+                        )}
+                      </Box>
+                    </Field>
+                  )}
+
+                  {/* SKU Display */}
+                  <Field label="SKU">
+                    <Box
+                      sx={{
+                        px: 2, py: 1.25,
+                        background: T.bgMuted, borderRadius: T.radiusSm,
+                        border: `0.5px solid ${T.border}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: T.text, fontFamily: 'monospace' }}>
+                        {(formData as any).variant_sku}
+                      </Typography>
+                    </Box>
+                  </Field>
+                </Box>
+              )}
+
+              <Field label="Account" required>
+                <TextField
+                  fullWidth size="small" value={formData.account}
+                  onChange={(e) => setFormData({ ...formData, account: e.target.value })}
+                  sx={inputSx}
+                  placeholder="e.g., Cost of Goods Sold"
+                />
+              </Field>
+
+              <Grid container spacing={1.5}>
+                <Grid size={{ xs: 6 }} component="div">
+                  <Field label="Quantity" required>
+                    <TextField
+                      fullWidth size="small" type="number"
+                      value={formData.quantity}
+                      onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })}
+                      sx={inputSx}
+                      inputProps={{ step: '0.01', min: '0' }}
+                    />
+                  </Field>
                 </Grid>
                 <Grid size={{ xs: 6 }} component="div">
-                  <TextField
-                    fullWidth
-                    label="Rate *"
-                    type="number"
-                    inputProps={{ step: '0.01' }}
-                    value={formData.rate}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        rate: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                      },
-                    }}
-                  />
+                  <Field label="Rate (₹)" required>
+                    <TextField
+                      fullWidth size="small" type="number"
+                      inputProps={{ step: '0.01', min: '0' }}
+                      value={formData.rate}
+                      onChange={(e) => setFormData({ ...formData, rate: parseFloat(e.target.value) || 0 })}
+                      sx={inputSx}
+                    />
+                  </Field>
                 </Grid>
               </Grid>
-              <TextField
-                label="Amount (Auto-calculated)"
-                fullWidth
-                disabled
-                value={`₹ ${calculateLineItemAmount(formData.quantity, formData.rate).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
+
+              {/* Auto calculated amount */}
+              <Box
                 sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    backgroundColor: alpha('#22c55e', 0.05),
-                    fontWeight: 700,
-                    color: '#22c55e',
-                  },
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  px: 2, py: 1.25,
+                  background: T.successBg, borderRadius: T.radiusSm,
+                  border: `0.5px solid ${T.successBdr}`,
                 }}
-              />
+              >
+                <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: T.success }}>
+                  Calculated amount
+                </Typography>
+                <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: T.success, fontVariantNumeric: 'tabular-nums' }}>
+                  ₹ {calculateLineItemAmount(formData.quantity, formData.rate).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </Typography>
+              </Box>
             </>
           )}
         </DialogContent>
-        <DialogActions
+
+        {/* Dialog footer */}
+        <Box
           sx={{
-            p: 3,
-            background: `linear-gradient(135deg, ${alpha('#f8f9fa', 1)} 0%, ${alpha('#e9ecef', 1)} 100%)`,
-            borderTop: `1px solid ${alpha('#e0e0e0', 1)}`,
+            display: 'flex', justifyContent: 'flex-end', gap: 1,
+            px: 2.5, py: 1.75,
+            background: T.bgMuted, borderTop: `0.5px solid ${T.border}`,
           }}
         >
-          <Button
-            onClick={handleCloseDialog}
+          <Box
+            onClick={handleClose}
             sx={{
-              textTransform: 'none',
-              fontWeight: 600,
-              borderRadius: 2,
-              px: 3,
+              px: 2.25, py: 0.875, borderRadius: T.radiusSm, cursor: 'pointer',
+              fontSize: '0.8rem', fontWeight: 600, color: T.textMuted,
+              border: `0.5px solid ${T.border}`, background: T.bg,
+              transition: 'all 0.15s',
+              '&:hover': { background: T.bgHover, borderColor: T.borderMd },
             }}
           >
             Cancel
-          </Button>
-          <Button
-            onClick={handleSaveLineItem}
-            variant="contained"
+          </Box>
+          <Box
+            onClick={handleSave}
             sx={{
-              textTransform: 'none',
-              fontWeight: 600,
-              borderRadius: 2,
-              px: 3,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              boxShadow: 2,
+              px: 2.5, py: 0.875, borderRadius: T.radiusSm, cursor: 'pointer',
+              fontSize: '0.8rem', fontWeight: 600, color: '#FFF',
+              background: T.brand,
+              boxShadow: '0 1px 3px rgba(37,99,235,0.25)',
+              transition: 'all 0.15s',
+              '&:hover': { background: '#1D4ED8', transform: 'translateY(-1px)', boxShadow: '0 4px 12px rgba(37,99,235,0.3)' },
+              '&:active': { transform: 'none' },
             }}
           >
-            {editingIndex !== null ? 'Update Item' : 'Add Item'}
-          </Button>
-        </DialogActions>
+            {editingIndex !== null ? 'Update item' : 'Add item'}
+          </Box>
+        </Box>
       </Dialog>
     </Box>
   );

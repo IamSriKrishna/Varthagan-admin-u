@@ -22,6 +22,7 @@ import {
   Chip,
   Divider,
   Tooltip,
+  Alert,
 } from "@mui/material";
 import { PieChart, SparkLineChart } from "@mui/x-charts";
 import {
@@ -88,6 +89,7 @@ const Dashboard = () => {
     loadingMetrics,
     activitySummary,
     stockInfo,
+    errorStock,
     fetchDashboardMetrics,
     fetchActivitySummary,
     fetchStockInfo,
@@ -144,6 +146,18 @@ const Dashboard = () => {
     fetchActivitySummary();
     fetchStockInfo();
   }, [fetchDashboardMetrics, fetchActivitySummary, fetchStockInfo]);
+
+  // Log when stockInfo changes
+  useEffect(() => {
+    console.log('StockInfo updated:', stockInfo);
+    if (stockInfo?.data) {
+      console.log('Stock items count:', stockInfo.data.length);
+      console.log('Items with availability:', stockInfo.data.map(item => ({
+        product: item.product_name,
+        availability: ((item.available_stock / item.current_stock) * 100).toFixed(2) + '%'
+      })));
+    }
+  }, [stockInfo]);
 
   useOrderPolling({ refetch, selectedVendorId: selectedVendorId ?? undefined, isEnabled: results?.success });
 
@@ -235,6 +249,38 @@ const Dashboard = () => {
   // Low stock alert
   const lowStockCount = stockInfo?.low_stock_count ?? 0;
   const outOfStockCount = stockInfo?.out_of_stock_count ?? 0;
+  
+  // Calculate items with less than 3% availability
+  const criticalAvailabilityItems = useMemo(() => {
+    if (!stockInfo?.data || !Array.isArray(stockInfo.data)) {
+      console.log('StockInfo.data is invalid:', stockInfo?.data);
+      return [];
+    }
+
+    return stockInfo.data.filter(item => {
+      try {
+        if (!item || item.current_stock === 0) return false; // Skip out of stock
+        
+        // Handle case where available_stock might be 0
+        if (item.available_stock === 0 && item.current_stock > 0) {
+          return false; // No available stock
+        }
+        
+        const availabilityPercentage = (item.available_stock / item.current_stock) * 100;
+        const isCritical = availabilityPercentage < 3 && item.available_stock > 0;
+        
+        // Debug log for critical items
+        if (isCritical) {
+          console.log(`✓ Critical availability detected: ${item.product_name} - ${availabilityPercentage.toFixed(2)}% (${item.available_stock}/${item.current_stock})`);
+        }
+        
+        return isCritical;
+      } catch (err) {
+        console.error(`Error processing item:`, item, err);
+        return false;
+      }
+    });
+  }, [stockInfo]);
 
   return (
     <Box>
@@ -287,20 +333,70 @@ const Dashboard = () => {
       </Box>
 
       {/* Stock Alerts */}
-      {(lowStockCount > 0 || outOfStockCount > 0) && (
-        <Card elevation={0} sx={{ mb: 3, bgcolor: "#FFF3E0", border: "1px solid #FFB74D" }}>
-          <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <AlertCircle size={24} color="#FF9800" />
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                Inventory Alert
+      <Box sx={{ 
+        p: 2, 
+        mb: 3, 
+        bgcolor: '#f5f5f5', 
+        borderRadius: 1,
+        border: '1px dashed #ccc'
+      }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+          🔍 Debug Info:
+        </Typography>
+        <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+          StockInfo loaded: {stockInfo ? 'Yes' : 'No'} | Items: {stockInfo?.data?.length ?? 0} | Critical: {criticalAvailabilityItems.length}
+        </Typography>
+        <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+          Low Stock: {lowStockCount} | Out of Stock: {outOfStockCount}
+        </Typography>
+        {errorStock && (
+          <Typography variant="caption" sx={{ display: 'block', color: 'error.main' }}>
+            ⚠️ Stock Error: {errorStock}
+          </Typography>
+        )}
+      </Box>
+
+      {(lowStockCount > 0 || outOfStockCount > 0 || criticalAvailabilityItems.length > 0) && (
+        <Stack spacing={2} sx={{ mb: 3 }}>
+          {/* Critical Availability Alert */}
+          {criticalAvailabilityItems.length > 0 && (
+            <Alert severity="warning" sx={{ borderRadius: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                ⚠️ Critical Stock Availability
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {lowStockCount} items low on stock, {outOfStockCount} out of stock
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                {criticalAvailabilityItems.length} product(s) with less than 3% availability:
               </Typography>
-            </Box>
-          </CardContent>
-        </Card>
+              <Stack spacing={0.5}>
+                {criticalAvailabilityItems.map((item) => {
+                  const availabilityPercentage = (item.available_stock / item.current_stock) * 100;
+                  return (
+                    <Typography key={item.product_id} variant="body2" sx={{ ml: 2, fontFamily: 'monospace' }}>
+                      • <strong>{item.product_name}</strong>: {availabilityPercentage.toFixed(1)}% available ({item.available_stock} of {item.current_stock} units)
+                    </Typography>
+                  );
+                })}
+              </Stack>
+            </Alert>
+          )}
+
+          {/* Low Stock & Out of Stock Alert */}
+          {(lowStockCount > 0 || outOfStockCount > 0) && (
+            <Card elevation={0} sx={{ bgcolor: "#FFF3E0", border: "1px solid #FFB74D" }}>
+              <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <AlertCircle size={24} color="#FF9800" />
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Inventory Status
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {lowStockCount} items low on stock, {outOfStockCount} out of stock
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          )}
+        </Stack>
       )}
 
       {/* Business Metrics Section */}

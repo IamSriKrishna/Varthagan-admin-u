@@ -12,7 +12,7 @@ import {
   Typography,
   CircularProgress,
 } from "@mui/material";
-import { Plus as PlusIcon, X as CloseIcon } from "lucide-react";
+import { Plus as PlusIcon, X as CloseIcon, Building2 } from "lucide-react";
 import CompaniesTable from "./CompaniesTable";
 import CompanySetupWizard from "./CompanySetupWizard";
 import { CompanyData, companyApi } from "@/lib/api/companyApi";
@@ -25,7 +25,6 @@ export default function CompanySettingsContainer() {
   const [isEditing, setIsEditing] = useState(false);
   const [loadingCompany, setLoadingCompany] = useState(false);
 
-  // Fetch fresh company data when in edit mode
   useEffect(() => {
     if (isEditing && selectedCompanyId && !selectedCompany) {
       fetchCompanyData();
@@ -57,117 +56,246 @@ export default function CompanySettingsContainer() {
     setSelectedCompany(null);
     setSelectedCompanyId(null);
     setIsEditing(false);
-    // Trigger refresh of the table
     setRefreshTrigger((prev) => prev + 1);
   };
 
   const handleEditClick = (company: CompanyData) => {
     setSelectedCompanyId(company.company.id);
-    setSelectedCompany(null); // Will be fetched via API
+    setSelectedCompany(null);
     setIsEditing(true);
     setView("form");
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {view === "list" ? (
-        <Box>
-          {/* Header with Title and Create Button */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mb: 4,
-              flexWrap: "wrap",
-              gap: 2,
-            }}
-          >
-            <Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  mb: 0.5,
-                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  backgroundClip: "text",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                Company Settings
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Manage and organize all your company information and settings
-              </Typography>
-            </Box>
-            <Button
-              variant="contained"
-              startIcon={<PlusIcon size={20} />}
-              onClick={handleCreateClick}
+    <Box
+      sx={{
+        minHeight: "100vh",
+        fontFamily: "'DM Sans', sans-serif",
+      }}
+    >
+      <Container maxWidth="lg" sx={{ py: 5 }}>
+        {view === "list" ? (
+          <Box>
+            {/* Page Header */}
+            <Box
               sx={{
-                px: 3,
-                py: 1.5,
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
-                "&:hover": {
-                  boxShadow: "0 6px 20px rgba(102, 126, 234, 0.6)",
-                  transform: "translateY(-2px)",
-                },
-                transition: "all 0.3s ease-in-out",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+                mb: 5,
+                flexWrap: "wrap",
+                gap: 3,
               }}
             >
-              Create Company
-            </Button>
-          </Box>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2.5 }}>
+                {/* Icon Badge */}
+                <Box
+                  sx={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: "14px",
+                    background: "linear-gradient(135deg, #4f63d2 0%, #7c3aed 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 8px 24px rgba(79, 99, 210, 0.28)",
+                    flexShrink: 0,
+                    mt: 0.5,
+                  }}
+                >
+                  <Building2 size={24} color="white" />
+                </Box>
 
-          {/* Companies Table */}
-          <CompaniesTable
-            onEdit={handleEditClick}
-            onRefresh={() => setRefreshTrigger((prev) => prev + 1)}
-            refreshTrigger={refreshTrigger}
-          />
-        </Box>
-      ) : (
-        <Dialog
-          open={view === "form"}
-          onClose={handleFormClose}
-          maxWidth="md"
-          fullWidth
-          PaperProps={{
-            sx: {
-              borderRadius: 2,
-              backgroundImage: "none",
-            },
-          }}
-        >
-          <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Typography variant="h6">
-              {isEditing ? "Edit Company" : "Create New Company"}
-            </Typography>
-            <IconButton
-              onClick={handleFormClose}
-              sx={{ color: "text.secondary" }}
-              size="small"
-            >
-              <CloseIcon size={20} />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent sx={{ pt: 2 }}>
-            {isEditing && loadingCompany ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                <CircularProgress />
+                <Box>
+                  <Typography
+                    sx={{
+                      fontSize: "1.75rem",
+                      fontWeight: 800,
+                      letterSpacing: "-0.5px",
+                      lineHeight: 1.2,
+                      color: "#1a1d2e",
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}
+                  >
+                    Company Settings
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "0.875rem",
+                      color: "#6b7280",
+                      mt: 0.5,
+                      fontFamily: "'DM Sans', sans-serif",
+                      fontWeight: 400,
+                    }}
+                  >
+                    Manage your company profiles, tax details, and configurations
+                  </Typography>
+                </Box>
               </Box>
-            ) : (
-              <CompanySetupWizard
-                company={selectedCompany}
-                onClose={handleFormClose}
-                onSuccess={handleFormClose}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
-      )}
-    </Container>
+
+              {/* Create Button */}
+              <Button
+                variant="contained"
+                startIcon={<PlusIcon size={18} />}
+                onClick={handleCreateClick}
+                sx={{
+                  px: 3,
+                  py: 1.25,
+                  borderRadius: "12px",
+                  background: "linear-gradient(135deg, #4f63d2 0%, #7c3aed 100%)",
+                  boxShadow: "0 4px 16px rgba(79, 99, 210, 0.35)",
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontWeight: 600,
+                  fontSize: "0.875rem",
+                  textTransform: "none",
+                  letterSpacing: "0",
+                  "&:hover": {
+                    background: "linear-gradient(135deg, #3d52c7 0%, #6d28d9 100%)",
+                    boxShadow: "0 6px 22px rgba(79, 99, 210, 0.45)",
+                    transform: "translateY(-1px)",
+                  },
+                  transition: "all 0.2s ease",
+                }}
+              >
+                New Company
+              </Button>
+            </Box>
+
+            {/* Thin accent rule below header */}
+            <Box
+              sx={{
+                height: "1px",
+                background: "linear-gradient(90deg, rgba(79,99,210,0.3) 0%, transparent 80%)",
+                mb: 4,
+              }}
+            />
+
+            <CompaniesTable
+              onEdit={handleEditClick}
+              onRefresh={() => setRefreshTrigger((prev) => prev + 1)}
+              refreshTrigger={refreshTrigger}
+            />
+          </Box>
+        ) : (
+          <Dialog
+            open={view === "form"}
+            onClose={handleFormClose}
+            maxWidth="md"
+            fullWidth
+            PaperProps={{
+              sx: {
+                borderRadius: "20px",
+                backgroundImage: "none",
+                backgroundColor: "#ffffff",
+                boxShadow: "0 24px 80px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04)",
+                overflow: "hidden",
+              },
+            }}
+          >
+            {/* Dialog Header with gradient strip */}
+            <Box
+              sx={{
+                height: "4px",
+                background: "linear-gradient(90deg, #4f63d2 0%, #7c3aed 100%)",
+              }}
+            />
+            <DialogTitle
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                px: 3,
+                pt: 2.5,
+                pb: 1.5,
+                borderBottom: "1px solid #f0f0f5",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <Box
+                  sx={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: "10px",
+                    background: "linear-gradient(135deg, #4f63d2 0%, #7c3aed 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Building2 size={17} color="white" />
+                </Box>
+                <Typography
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: "1rem",
+                    color: "#1a1d2e",
+                    fontFamily: "'DM Sans', sans-serif",
+                    letterSpacing: "-0.2px",
+                  }}
+                >
+                  {isEditing ? "Edit Company" : "Create New Company"}
+                </Typography>
+              </Box>
+
+              <IconButton
+                onClick={handleFormClose}
+                size="small"
+                sx={{
+                  color: "#9ca3af",
+                  backgroundColor: "#f3f4f6",
+                  borderRadius: "8px",
+                  width: 30,
+                  height: 30,
+                  "&:hover": {
+                    backgroundColor: "#fee2e2",
+                    color: "#ef4444",
+                  },
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <CloseIcon size={16} />
+              </IconButton>
+            </DialogTitle>
+
+            <DialogContent sx={{ px: 3, py: 2.5 }}>
+              {isEditing && loadingCompany ? (
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    py: 8,
+                    gap: 2,
+                  }}
+                >
+                  <CircularProgress
+                    size={36}
+                    sx={{
+                      color: "#4f63d2",
+                    }}
+                  />
+                  <Typography
+                    sx={{
+                      fontSize: "0.875rem",
+                      color: "#9ca3af",
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}
+                  >
+                    Loading company details…
+                  </Typography>
+                </Box>
+              ) : (
+                <CompanySetupWizard
+                  company={selectedCompany}
+                  onClose={handleFormClose}
+                  onSuccess={handleFormClose}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
+        )}
+      </Container>
+    </Box>
   );
 }

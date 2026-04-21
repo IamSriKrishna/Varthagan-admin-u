@@ -24,9 +24,7 @@ export const purchaseOrderValidationSchema = Yup.object({
       schema.typeError('Customer is required').required('Customer is required').min(1, 'Please select a valid customer'),
     otherwise: (schema) => schema.optional(),
   }),
-  reference_no: Yup.string()
-    .required('Reference number is required')
-    .min(3, 'Reference number must be at least 3 characters'),
+  reference_no: Yup.string().optional(),
   date: Yup.string().required('Date is required'),
   delivery_date: Yup.string()
     .required('Delivery date is required')
@@ -40,11 +38,13 @@ export const purchaseOrderValidationSchema = Yup.object({
       }
     ),
   payment_terms: Yup.string().required('Payment terms is required'),
-  shipment_preference: Yup.string().required('Shipment preference is required'),
+  shipment_preference: Yup.string().optional(),
   line_items: Yup.array()
     .of(
       Yup.object({
-        item_id: Yup.string().required('Item is required'),
+        product_id: Yup.string().optional(),
+        product_name: Yup.string().optional(),
+        sku: Yup.string().optional(),
         account: Yup.string().required('Account is required'),
         quantity: Yup.number()
           .required('Quantity is required')
@@ -52,27 +52,15 @@ export const purchaseOrderValidationSchema = Yup.object({
         rate: Yup.number()
           .required('Rate is required')
           .min(0, 'Rate must be non-negative'),
-        variant_id: Yup.number().optional(),
-        variant_details: Yup.object().optional(),
       })
     )
     .min(1, 'At least one line item is required'),
-  discount: Yup.number()
-    .required('Discount is required')
-    .min(0, 'Discount cannot be negative'),
-  discount_type: Yup.string()
-    .required('Discount type is required')
-    .oneOf(['percentage', 'amount']),
-  tax_type: Yup.string()
-    .required('Tax type is required')
-    .oneOf(['tds', 'tcs']),
-  tax_id: Yup.number()
-    .typeError('Tax is required')
-    .required('Tax is required')
-    .min(1, 'Please select a valid tax'),
-  adjustment: Yup.number()
-    .required('Adjustment is required')
-    .min(0, 'Adjustment cannot be negative'),
+  discount: Yup.number().optional().min(0, 'Discount cannot be negative'),
+  discount_type: Yup.string().optional().oneOf(['percentage', 'amount']),
+  tax_type: Yup.string().optional(),
+  tax_id: Yup.number().optional(),
+  adjustment: Yup.number().optional().min(0, 'Adjustment cannot be negative'),
   notes: Yup.string().optional(),
   terms_and_conditions: Yup.string().optional(),
+  attachments: Yup.array().of(Yup.string()).optional(),
 });

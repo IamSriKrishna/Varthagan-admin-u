@@ -12,7 +12,7 @@ import { BBButton, BBDropdown, BBInput, BBLoader, BBRichTextEditor, BBTitle } fr
 import BBMultiSelect from "@/lib/BBMultiSelect/BBMultiSelect";
 import BBSwitch from "@/lib/BBSwitch/BBSwitch";
 import { ICategories } from "@/models/ICategory";
-import { IProduct, IProductImage } from "@/models/IProduct";
+import { IProducts } from "@/models/IProduct";
 import { IProductForm } from "@/models/IProductForm";
 import { ITag, ITags } from "@/models/ITags";
 import { RootState } from "@/store";
@@ -28,21 +28,33 @@ import * as Yup from "yup";
 import { headerBox } from "./AddProductForm.styles";
 
 const validationSchema = Yup.object().shape({
-  productName: Yup.string().required("Product Name is required"),
-  description: Yup.string().required("Description is required"),
-  subtitle: Yup.string(),
-  deal_amount: Yup.number()
-    .typeError("Amount must be a number")
-    .required("Amount is required")
-    .min(0, "Amount must be at least 0"),
-  product_discount: Yup.number().typeError("Discount must be a number").min(0, "Discount must be at least 0"),
-  gst_percentage: Yup.number()
-    .typeError("Gst must be a number")
-    .min(0, "Gst must be at least 0")
-    .max(99, "Gst cannot be more than 99"),
-  type: Yup.string().oneOf(["service", "product"]).required("Type is required"),
-  discount_type: Yup.string().oneOf(["percentage", "fixed"]).required("Dscount Type is required"),
-  categoryId: Yup.string().required("Category is required"),
+  name: Yup.string().required("Product Name is required"),
+  product_details: Yup.object().shape({
+    description: Yup.string().required("Description is required"),
+    unit: Yup.string().required("Unit is required"),
+    base_sku: Yup.string(),
+    upc: Yup.string(),
+    ean: Yup.string(),
+    mpn: Yup.string(),
+    isbn: Yup.string(),
+  }),
+  sales_info: Yup.object().shape({
+    selling_price: Yup.number()
+      .typeError("Selling Price must be a number")
+      .required("Selling Price is required")
+      .min(0, "Price must be at least 0"),
+    currency: Yup.string(),
+    account: Yup.string(),
+  }),
+  purchase_info: Yup.object().shape({
+    cost_price: Yup.number()
+      .typeError("Cost Price must be a number")
+      .min(0, "Cost Price must be at least 0"),
+  }),
+  inventory: Yup.object().shape({
+    track_inventory: Yup.boolean(),
+    reorder_point: Yup.number().min(0),
+  }),
 });
 interface IVariant {
   sku: string;
@@ -51,24 +63,59 @@ interface IVariant {
   attributes: Record<string, string>;
 }
 
+// Helper function to convert IProductVariant to IVariant for the UI
+const convertProductVariantToUIVariant = (pv: any): IVariant => ({
+  sku: pv.sku || "",
+  price: pv.selling_price || 0,
+  default: false,
+  attributes: pv.attribute_map || {},
+});
+
+// Helper function to convert IVariant from UI to IProductVariant for API
+const convertUIVariantToProductVariant = (v: IVariant): any => ({
+  sku: v.sku,
+  variant_name: v.sku,
+  selling_price: v.price,
+  cost_price: v.price * 0.5, // Default cost at 50% of selling price
+  stock_quantity: 0,
+  attribute_map: v.attributes,
+  is_active: true,
+});
+
 const initialValues: IProductForm = {
-  productName: "",
-  description: "",
-  deal_amount: "",
-  gst_percentage: "",
-  product_discount: "",
-  discount_type: "",
-  max_bb_coins: "",
-  type: "",
-  categoryId: "",
-  tagIds: [],
-  images: [],
-  is_combo: false,
-  is_popular: false,
-  list_price: "",
+  name: "",
+  product_details: {
+    unit: "",
+    description: "",
+    base_sku: "",
+    upc: "",
+    ean: "",
+    mpn: "",
+    isbn: "",
+    variants: [],
+    attribute_definitions: [],
+  },
+  sales_info: {
+    selling_price: 0,
+    currency: "INR",
+    account: "",
+    description: "",
+  },
+  purchase_info: {
+    cost_price: 0,
+    currency: "INR",
+    account: "",
+    description: "",
+  },
+  inventory: {
+    track_inventory: false,
+    inventory_account: "",
+    reorder_point: 0,
+  },
+  return_policy: {
+    returnable: false,
+  },
   has_style: false,
-  is_deliverable: false,
-  style_data: "",
 };
 type ApiResponse<T> = {
   success: boolean;
@@ -101,11 +148,18 @@ const AddProduct = () => {
     { label: string; value: string }[]
   >({
     url: category.getCategory,
-    formatter: (res) =>
-      res.data.categories.map((cat) => ({
+    formatter: (res) => {
+      // Handle both response structures
+      const data = res?.data || (res as any);
+      
+      if (!data || !Array.isArray(data.categories)) {
+        return [];
+      }
+      return data.categories.map((cat) => ({
         label: cat.category_name,
         value: cat.id,
-      })),
+      }));
+    },
   });
 
   const {
@@ -113,107 +167,94 @@ const AddProduct = () => {
     loading: productLoading,
     error: productError,
     refetch,
-  } = useFetch<{ data: IProduct }, IProductForm>({
+  } = useFetch<{ data: any }, IProductForm>({
     url: isEdit ? `${products.getProducts}/${productId}` : "",
     formatter: (res) => {
-      let meta = { is_combo: false, is_popular: false };
+      // Handle both response structures: { data: IProduct } or IProduct directly
+      const product = res?.data || (res as any);
 
-      if (res.data.metadata) {
-        try {
-          meta = JSON.parse(res.data.metadata);
-        } catch (err) {
-          console.warn("Invalid metadata JSON:", res.data.metadata, err);
-        }
+      if (!product) {
+        return initialValues;
       }
 
+      // Map old API structure to new form structure
       return {
-        productName: res.data.product_name ?? "",
-        description: res.data.description ?? "",
-        discount_type: res.data.discount_type ?? "",
-        product_discount: res.data.product_discount ?? "",
-        max_bb_coins: res.data.max_bb_coins ?? "",
-        list_price: res.data.list_price ?? "",
-        deal_amount: res.data.deal_amount ?? "",
-        gst_percentage: res.data.gst_percentage ?? "",
-        has_style: res.data.has_style ?? false,
-        style_data: res.data.style_data ?? "",
-        type: res.data.type ?? "",
-        categoryId: res.data.category_id ?? "",
-        tagIds: Array.isArray(res.data.tag_ids)
-          ? res.data.tag_ids
-          : typeof res.data.tag_ids === "string" && res.data.tag_ids.length > 0
-            ? JSON.parse(res.data.tag_ids as string)
-            : [],
-        images: res.data.images ?? [],
-        is_combo: meta.is_combo ?? false,
-        is_popular: meta.is_popular ?? false,
-        is_active: res.data.is_active ?? false,
-        is_dynamic: res.data.is_dynamic ?? false,
-        is_deliverable: res.data.is_deliverable ?? false,
-      };
+        name: product.product_name ?? product.name ?? "",
+        product_details: {
+          unit: product.unit ?? product.type ?? "piece",
+          description: product.description ?? "",
+          base_sku: product.base_sku ?? product.sku ?? product.id ?? "",
+          upc: product.upc ?? "",
+          ean: product.ean ?? "",
+          mpn: product.mpn ?? "",
+          isbn: product.isbn ?? "",
+          manufacturer_id: product.manufacturer_id,
+          variants: product.variants ?? product.product_details?.variants ?? [],
+          attribute_definitions: product.attribute_definitions ?? product.product_details?.attribute_definitions ?? [],
+        },
+        sales_info: {
+          account: product.sales_info?.account ?? product.account ?? "",
+          // Use the new structure first, fall back to old fields
+          selling_price: product.sales_info?.selling_price ?? product.list_price ?? product.deal_amount ?? 0,
+          currency: product.sales_info?.currency ?? product.currency ?? "INR",
+          description: product.sales_info?.description ?? product.description ?? "",
+        },
+        purchase_info: {
+          account: product.purchase_info?.account ?? "",
+          // Try new structure first, then old fields
+          cost_price: product.purchase_info?.cost_price ?? product.cost_price ?? 0,
+          currency: product.purchase_info?.currency ?? product.currency ?? "INR",
+          preferred_vendor_id: product.purchase_info?.preferred_vendor_id ?? product.preferred_vendor_id,
+          description: product.purchase_info?.description ?? "",
+        },
+        inventory: {
+          track_inventory: product.inventory?.track_inventory ?? product.track_inventory ?? false,
+          inventory_account: product.inventory?.inventory_account ?? product.inventory_account ?? "",
+          inventory_valuation_method: product.inventory?.inventory_valuation_method ?? product.inventory_valuation_method ?? "",
+          reorder_point: product.inventory?.reorder_point ?? product.reorder_point ?? 0,
+        },
+        return_policy: {
+          returnable: product.return_policy?.returnable ?? product.returnable ?? false,
+        },
+        has_style: (product.has_style ?? false) || (Array.isArray(product.product_details?.variants) && product.product_details.variants.length > 0) || (Array.isArray(product.variants) && product.variants.length > 0),
+      } as IProductForm;
     },
     options: {
       skip: !isEdit,
     },
   });
   useEffect(() => {
-    if (productData) {
-      try {
-        let parsedStyleData = null;
-        if (typeof productData.style_data == "string" && productData.style_data.trim()) {
-          parsedStyleData = JSON.parse(productData.style_data);
-        } else if (typeof productData.style_data == "object" && productData.style_data !== null) {
-          parsedStyleData = productData.style_data;
-        }
-
-        if (parsedStyleData && parsedStyleData.variants && Array.isArray(parsedStyleData.variants)) {
-          setInitialVariantData(parsedStyleData);
-        }
-      } catch (err) {
-        console.error("❌ Error parsing style_data:", err);
-      }
+    if (productData?.product_details?.variants && Array.isArray(productData.product_details.variants)) {
+      const convertedVariants = productData.product_details.variants.map(convertProductVariantToUIVariant);
+      setInitialVariantData({
+        variants: convertedVariants,
+      });
     }
   }, [productData]);
 
   const { mutateApi: createTagApi } = useApi<ApiResponse<ITags>>(tags.postTags, "POST", undefined);
 
   const handleCreateTag = async (label: string, formValues?: IProductForm) => {
-    const categoryId = formValues?.categoryId;
-
-    if (!categoryId) {
-      showToastMessage("Please fill the category before creating a tag.", "error");
-      return Promise.reject();
-    }
-    try {
-      const response = await createTagApi({
-        tag_name: label,
-        category_id: categoryId,
-        description: label,
-        is_active: true,
-      });
-
-      const data = response?.data;
-      const newTag = {
-        label: data?.tag_name ?? label,
-        value: data?.id ?? `temp-${label}`,
-      };
-
-      setLocalTags((prev) => [...prev, newTag]);
-      showToastMessage(response?.message || "Tag Created", "success");
-
-      return newTag;
-    } catch {
-      showToastMessage("Failed to create tag", "error");
-      return Promise.reject();
-    }
+    // CategoryId is no longer in the new structure
+    // For now, skip tag creation or implement category-less tag creation
+    showToastMessage("Tag creation workflow needs to be updated for new structure", "info");
+    return Promise.reject();
   };
 
   const handleProductSubmit = async (values: IProductForm) => {
-    const submitValues = {
-      ...values,
-      style_data: initialVariantData ? JSON.stringify(initialVariantData) : "",
-    };
     try {
+      // If we have variant data from the VariantBuilder, convert and include it
+      let submitValues = values;
+      if (initialVariantData?.variants && initialVariantData.variants.length > 0) {
+        submitValues = {
+          ...values,
+          product_details: {
+            ...values.product_details,
+            variants: initialVariantData.variants.map(convertUIVariantToProductVariant),
+          },
+        };
+      }
+
       const response = await addOrUpdateProduct(submitValues, isEdit ? productId : undefined);
       if (response.success) {
         showToastMessage(response.message || (isEdit ? "Product updated!" : "Product added!"), "success");
@@ -235,7 +276,7 @@ const AddProduct = () => {
 
   return (
     <Box>
-      <BBLoader enabled={authLoading || categoriesLoading || productLoading} />
+      <BBLoader enabled={authLoading || categoriesLoading || (isEdit && productLoading)} />
       {productError && <Alert severity="error">Failed to load product details.</Alert>}
       <Formik
         initialValues={isEdit && productData ? productData : initialValues}
@@ -250,7 +291,7 @@ const AddProduct = () => {
                 title={
                   tab == 0 ? (isEdit ? "Edit Product" : "Add a New Product") : tab == 1 ? "Product Media" : "Style Data"
                 }
-                subtitle="Orders placed across your store"
+                subtitle={isEdit ? `Editing product ${productId}` : "Create a new product"}
                 rightContent={
                   <Box sx={{ display: "flex", gap: 1 }}>
                     <BBButton variant="outlined" onClick={handleBack} startIcon={<ArrowLeft size={20} />}>
@@ -299,69 +340,95 @@ const AddProduct = () => {
                   </Alert>
                   <Grid container spacing={3} component="div">
                     <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="productName" label="Product Name" disabled={authLoading} />
+                      <BBInput name="name" label="Product Name" disabled={authLoading} />
                     </Grid>
 
                     <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBDropdown name="categoryId" label="Category" options={categoriesData || []} />
+                      <BBInput name="product_details.unit" label="Unit" placeholder="e.g., piece, kg, liter" />
                     </Grid>
                     <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="list_price" label="List Amount" />
+                      <BBInput name="product_details.base_sku" label="Base SKU" />
                     </Grid>
 
                     <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="deal_amount" label="Deal Amount" />
+                      <BBInput name="sales_info.selling_price" label="Selling Price" type="number" />
                     </Grid>
                     <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="gst_percentage" label="GST" />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="product_discount" label="Discount" />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBDropdown name="discount_type" label="Discount Type" options={discountTypeOptions || []} />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBMultiSelect
-                        name="tagIds"
-                        label="Tags"
-                        options={[...(tagsData || []), ...localTags]}
-                        loading={tagLoading}
-                        onCreate={(label) => handleCreateTag(label, values)}
-                      />
+                      <BBInput name="purchase_info.cost_price" label="Cost Price" type="number" />
                     </Grid>
 
                     <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBDropdown name="type" label="Type" options={productTypes} />
+                      <BBInput name="product_details.upc" label="UPC" />
                     </Grid>
 
                     <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="max_bb_coins" label="BB Coins" />
+                      <BBInput name="product_details.ean" label="EAN" />
                     </Grid>
 
-                    <Grid size={{ xs: 12, md: 3 }} component="div" display="flex" alignItems="center">
-                      <BBSwitch name="is_combo" label="Combo" />
+                    <Grid size={{ xs: 12, md: 6 }} component="div">
+                      <BBInput name="product_details.mpn" label="MPN" />
                     </Grid>
-                    <Grid size={{ xs: 12, md: 3 }} component="div" display="flex" alignItems="center">
-                      <BBSwitch name="is_popular" label="Popular" />
+
+                    <Grid size={{ xs: 12, md: 6 }} component="div">
+                      <BBInput name="product_details.isbn" label="ISBN" />
                     </Grid>
-                    <Grid size={{ xs: 12, md: 3 }} component="div" display="flex" alignItems="center">
-                      <BBSwitch name="is_active" label="Status" />
+
+                    <Grid size={{ xs: 12, md: 6 }} component="div">
+                      <BBInput name="sales_info.currency" label="Currency" placeholder="INR" />
                     </Grid>
-                    <Grid size={{ xs: 12, md: 3 }} component="div" display="flex" alignItems="center">
-                      <BBSwitch name="has_style" label="Has Style" />
+
+                    <Grid size={{ xs: 12, md: 6 }} component="div">
+                      <BBInput name="sales_info.account" label="Sales Account" />
                     </Grid>
-                    <Grid size={{ xs: 12, md: 3 }} component="div" display="flex" alignItems="center">
-                      <BBSwitch name="is_dynamic" label="Is Dynamic" />
+
+                    <Grid size={{ xs: 12, md: 6 }} component="div">
+                      <BBInput name="purchase_info.currency" label="Purchase Currency" placeholder="INR" />
                     </Grid>
-                    <Grid size={{ xs: 12, md: 3 }} component="div" display="flex" alignItems="center">
-                      <BBSwitch name="is_deliverable" label="Is Deliverable" />
+
+                    <Grid size={{ xs: 12, md: 6 }} component="div">
+                      <BBInput name="purchase_info.account" label="Purchase Account" />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6 }} component="div">
+                      <BBInput name="inventory.inventory_account" label="Inventory Account" />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6 }} component="div">
+                      <BBInput name="inventory.inventory_valuation_method" label="Valuation Method" placeholder="e.g., FIFO, LIFO, Weighted Average" />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6 }} component="div">
+                      <BBInput name="inventory.reorder_point" label="Reorder Point" type="number" />
                     </Grid>
 
                     <Grid size={{ xs: 12 }} component="div">
                       <BBRichTextEditor
-                        name="description"
-                        label="Description"
+                        name="sales_info.description"
+                        label="Sales Description"
+                        placeholder="Enter sales related description..."
+                      />
+                    </Grid>
+
+                    <Grid size={{ xs: 12 }} component="div">
+                      <BBRichTextEditor
+                        name="purchase_info.description"
+                        label="Purchase Description"
+                        placeholder="Enter purchase related description..."
+                      />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 3 }} component="div" display="flex" alignItems="center">
+                      <BBSwitch name="inventory.track_inventory" label="Track Inventory" />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 3 }} component="div" display="flex" alignItems="center">
+                      <BBSwitch name="return_policy.returnable" label="Returnable" />
+                    </Grid>
+
+                    <Grid size={{ xs: 12 }} component="div">
+                      <BBRichTextEditor
+                        name="product_details.description"
+                        label="Product Description"
                         placeholder="Enter detailed description..."
                       />
                     </Grid>
@@ -372,12 +439,12 @@ const AddProduct = () => {
             {tab == 1 && isEdit && (
               <ViewProductImagesPage
                 productId={productId}
-                productImages={(productData?.images as IProductImage[]) ?? []}
+                productImages={[]}
                 refetch={refetch}
               />
             )}
 
-            {tab === (isEdit ? 2 : 1) && values.has_style && (
+            {tab === (isEdit ? 2 : 1) && (
               <VariantBuilder initialData={initialVariantData || undefined} onSave={handleVariantSave} />
             )}
           </Form>

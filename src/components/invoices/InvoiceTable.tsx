@@ -2,9 +2,9 @@
 
 import BBTable, { ITableColumn } from "@/lib/BBTable/BBTable";
 import { IInvoice } from "@/models/IInvoice";
-import { Box, Chip, Typography, IconButton } from "@mui/material";
+import { Box, Chip, Typography, IconButton, Tooltip } from "@mui/material";
 import dayjs from "dayjs";
-import { Edit2, Eye, Trash2 } from "lucide-react";
+import { Edit2, Eye, Trash2, MoreVertical } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
 
@@ -17,6 +17,7 @@ interface InvoiceTableProps {
   onRowsPerPageChange: (rows: number) => void;
   onEdit?: (invoice: IInvoice) => void;
   onDelete?: (invoice: IInvoice) => void;
+  onStatusUpdate?: (invoice: IInvoice) => void;
 }
 
 const statusColorMap: Record<string, "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning"> = {
@@ -37,6 +38,7 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
   onRowsPerPageChange,
   onEdit,
   onDelete,
+  onStatusUpdate,
 }) => {
   const router = useRouter();
 
@@ -141,28 +143,43 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
       label: "ACTIONS",
       render: (row) => (
         <Box sx={{ display: "flex", gap: 1 }}>
-          <IconButton
-            size="small"
-            onClick={() => router.push(`/invoices/${row.id}`)}
-            title="View Invoice"
-          >
-            <Eye size={18} />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => onEdit?.(row)}
-            title="Edit Invoice"
-          >
-            <Edit2 size={18} />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => onDelete?.(row)}
-            title="Delete Invoice"
-            sx={{ color: "error.main" }}
-          >
-            <Trash2 size={18} />
-          </IconButton>
+          <Tooltip title="View Invoice">
+            <IconButton
+              size="small"
+              onClick={() => router.push(`/invoices/${row.id}`)}
+              title="View Invoice"
+            >
+              <Eye size={18} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Update Status">
+            <IconButton
+              size="small"
+              onClick={() => onStatusUpdate?.(row)}
+              title="Update Status"
+            >
+              <MoreVertical size={18} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Edit Invoice">
+            <IconButton
+              size="small"
+              onClick={() => onEdit?.(row)}
+              title="Edit Invoice"
+            >
+              <Edit2 size={18} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete Invoice">
+            <IconButton
+              size="small"
+              onClick={() => onDelete?.(row)}
+              title="Delete Invoice"
+              sx={{ color: "error.main" }}
+            >
+              <Trash2 size={18} />
+            </IconButton>
+          </Tooltip>
         </Box>
       ),
       cellStyle: { minWidth: 130 },

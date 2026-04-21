@@ -3,12 +3,15 @@ import useApi from "../useApi";
 import { config } from "@/config";
 
 export interface IUserForm {
+  name?: string;
   email?: string;
   phone?: string | number;
   username?: string;
   password?: string;
   user_type?: string;
   role_name?: string;
+  number?: string | number;
+  company_id?: number;
 }
 
 export interface IUserResponse {

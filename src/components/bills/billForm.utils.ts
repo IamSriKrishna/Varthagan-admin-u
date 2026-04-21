@@ -48,6 +48,9 @@ export const transformBillToPayload = (bill: Bill): CreateBillRequest => {
     subject: bill.subject,
     line_items: bill.line_items.map((item) => ({
       item_id: item.item_id,
+      product_id: item.product_id,
+      product_name: item.product_name,
+      sku: item.sku || item.variant_sku,
       variant_sku: item.variant_sku,
       quantity: item.quantity,
       rate: item.rate,

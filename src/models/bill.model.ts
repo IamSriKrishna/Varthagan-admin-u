@@ -2,6 +2,9 @@
 export interface LineItem {
   id?: number;
   item_id: string;
+  product_id?: string;
+  product_name?: string;
+  sku?: string;
   variant_sku?: string;
   item?: {
     id: string;
