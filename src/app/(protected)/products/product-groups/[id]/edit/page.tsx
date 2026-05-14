@@ -10,8 +10,8 @@ import * as Yup from "yup";
 import useFetch from "@/hooks/useFetch";
 import { showToastMessage } from "@/utils/toastUtil";
 import { products } from "@/constants/apiConstants";
-import { UpdateProductGroupInput, ProductGroupComponentInput, ProductGroupResponse } from "@/models/product-group.model";
 import { UpdateProductGroupInput, ProductGroupComponentInput, ProductGroupResponse, ProductVariant } from "@/models/product-group.model";
+import { productGroupService } from "@/services/productGroupService";
 
 interface ProductItem {
   id: string;
@@ -68,11 +68,11 @@ export default function EditProductGroupPage({ params }: { params: { id: string 
       });
       const components = productGroupData.data.components.map(c => ({
         product_id: c.product_id,
-        product_name: c.product_name,
-        variant_sku: c.variant_sku,
+        product_name: c.product?.name || "",
+        variant_sku: c.variant_sku || null,
         quantity: c.quantity,
-        position: c.position,
-        required: true,
+        position: c.position || 0,
+        variants: [],
       }));
       setSelectedProducts(components);
     }
@@ -141,7 +141,12 @@ export default function EditProductGroupPage({ params }: { params: { id: string 
         name: values.name,
         description: values.description,
         is_active: values.is_active,
-        components: selectedProducts,
+        products: selectedProducts.map(p => ({
+          product_id: p.product_id,
+          quantity: p.quantity,
+          variant_sku: p.variant_sku || undefined,
+          position: p.position,
+        })),
       };
 
       const response = await productGroupService.updateProductGroup(params.id, payload);

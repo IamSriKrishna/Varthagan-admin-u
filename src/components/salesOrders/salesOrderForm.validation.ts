@@ -21,21 +21,21 @@ export const salesOrderValidationSchema = Yup.object({
   line_items: Yup.array()
     .of(
       Yup.object({
-        product_id: Yup.string().required('Product is required'),
-        product_name: Yup.string().optional(),
-        description: Yup.string().optional(),
-        sku: Yup.string().optional(),
-        account: Yup.string().optional(),
+        product_group_id: Yup.string()
+          .required('Product Group is required')
+          .min(1, 'Product Group must be selected'),
+        product_group_name: Yup.string()
+          .required('Product Group name is required')
+          .min(1, 'Product Group name cannot be empty'),
+        account: Yup.string()
+          .required('Account is required')
+          .min(1, 'Account cannot be empty'),
         quantity: Yup.number()
           .required('Quantity is required')
           .positive('Quantity must be greater than 0'),
         rate: Yup.number()
           .required('Rate is required')
-          .min(0, 'Rate must be non-negative'),
-        delivered_quantity: Yup.number().optional().min(0, 'Delivered quantity cannot be negative'),
-        variant_id: Yup.number().optional(),
-        variant_sku: Yup.string().optional(),
-        variant_details: Yup.object().optional(),
+          .positive('Rate must be greater than 0'),
       })
     )
     .min(1, 'At least one line item is required'),

@@ -11,7 +11,7 @@ import {
 import {
   Plus, Edit, Trash2, Eye, Package2, Layers,
   CalendarDays, Activity, ChevronRight,
-  Zap, Sparkles, BarChart3, AlertTriangle,
+  Zap, Sparkles, BarChart3, AlertTriangle, Repeat,
 } from "lucide-react";
 import useApi from "@/hooks/useApi";
 import useFetch from "@/hooks/useFetch";
@@ -187,10 +187,10 @@ function StatPill({
 
 // ─── Group Card ────────────────────────────────────────────────────────────────
 function GroupCard({
-  group, index, onView, onEdit, onDelete,
+  group, index, onView, onEdit, onDelete, onReorder,
 }: {
   group: ProductGroupListOutput; index: number;
-  onView: () => void; onEdit: () => void; onDelete: () => void;
+  onView: () => void; onEdit: () => void; onDelete: () => void; onReorder: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const { fg } = colorFromString(group.name);
@@ -278,6 +278,11 @@ function GroupCard({
                 icon: Eye, title: "View",
                 style: { color: T.inkLight, bg: T.surfaceMid, border: T.border, hoverBg: T.blueSoft, hoverColor: T.blue, hoverBorder: "#A8C4E8" },
                 action: onView,
+              },
+              {
+                icon: Repeat, title: "Reorder",
+                style: { color: T.green, bg: T.greenSoft, border: "#A8DFC0", hoverBg: "#D4EFE0", hoverColor: T.green, hoverBorder: T.greenMid },
+                action: onReorder,
               },
               {
                 icon: Edit, title: "Edit",
@@ -748,6 +753,7 @@ export default function ProductGroupsPage() {
                 index={i}
                 onView={() => router.push(`/products/product-groups/${group.id}`)}
                 onEdit={() => router.push(`/products/product-groups/${group.id}/edit`)}
+                onReorder={() => router.push(`/products/product-groups/${group.id}/reorder`)}
                 onDelete={() => { setSelectedId(group.id); setOpenDeleteDialog(true); }}
               />
             ))}

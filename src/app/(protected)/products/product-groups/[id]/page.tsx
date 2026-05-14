@@ -692,6 +692,139 @@ export default function ProductGroupDetailsPage({ params }: { params: { id: stri
               )}
             </Box>
 
+            {/* ── Resources table card ──────────────────────────────────────── */}
+            {productGroup.resources && productGroup.resources.length > 0 && (
+              <Box sx={{
+                background: T.cardBg, borderRadius: "20px",
+                border: `1.5px solid ${T.border}`,
+                boxShadow: T.shadowMd, overflow: "hidden",
+              }}>
+                {/* Table header */}
+                <Box sx={{
+                  px: 3, py: 2.25,
+                  borderBottom: `1.5px solid ${T.border}`,
+                  background: `linear-gradient(180deg, #F8F9FF, ${T.cardBg})`,
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                }}>
+                  <Stack direction="row" alignItems="center" spacing={1.5}>
+                    <Box sx={{
+                      p: 0.75, borderRadius: "8px",
+                      background: `linear-gradient(135deg, ${T.warningSoft}, #FEF3E2)`,
+                      border: `1px solid ${T.warningMid}`,
+                    }}>
+                      <Zap size={14} color={T.warning} />
+                    </Box>
+                    <Typography sx={{ fontWeight: 800, color: T.text, fontSize: "0.9rem", letterSpacing: "-0.02em" }}>
+                      Resources Required
+                    </Typography>
+                    <Box sx={{
+                      display: "inline-flex", alignItems: "center", gap: 0.4,
+                      px: 0.9, py: 0.25, borderRadius: "6px",
+                      background: `linear-gradient(135deg, ${T.warningSoft}, #FEF3E2)`,
+                      border: `1px solid ${T.warningMid}`,
+                    }}>
+                      <Zap size={9} color={T.warning} />
+                      <Typography sx={{ fontSize: "0.62rem", fontWeight: 800, color: T.warning, fontFamily: "'DM Mono', monospace" }}>
+                        {productGroup.resources.length}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+
+                {/* Table */}
+                <Box sx={{
+                  overflowX: "auto",
+                  "& .MuiTableCell-root": {
+                    borderBottom: `1px solid ${T.border}`,
+                    py: 1.75, px: 2,
+                  },
+                  "& .MuiTableCell-head": {
+                    background: `linear-gradient(180deg, #F8F9FF, ${T.subtleBg})`,
+                    color: T.textLight, fontSize: "0.65rem", fontWeight: 800,
+                    textTransform: "uppercase", letterSpacing: "0.08em",
+                    borderBottom: `2px solid ${T.border}`,
+                    py: 1.5,
+                  },
+                  "& .MuiTableRow-root:not(.MuiTableRow-head)": {
+                    transition: "background 0.12s",
+                    "&:hover": { background: `linear-gradient(90deg, ${T.warningSoft}80, ${T.subtleBg}50)` },
+                  },
+                  "& .MuiTableRow-root:last-child td": { borderBottom: "none" },
+                }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>#</TableCell>
+                        <TableCell>Resource Type</TableCell>
+                        <TableCell>Unit</TableCell>
+                        <TableCell align="center">Quantity</TableCell>
+                        <TableCell align="right">Cost</TableCell>
+                        <TableCell>Added</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {productGroup.resources.map((resource, idx) => (
+                        <TableRow key={resource.id || idx}>
+                          {/* Position */}
+                          <TableCell>
+                            <PositionBadge pos={resource.position ?? idx + 1} />
+                          </TableCell>
+
+                          {/* Resource Type */}
+                          <TableCell>
+                            <Typography sx={{ fontWeight: 700, color: T.text, fontSize: "0.82rem" }}>
+                              {resource.resource_type}
+                            </Typography>
+                          </TableCell>
+
+                          {/* Unit */}
+                          <TableCell>
+                            <Box sx={{
+                              display: "inline-flex", alignItems: "center",
+                              px: 1, py: 0.3, borderRadius: "6px",
+                              background: T.subtleBg, border: `1px solid ${T.border}`,
+                            }}>
+                              <Typography sx={{ fontFamily: "'DM Mono', monospace", fontSize: "0.72rem", color: T.textMid, fontWeight: 600 }}>
+                                {resource.unit}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+
+                          {/* Quantity */}
+                          <TableCell align="center">
+                            <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: "0.82rem", color: T.text }}>
+                              {resource.quantity}
+                            </Typography>
+                          </TableCell>
+
+                          {/* Cost */}
+                          <TableCell align="right">
+                            <Box sx={{
+                              display: "inline-flex", alignItems: "center",
+                              px: 1.25, py: 0.4, borderRadius: "7px",
+                              background: `linear-gradient(135deg, ${T.warningSoft}, #FEF3C7)`,
+                              border: `1.5px solid ${T.warningMid}`,
+                            }}>
+                              <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 800, fontSize: "0.78rem", color: T.warning }}>
+                                ₹{resource.cost.toFixed(2)}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+
+                          {/* Created date */}
+                          <TableCell>
+                            <Typography sx={{ color: T.textLight, fontSize: "0.72rem", fontWeight: 500, fontFamily: "'DM Mono', monospace" }}>
+                              {resource.created_at ? new Date(resource.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }) : "N/A"}
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </Box>
+              </Box>
+            )}
+
             {/* ── Footer actions ─────────────────────────────────────────────── */}
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
               <Button

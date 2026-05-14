@@ -40,25 +40,43 @@ import CloseIcon from '@mui/icons-material/Close';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import WarningIcon from '@mui/icons-material/Warning';
 import { FormikProps } from 'formik';
-import { SalesOrder, LineItem } from '@/models/salesOrder.model';
-import { Product } from '@/models/product';
-import { productService } from '@/lib/api/productService';
-import { stockService } from '@/lib/api/stockService';
+import { SalesOrder, SalesOrderLineItemInput } from '@/models/salesOrder.model';
+import { apiService } from '@/lib/api/api.service';
+import { localStorageAuthKey } from '@/constants/localStorageConstant';
+import { LoginResponse } from '@/models/IUser';
+
+// ────────────────────────────────────────────────────────────────────────
+// Helper to get auth token from localStorage
+const getToken = (): string => {
+  if (typeof window === 'undefined') return '';
+  try {
+    const persistedRoot = localStorage.getItem(localStorageAuthKey);
+    if (!persistedRoot) return '';
+    const rootData = JSON.parse(persistedRoot);
+    if (!rootData.auth) return '';
+    const authData = JSON.parse(rootData.auth) as LoginResponse;
+    return authData.access_token || '';
+  } catch (e) {
+    console.error('Failed to get token:', e);
+    return '';
+  }
+};
 
 interface SalesOrderLineItemsProps {
   formik: FormikProps<SalesOrder>;
 }
 
-interface LineItemFormData extends LineItem {
-  variant_details?: Record<string, any>;
-}
-
-interface ProductStockInfo {
-  product_id: string;
-  availability_percentage: number;
-  current_stock: number;
-  available_stock: number;
-  reorder_level: number;
+interface ProductGroup {
+  id: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  cost: number;
+  selling_price: number;
+  profit: number;
+  components: any[];
+  created_at: string;
+  updated_at: string;
 }
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -103,94 +121,62 @@ function Field({ label, required, children }: { label: string; required?: boolea
   );
 }
 
-const EMPTY_ITEM: LineItemFormData = {
-  product_id: '',
-  product_name: '',
-  sku: '',
-  account: 'revenue',
+const EMPTY_ITEM: SalesOrderLineItemInput = {
+  product_group_id: '',
+  product_group_name: '',
   quantity: 1,
   rate: 0,
-  variant_sku: '',
-  variant_details: {},
-  delivered_quantity: 0,
+  account: 'SALES',
 };
 
 export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
+  const [loadingProductGroups, setLoadingProductGroups] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
-  const [formData, setFormData] = useState<LineItemFormData>(EMPTY_ITEM);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedVariant, setSelectedVariant] = useState<any>(null);
-  const [stockData, setStockData] = useState<Map<string, ProductStockInfo>>(new Map());
+  const [formData, setFormData] = useState<SalesOrderLineItemInput>(EMPTY_ITEM);
+  const [selectedProductGroup, setSelectedProductGroup] = useState<ProductGroup | null>(null);
 
-  // Fetch products and stock data
+  // Fetch product groups
   useEffect(() => {
-    setLoadingProducts(true);
-    productService.getProducts(1, 100)
-      .then((r) => { 
-        if (r.products) {
-          setProducts(r.products as any);
-          // Fetch stock data for all products
-          fetchStockDataForProducts(r.products as any);
-        }
-      })
-      .catch(console.error)
-      .finally(() => setLoadingProducts(false));
-  }, []);
-
-  // Fetch stock data for products
-  const fetchStockDataForProducts = async (productsList: Product[]) => {
-    try {
-      const stockMap = new Map<string, ProductStockInfo>();
-      for (const product of productsList) {
-        try {
-          const stock = await stockService.getStockByProductId(product.id);
-          if (stock) {
-            // Calculate availability percentage based on current_stock
-            // If available_stock is less than 3% of current_stock, flag as low availability
-            const currentStock = stock.current_stock || 1;
-            const availabilityPercentage = (stock.available_stock / currentStock) * 100;
-            const reorderLevel = currentStock; // Use current_stock as baseline for reference
-            
-            stockMap.set(product.id, {
-              product_id: product.id,
-              availability_percentage: availabilityPercentage,
-              current_stock: stock.current_stock,
-              available_stock: stock.available_stock,
-              reorder_level: reorderLevel,
-            });
+    setLoadingProductGroups(true);
+    const fetchProductGroups = async () => {
+      try {
+        const token = getToken();
+        const response = await fetch('http://127.0.0.1:8088/product-groups', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
           }
-        } catch (err) {
-          console.warn(`Failed to fetch stock for product ${product.id}:`, err);
+        });
+        const result = await response.json();
+        if (result.data && Array.isArray(result.data)) {
+          setProductGroups(result.data);
         }
+      } catch (error) {
+        console.error('Failed to fetch product groups:', error);
+      } finally {
+        setLoadingProductGroups(false);
       }
-      setStockData(stockMap);
-    } catch (err) {
-      console.error('Error fetching stock data:', err);
-    }
-  };
+    };
+    fetchProductGroups();
+  }, []);
 
   const openDialog = (index?: number) => {
     if (index !== undefined) {
       const item = formik.values.line_items[index];
-      setFormData(item);
+      setFormData(item as SalesOrderLineItemInput);
       setEditIndex(index);
-      if (item.product_id) {
-        const product = products.find(p => p.id === item.product_id);
-        if (product) {
-          setSelectedProduct(product);
-          if (item.sku) {
-            setSelectedVariant(product.product_details?.variants?.find((v: any) => v.sku === item.sku) || null);
-          }
+      if (item.product_group_id) {
+        const productGroup = productGroups.find(pg => pg.id === item.product_group_id);
+        if (productGroup) {
+          setSelectedProductGroup(productGroup);
         }
       }
     } else {
       setEditIndex(null);
       setFormData(EMPTY_ITEM);
-      setSelectedProduct(null);
-      setSelectedVariant(null);
+      setSelectedProductGroup(null);
     }
     setDialogOpen(true);
   };
@@ -198,21 +184,22 @@ export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps
   const closeDialog = () => {
     setDialogOpen(false);
     setEditIndex(null);
-    setSelectedProduct(null);
-    setSelectedVariant(null);
+    setSelectedProductGroup(null);
   };
 
   const handleSave = () => {
-    if (!formData.product_id || !formData.quantity || !formData.rate) return;
+    if (!formData.product_group_id || !formData.product_group_name || !formData.quantity || !formData.rate || !formData.account) {
+      alert('Please fill in all required fields');
+      return;
+    }
     const lineItems = [...formik.values.line_items];
-    const amount = formData.quantity * formData.rate; 
-    const safeFormData = {
-      ...formData,
-      product_name: formData.product_name || '',
-      sku: formData.sku || '',
-    };
-    if (editIndex !== null) lineItems[editIndex] = { ...safeFormData, amount };
-    else lineItems.push({ ...safeFormData, amount });
+    const amount = formData.quantity * formData.rate;
+    const lineItem = { ...formData, amount } as any;
+    if (editIndex !== null) {
+      lineItems[editIndex] = lineItem;
+    } else {
+      lineItems.push(lineItem);
+    }
     formik.setFieldValue('line_items', lineItems);
     closeDialog();
   };
@@ -224,80 +211,29 @@ export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps
     );
   };
 
-  const handleProductChange = async (value: any) => {
+  const handleProductGroupChange = (value: any) => {
     if (!value?.id) {
-      setSelectedProduct(null);
-      setSelectedVariant(null);
+      setSelectedProductGroup(null);
       setFormData(EMPTY_ITEM);
       return;
     }
-    setFormData((p) => ({ 
-      ...p, 
-      product_id: value.id, 
-      product_name: value.name,
+    setFormData((p) => ({
+      ...p,
+      product_group_id: value.id,
+      product_group_name: value.name,
+      rate: value.selling_price || 0,
     }));
-    setSelectedProduct(value);
-    setSelectedVariant(null);
-    
-    // Auto-select selling_price from sales_info
-    if (value.product_details?.variants?.length === 1) {
-      const v = value.product_details.variants[0];
-      setSelectedVariant(v);
-      setFormData(prev => ({ 
-        ...prev, 
-        rate: v.selling_price || 0, 
-        sku: v.sku,
-        variant_sku: v.sku,
-        variant_details: v.attribute_map || {} 
-      }));
-    } else if (value.sales_info?.selling_price) {
-      setFormData(prev => ({ ...prev, rate: value.sales_info.selling_price || 0 }));
-    }
+    setSelectedProductGroup(value);
   };
 
-  const subtotal = formik.values.line_items.reduce((s, i) => s + (i.amount || 0), 0);
+  const subtotal = formik.values.line_items.reduce((s, i) => s + ((i as any).amount || 0), 0);
   const lineCount = formik.values.line_items.length;
-  const selectedProductOption = products.find((p) => p.id === formData.product_id);
-  
-  // Find line items with low availability (< 3%) - updates whenever stockData changes
-  const lowAvailabilityItems = React.useMemo(() => {
-    return formik.values.line_items.filter(item => {
-      const stock = stockData.get(item.product_id as string);
-      return stock && stock.availability_percentage < 3;
-    });
-  }, [formik.values.line_items, stockData]);
+  const selectedProductGroupOption = productGroups.find((pg) => pg.id === formData.product_group_id);
 
   return (
     <Stack spacing={3}>
       <Card elevation={0} sx={{ border: '1px solid #f1f5f9', borderRadius: 3 }}>
         <CardContent sx={{ p: 3 }}>
-          {/* Low Availability Alert */}
-          {lowAvailabilityItems.length > 0 && (
-            <Alert
-              severity="warning"
-              icon={<WarningIcon />}
-              sx={{ mb: 3, borderRadius: 2 }}
-            >
-              <Box>
-                <Typography sx={{ fontWeight: 600, fontSize: '0.9rem', mb: 0.75 }}>
-                  ⚠️ Low Stock Availability
-                </Typography>
-                <Box sx={{ fontSize: '0.85rem', color: 'inherit' }}>
-                  {lowAvailabilityItems.map((item) => {
-                    const stock = stockData.get(item.product_id as string);
-                    return (
-                      <Box key={item.product_id} sx={{ mt: 0.5 }}>
-                        <strong>{item.product_name}</strong> has only{' '}
-                        <strong>{stock?.availability_percentage.toFixed(1)}%</strong> availability
-                        ({stock?.available_stock} of {stock?.reorder_level} units)
-                      </Box>
-                    );
-                  })}
-                </Box>
-              </Box>
-            </Alert>
-          )}
-
           {/* Header */}
           <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
             <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -429,7 +365,7 @@ export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps
                 <Table>
                   <TableHead>
                     <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                      {['Product', 'Qty', 'Rate', 'Amount', ''].map((h, i) => (
+                      {['Product Group', 'Qty', 'Rate', 'Amount', ''].map((h, i) => (
                         <TableCell
                           key={i}
                           align={['Qty', 'Rate', 'Amount'].includes(h) ? 'right' : i === 4 ? 'center' : 'left'}
@@ -449,7 +385,7 @@ export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {formik.values.line_items.map((item, idx) => (
+                    {formik.values.line_items.map((item: SalesOrderLineItemInput, idx: number) => (
                       <TableRow
                         key={idx}
                         sx={{
@@ -478,43 +414,12 @@ export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps
                               <InventoryOutlinedIcon sx={{ fontSize: 16 }} />
                             </Box>
                             <Box>
-                              <Stack direction="row" alignItems="center" spacing={0.75} mb={0.25}>
-                                <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}>
-                                  {item.product_name || item.product_id}
-                                </Typography>
-                                {stockData.get(item.product_id as string)?.availability_percentage !== undefined && 
-                                  stockData.get(item.product_id as string)!.availability_percentage < 3 && (
-                                  <Tooltip 
-                                    title={`Availability: ${stockData.get(item.product_id as string)?.availability_percentage.toFixed(1)}%`}
-                                    arrow
-                                  >
-                                    <Box 
-                                      sx={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        width: 18,
-                                        height: 18,
-                                        borderRadius: '50%',
-                                        bgcolor: '#fee2e2',
-                                        color: '#dc2626',
-                                      }}
-                                    >
-                                      <WarningIcon sx={{ fontSize: 12 }} />
-                                    </Box>
-                                  </Tooltip>
-                                )}
-                              </Stack>
-                              {item.sku && (
-                                <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                                  SKU: {item.sku}
-                                  {item.variant_details &&
-                                    Object.entries(item.variant_details)
-                                      .filter(([k]) => k !== 'sku')
-                                      .map(([k, v]) => ` · ${k}: ${v}`)
-                                      .join('')}
-                                </Typography>
-                              )}
+                              <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}>
+                                {item.product_group_name}
+                              </Typography>
+                              <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                {item.account}
+                              </Typography>
                             </Box>
                           </Stack>
                         </TableCell>
@@ -546,7 +451,7 @@ export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps
                           <Typography
                             sx={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}
                           >
-                            ₹{(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            ₹{((item as any).amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                           </Typography>
                         </TableCell>
                         <TableCell align="center">
@@ -672,170 +577,107 @@ export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps
         </Box>
 
         <DialogContent sx={{ p: 3 }}>
-          {loadingProducts ? (
+          {loadingProductGroups ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
               <CircularProgress size={32} sx={{ color: '#0f172a' }} />
             </Box>
           ) : (
             <Stack spacing={2.5}>
-              {/* Product select */}
+              {/* Product Group select */}
               <Box>
-                <Field label="Product" required>
-                  <Autocomplete
-                    size="small"
-                    options={products}
-                    getOptionLabel={(o) => `${o.name || ''}`}
-                    value={selectedProductOption || null}
-                    onChange={(_, val) => handleProductChange(val)}
-                    renderOption={(props, option) => (
-                      <Box component="li" {...props} sx={{ py: '10px !important', gap: 1.5 }}>
-                        <Box
-                          sx={{
-                            width: 30,
-                            height: 30,
-                            borderRadius: 1.5,
-                            bgcolor: '#f1f5f9',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#94a3b8',
-                            flexShrink: 0,
-                          }}
-                        >
-                          <InventoryOutlinedIcon sx={{ fontSize: 16 }} />
-                        </Box>
-                        <Box>
-                          <Typography sx={{ fontSize: '0.875rem', fontWeight: 500 }}>{option.name}</Typography>
-                          {option.product_details?.base_sku && (
-                            <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8' }}>SKU: {option.product_details.base_sku}</Typography>
-                          )}
-                        </Box>
+                <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', mb: 1 }}>
+                  Product Group <span style={{ color: '#dc2626' }}>*</span>
+                </Typography>
+                <Autocomplete
+                  size="small"
+                  options={productGroups}
+                  getOptionLabel={(o) => `${o.name || ''}`}
+                  value={selectedProductGroupOption || null}
+                  onChange={(_, val) => handleProductGroupChange(val)}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props} sx={{ py: '10px !important', gap: 1.5 }}>
+                      <Box
+                        sx={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: 1.5,
+                          bgcolor: '#f1f5f9',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#94a3b8',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <InventoryOutlinedIcon sx={{ fontSize: 16 }} />
                       </Box>
-                    )}
-                    renderInput={(params) => (
-                      <TextField {...params} placeholder="Search and select a product…" sx={inputSx} />
-                    )}
-                    noOptionsText="No products found"
-                  />
-                </Field>
-              </Box>
-
-              {/* Variant select */}
-              {selectedProduct?.product_details?.variants && selectedProduct.product_details.variants.length > 0 && (
-                <Box>
-                  <Field label={selectedProduct.product_details.variants.length > 1 ? "Variant" : "Product Variant"} required={selectedProduct.product_details.variants.length > 1}>
-                    <Select
-                      size="small"
-                      fullWidth
-                      value={formData.sku || ''}
-                      onChange={(e) => {
-                        const v = selectedProduct.product_details?.variants?.find((v: any) => v.sku === e.target.value);
-                        if (v) {
-                          setSelectedVariant(v);
-                          setFormData((p) => ({ ...p, rate: v.selling_price || 0, sku: v.sku, variant_sku: v.sku, variant_details: v.attribute_map || {} }));
-                        }
-                      }}
-                      displayEmpty
-                      sx={selectSx}
-                    >
-                      <MenuItem value="" disabled sx={{ fontSize: '0.875rem', color: '#94a3b8' }}>
-                        Select a variant…
-                      </MenuItem>
-                      {selectedProduct.product_details.variants.map((v: any, i: number) => {
-                        const attrs = Object.entries(v.attribute_map || {}).map(([k, val]) => `${k}: ${val}`).join(', ');
-                        return (
-                          <MenuItem key={i} value={v.sku} sx={{ fontSize: '0.875rem' }}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography component="span" sx={{ fontWeight: 600 }}>{v.sku}</Typography>
-                                {attrs && <Typography component="span" sx={{ fontSize: '0.8rem', color: '#64748b' }}>— {attrs}</Typography>}
-                              </Box>
-                              <Typography component="span" sx={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                ₹{v.selling_price?.toFixed(2) || '0.00'} (selling)
-                              </Typography>
-                            </Box>
-                          </MenuItem>
-                        );
-                      })}
-                    </Select>
-                  </Field>
-                </Box>
-              )}
-
-              {/* SKU Display Field */}
-              {formData.sku && (
-                <Box>
-                  <Field label="SKU">
-                    <Box
-                      sx={{
-                        px: 2,
-                        py: 1.25,
-                        background: '#f8fafc',
-                        borderRadius: '7px',
-                        border: '0.5px solid #e2e8f0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}
-                    >
-                      <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a', fontFamily: 'monospace' }}>
-                        {formData.sku}
-                      </Typography>
-                      {selectedVariant?.attribute_map && Object.keys(selectedVariant.attribute_map).length > 0 && (
-                        <Typography sx={{ fontSize: '0.75rem', color: '#64748b' }}>
-                          {Object.entries(selectedVariant.attribute_map).map(([k, v]) => `${k}: ${v}`).join(' • ')}
-                        </Typography>
-                      )}
+                      <Box>
+                        <Typography sx={{ fontSize: '0.875rem', fontWeight: 500 }}>{option.name}</Typography>
+                        {option.components?.length > 0 && (
+                          <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                            {option.components.length} component{option.components.length > 1 ? 's' : ''}
+                          </Typography>
+                        )}
+                        {option.selling_price && (
+                          <Typography sx={{ fontSize: '0.75rem', color: '#64748b' }}>
+                            Selling: ₹{option.selling_price.toFixed(2)}
+                          </Typography>
+                        )}
+                      </Box>
                     </Box>
-                  </Field>
-                </Box>
-              )}
+                  )}
+                  renderInput={(params) => (
+                    <TextField {...params} placeholder="Search and select a product group…" sx={{ mb: 0 }} />
+                  )}
+                  noOptionsText="No product groups found"
+                />
+              </Box>
 
               {/* Account Selection */}
               <Box>
-                <Field label="Account">
-                  <Select
-                    size="small"
-                    fullWidth
-                    value={formData.account || 'revenue'}
-                    onChange={(e) => setFormData((p) => ({ ...p, account: e.target.value }))}
-                    sx={selectSx}
-                  >
-                    <MenuItem value="revenue">Revenue</MenuItem>
-                    <MenuItem value="cost_of_goods_sold">Cost of Goods Sold</MenuItem>
-                    <MenuItem value="inventory">Inventory</MenuItem>
-                    <MenuItem value="sales">Sales</MenuItem>
-                  </Select>
-                </Field>
+                <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', mb: 1 }}>
+                  Account <span style={{ color: '#dc2626' }}>*</span>
+                </Typography>
+                <Select
+                  size="small"
+                  fullWidth
+                  value={formData.account || 'SALES'}
+                  onChange={(e) => setFormData((p) => ({ ...p, account: e.target.value }))}
+                >
+                  <MenuItem value="SALES">Sales</MenuItem>
+                  <MenuItem value="revenue">Revenue</MenuItem>
+                  <MenuItem value="cost_of_goods_sold">Cost of Goods Sold</MenuItem>
+                  <MenuItem value="inventory">Inventory</MenuItem>
+                </Select>
               </Box>
 
               {/* Qty + Rate */}
               <Stack direction="row" spacing={1.5}>
                 <Box sx={{ flex: 1 }}>
-                  <Field label="Quantity" required>
-                    <TextField
-                      size="small"
-                      type="number"
-                      value={formData.quantity}
-                      onChange={(e) => setFormData((p) => ({ ...p, quantity: Number(e.target.value) }))}
-                      fullWidth
-                      inputProps={{ min: 1, step: 1 }}
-                      sx={inputSx}
-                    />
-                  </Field>
+                  <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', mb: 1 }}>
+                    Quantity <span style={{ color: '#dc2626' }}>*</span>
+                  </Typography>
+                  <TextField
+                    size="small"
+                    type="number"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData((p) => ({ ...p, quantity: Number(e.target.value) }))}
+                    fullWidth
+                    inputProps={{ min: 1, step: 1 }}
+                  />
                 </Box>
                 <Box sx={{ flex: 1 }}>
-                  <Field label="Rate (₹)" required>
-                    <TextField
-                      size="small"
-                      type="number"
-                      value={formData.rate}
-                      onChange={(e) => setFormData((p) => ({ ...p, rate: Number(e.target.value) }))}
-                      fullWidth
-                      inputProps={{ step: '0.01', min: 0 }}
-                      sx={inputSx}
-                    />
-                  </Field>
+                  <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', mb: 1 }}>
+                    Rate (₹) <span style={{ color: '#dc2626' }}>*</span>
+                  </Typography>
+                  <TextField
+                    size="small"
+                    type="number"
+                    value={formData.rate}
+                    onChange={(e) => setFormData((p) => ({ ...p, rate: Number(e.target.value) }))}
+                    fullWidth
+                    inputProps={{ step: '0.01', min: 0 }}
+                  />
                 </Box>
               </Stack>
 
@@ -893,7 +735,7 @@ export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps
           </Button>
           <Button
             onClick={handleSave}
-            disabled={!formData.product_id || !formData.quantity || !formData.rate}
+            disabled={!formData.product_group_id || !formData.quantity || !formData.rate || !formData.account}
             sx={{
               borderRadius: 2,
               px: 2.5,

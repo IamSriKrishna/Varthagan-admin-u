@@ -126,7 +126,7 @@ export const salesOrderService = {
    * Endpoint: GET /api/sales-orders (with status filter)
    */
   async getSalesOrdersByStatus(
-    status: 'draft' | 'sent' | 'confirmed' | 'partial_shipped' | 'shipped' | 'delivered' | 'paid' | 'cancelled',
+    status: 'draft' | 'sent' | 'confirmed' | 'partial_delivered' | 'delivered' | 'paid' | 'cancelled',
     limit: number = 10,
     offset: number = 0
   ): Promise<{ data: SalesOrderOutput[]; total: number }> {
@@ -161,11 +161,11 @@ export const salesOrderService = {
 
   /**
    * Update sales order status
-   * Endpoint: PATCH /api/sales-orders/{id}/status
+   * Endpoint: PUT /api/sales-orders/{id}/status
    */
   async updateSalesOrderStatus(id: string, input: UpdateSalesOrderStatusRequest): Promise<SalesOrderOutput> {
     const response = await fetch(`${API_BASE_URL}/sales-orders/${id}/status`, {
-      method: 'PATCH',
+      method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(input),
     });

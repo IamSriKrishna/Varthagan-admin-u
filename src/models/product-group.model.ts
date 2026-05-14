@@ -1,6 +1,24 @@
 // models/product-group.model.ts
 
 // ============================================================================
+// Product Group Resource - Request DTOs
+// ============================================================================
+
+export interface ProductGroupResourceInput {
+  resource_type: string;
+  unit: string;
+  quantity: number;
+  cost: number;
+}
+
+export interface ProductGroupResourceOutput extends ProductGroupResourceInput {
+  id?: string | number;
+  position?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================================================
 // Product Group Component - Request DTOs
 // ============================================================================
 
@@ -22,6 +40,7 @@ export interface CreateProductGroupInput {
   status?: string;
   is_active: boolean;
   products: ProductGroupComponentInput[];
+  resources?: ProductGroupResourceInput[];
 }
 
 export interface UpdateProductGroupInput extends Partial<CreateProductGroupInput> {}
@@ -77,6 +96,7 @@ export interface CreateProductGroupOutput {
   selling_price: number;
   profit: number;
   components: ProductGroupComponentOutput[];
+  resources?: ProductGroupResourceOutput[];
   created_at: string;
   updated_at: string;
   message?: string;
@@ -91,6 +111,7 @@ export interface ProductGroupDetailsOutput {
   selling_price: number;
   profit: number;
   components: ProductGroupComponentOutput[];
+  resources?: ProductGroupResourceOutput[];
   created_at: string;
   updated_at: string;
 }

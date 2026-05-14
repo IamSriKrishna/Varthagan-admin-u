@@ -25,12 +25,14 @@ import {
   Collapse,
   Divider,
   Grid,
+  IconButton,
   Stack,
   Tooltip,
   Typography,
 } from "@mui/material";
 import {
   AlertCircle,
+  AlertTriangle,
   BarChart3,
   CheckCircle,
   ChevronDown,
@@ -52,6 +54,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useRouter, useSearchParams } from "next/navigation";
+import MarkDamagedDialog from "@/components/stock/MarkDamagedDialog";
 
 /* ─────────────────────────────────────────────────────────────
    DESIGN TOKENS — Warm Cream Light Theme
@@ -163,7 +166,7 @@ function StockChip({ status }: { status: 'in_stock' | 'low_stock' | 'out_of_stoc
 
 /* ─── Types ─────────────────────────────────────────────────── */
 type TrendDataMap = { [key: string]: EntityTrends | null };
-type TabId = "overview" | "inventory" | "activity" | "stock";
+type TabId = "overview" | "inventory" | "activity" | "stock" | "damaged";
 
 /* ─────────────────────────────────────────────────────────────
    GLOBAL STYLES
@@ -287,6 +290,15 @@ const Dashboard = () => {
   const [dashStockLoading, setDashStockLoading] = useState(false);
   const [dashStockError,   setDashStockError]   = useState<string | null>(null);
 
+  // ── Mark Damaged Dialog state
+  const [markDamagedOpen, setMarkDamagedOpen] = useState(false);
+  const [selectedProductForDamage, setSelectedProductForDamage] = useState<StockSummaryItem | null>(null);
+
+  // ── Damaged Products state: GET /api/stock/damaged
+  const [damagedProducts, setDamagedProducts] = useState<any[]>([]);
+  const [damagedLoading, setDamagedLoading] = useState(false);
+  const [damagedError, setDamagedError] = useState<string | null>(null);
+
   /* ── URL param: view_user_id ── */
   useEffect(() => {
     const uid = searchParams?.get("view_user_id");
@@ -316,6 +328,20 @@ const Dashboard = () => {
   const handleClearUserSelection = () => {
     setSelectedUser(null); setViewUserId(undefined); setShowUserSelector(false);
     router.push("/");
+  };
+
+  const handleMarkDamagedSuccess = async () => {
+    try {
+      const userIdParam = currentUserRole === "superadmin" && viewUserId ? viewUserId : undefined;
+      const res: StockSummaryResponse = await stockService.getStockSummary(userIdParam);
+      setSummaryStocks(res.stocks);
+      setSummaryMeta({
+        total_stock_value: res.total_stock_value,
+        total_sold_product_value: res.total_sold_product_value,
+      });
+    } catch (err) {
+      console.error('Error refreshing stock after damage marking:', err);
+    }
   };
 
   const queryParams = useMemo(() => {
@@ -419,6 +445,27 @@ const Dashboard = () => {
     };
     run();
   }, [activeTab, viewUserId, currentUserRole]);
+
+  /* ── Fetch Damaged Products: GET /api/stock/damaged ──────────────────
+     Fetches list of products marked as damaged with reason
+  ─────────────────────────────────────────────────────────────────── */
+  useEffect(() => {
+    if (activeTab !== "damaged") return;
+    const run = async () => {
+      try {
+        setDamagedLoading(true);
+        setDamagedError(null);
+        const res = await stockService.getDamagedProducts();
+        setDamagedProducts(res.damaged_items || []);
+      } catch (e) {
+        setDamagedError(e instanceof Error ? e.message : String(e));
+        setDamagedProducts([]);
+      } finally {
+        setDamagedLoading(false);
+      }
+    };
+    run();
+  }, [activeTab]);
 
   useOrderPolling({ refetch, selectedVendorId: selectedVendorId ?? undefined, isEnabled: results?.success });
 
@@ -611,6 +658,7 @@ const Dashboard = () => {
           { id: "inventory", label: "Inventory", Icon: Package },
           { id: "activity",  label: "Activity",  Icon: Zap },
           { id: "stock",     label: "Stock",     Icon: Layers },
+          { id: "damaged",   label: "Damaged",   Icon: AlertTriangle },
         ] as const).map(({ id, label, Icon }, i) => (
           <button key={id} className={`db-tab db-fade ${activeTab === id ? "db-tab-on" : "db-tab-off"}`}
             style={{ animationDelay: `${0.1 + i * 0.04}s` }} onClick={() => setActiveTab(id)}>
@@ -1120,6 +1168,7 @@ const Dashboard = () => {
                           <TH align="center">Last Purchased</TH>
                           {/* last_sold — NOT last_sold_date */}
                           <TH align="center">Last Sold</TH>
+                          <TH align="center">Actions</TH>
                         </tr>
                       </thead>
                       <tbody>
@@ -1178,6 +1227,24 @@ const Dashboard = () => {
                                   ? new Date(stock.last_sold).toLocaleDateString("en-IN")
                                   : "—"}
                               </Typography>
+                            </td>
+                            {/* Actions Column */}
+                            <td style={{ padding: "13px 16px", textAlign: "center" }}>
+                              <Tooltip title="Mark as Damaged">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => {
+                                    setSelectedProductForDamage(stock);
+                                    setMarkDamagedOpen(true);
+                                  }}
+                                  sx={{
+                                    color: C.rust,
+                                    "&:hover": { backgroundColor: C.rustLt },
+                                  }}
+                                >
+                                  <AlertTriangle size={18} />
+                                </IconButton>
+                              </Tooltip>
                             </td>
                           </tr>
                         ))}
@@ -1265,6 +1332,110 @@ const Dashboard = () => {
             </>
           )}
         </>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════
+          DAMAGED TAB
+      ═══════════════════════════════════════════════════════════════ */}
+      {activeTab === "damaged" && (
+        <>
+          {damagedLoading && <LoadingSpinner label="Loading damaged products…" />}
+          {damagedError   && <ErrorState msg={damagedError} />}
+
+          {!damagedLoading && !damagedError && (
+            <>
+              {/* Summary Stats */}
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                {[
+                  { label: "Total Damaged Items", val: damagedProducts.length,           color: C.rust,    icon: AlertTriangle },
+                  { label: "Total Damaged Value", val: `₹${damagedProducts.reduce((sum: number, item: any) => sum + (item.damaged_value || 0), 0).toLocaleString()}`, color: C.gold,   icon: DollarSign },
+                ].map(({ label, val, color, icon: Icon }, i) => (
+                  <Grid key={label} size={{ xs: 6, sm: 4, lg: "auto" }}>
+                    <Box className="db-card db-fade" sx={{ p: 2.5, animationDelay: `${0.05 * i}s` }}>
+                      <IconBox Icon={Icon} color={color} size={36} />
+                      <Typography className="db-num" sx={{ fontSize: 20, fontWeight: 700, color, mt: 1.5, mb: 0.3 }}>
+                        {typeof val === "number" ? val.toLocaleString() : val}
+                      </Typography>
+                      <Typography sx={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em" }}>{label}</Typography>
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+
+              {damagedProducts.length === 0 ? (
+                <EmptyState msg="No damaged products" sub="All products are in good condition" />
+              ) : (
+                <>
+                  <SectionHeading>Damaged Products — {damagedProducts.length} items</SectionHeading>
+                  <Box className="db-card-flat db-fade" sx={{ mb: 3, overflowX: "auto", animationDelay: "0.18s" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 720 }}>
+                      <thead>
+                        <tr>
+                          <TH align="left">Product</TH>
+                          <TH align="left">Variant</TH>
+                          <TH align="center">SKU</TH>
+                          <TH align="center">Quantity Damaged</TH>
+                          <TH align="left">Reason</TH>
+                          <TH align="center">Damaged Value</TH>
+                          <TH align="center">Date Marked</TH>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {damagedProducts.map((item: any, idx) => (
+                          <tr key={`${item.product_id}-${item.variant_sku}-${idx}`} className="db-tr"
+                            style={{ borderBottom: `1px solid ${C.border}`, background: idx % 2 === 0 ? C.surface : C.bg }}>
+                            <td style={{ padding: "14px 16px" }}>
+                              <Typography sx={{ fontWeight: 600, fontSize: 13, color: C.ink }}>{item.product_name}</Typography>
+                              <Typography className="db-num" sx={{ fontSize: 10, color: C.subtle, mt: 0.2 }}>{item.product_id}</Typography>
+                            </td>
+                            <td style={{ padding: "14px 16px" }}>
+                              <Typography sx={{ fontSize: 12, color: C.inkMid }}>{item.variant_name || "—"}</Typography>
+                            </td>
+                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                              <Typography className="db-num" sx={{ fontSize: 11, color: C.muted }}>{item.variant_sku || "—"}</Typography>
+                            </td>
+                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                              <span style={{ background: C.rustLt, color: C.rust, padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, fontFamily: MONO }}>
+                                {item.damaged_stock || 0}
+                              </span>
+                            </td>
+                            <td style={{ padding: "14px 16px" }}>
+                              <Typography sx={{ fontSize: 12, color: C.inkMid }}>
+                                {item.damage_reason ? item.damage_reason.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()) : "—"}
+                              </Typography>
+                            </td>
+                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                              <Typography className="db-num" sx={{ fontSize: 12, fontWeight: 700, color: C.rust }}>₹{(item.damaged_value || 0).toLocaleString()}</Typography>
+                            </td>
+                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                              <Typography sx={{ fontSize: 11, color: C.muted }}>
+                                {item.damaged_at ? new Date(item.damaged_at).toLocaleDateString("en-IN") : "—"}
+                              </Typography>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </Box>
+                </>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* Mark Damaged Dialog */}
+      {selectedProductForDamage && (
+        <MarkDamagedDialog
+          open={markDamagedOpen}
+          onClose={() => setMarkDamagedOpen(false)}
+          onSuccess={handleMarkDamagedSuccess}
+          productId={selectedProductForDamage.product_id}
+          productName={selectedProductForDamage.product_name}
+          variantSku={selectedProductForDamage.sku}
+          variantName={selectedProductForDamage.variant_name}
+          availableStock={selectedProductForDamage.available_stock}
+        />
       )}
 
       {/* Footer */}

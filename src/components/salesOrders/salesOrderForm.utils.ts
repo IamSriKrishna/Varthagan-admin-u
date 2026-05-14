@@ -24,11 +24,15 @@ export const initialSalesOrderValues: SalesOrder = {
 
 /**
  * Create a new blank line item with optional defaults
+ * Uses Product Groups for bundled products
  */
 export const createBlankLineItem = (
   overrides?: Partial<SalesOrderLineItemInput>
 ): SalesOrderLineItemInput => {
   return {
+    product_group_id: '',
+    product_group_name: '',
+    account: 'SALES',
     quantity: 1,
     rate: 0,
     ...overrides,
@@ -60,61 +64,30 @@ export const transformSOToPayload = (
     payment_terms: so.payment_terms,
     delivery_method: so.delivery_method,
     line_items: so.line_items.map((item, index) => {
-      // Validate required fields
-      if (!item.product_id) throw new Error(`Line item ${index + 1}: product is required`);
+      // Validate required fields for product groups
+      if (!item.product_group_id) throw new Error(`Line item ${index + 1}: product group is required`);
+      if (!item.product_group_name) throw new Error(`Line item ${index + 1}: product group name is required`);
       if (item.quantity === undefined || item.quantity === null) throw new Error(`Line item ${index + 1}: quantity is required`);
       if (item.rate === undefined || item.rate === null) throw new Error(`Line item ${index + 1}: rate is required`);
+      if (!item.account) throw new Error(`Line item ${index + 1}: account is required`);
 
       const lineItem: any = {
-        product_id: item.product_id,
-        product_name: item.product_name || '',
+        product_group_id: item.product_group_id,
+        product_group_name: item.product_group_name,
         quantity: item.quantity,
         rate: item.rate,
+        account: item.account,
       };
-      
-      // Include optional fields if they have values
-      if (item.description) {
-        lineItem.description = item.description;
-      }
-      if (item.sku) {
-        lineItem.sku = item.sku;
-      }
-      if (item.account) {
-        lineItem.account = item.account;
-      }
-      if (item.variant_id !== undefined && item.variant_id !== null) {
-        lineItem.variant_id = item.variant_id;
-      }
-      // Include variant_sku if available
-      if (item.variant_sku) {
-        lineItem.variant_sku = item.variant_sku;
-      }
-      // Include variant_name if available
-      if (item.variant_name) {
-        lineItem.variant_name = item.variant_name;
-      }
-      // Include variant_details if available
-      if (item.variant_details && Object.keys(item.variant_details).length > 0) {
-        lineItem.variant_details = item.variant_details;
-      }
-      // Include item_id if available (for cross-reference)
-      if (item.item_id) {
-        lineItem.item_id = item.item_id;
-      }
       
       return lineItem;
     }),
     shipping_charges: so.shipping_charges || 0,
     tax_id: so.tax_id,
+    tax_rate: so.tax_rate || 0,
     adjustment: so.adjustment || 0,
     customer_notes: so.customer_notes || '',
     terms_and_conditions: so.terms_and_conditions || '',
   };
-
-  // Only add tax_rate if it's a valid number
-  if (so.tax?.rate && typeof so.tax.rate === 'number') {
-    payload.tax_rate = so.tax.rate;
-  }
 
   if (so.salesperson_id) {
     payload.salesperson_id = so.salesperson_id;
@@ -129,16 +102,24 @@ export const transformSOToPayload = (
 export const validateLineItem = (item: SalesOrderLineItemInput | LineItem): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
-  if (!item.product_id && !('product_name' in item && item.product_name)) {
-    errors.push('Product ID or Product name is required');
+  if (!item.product_group_id) {
+    errors.push('Product Group ID is required');
+  }
+
+  if (!item.product_group_name) {
+    errors.push('Product Group name is required');
+  }
+
+  if (!item.account) {
+    errors.push('Account is required');
   }
 
   if (!item.quantity || item.quantity <= 0) {
     errors.push('Quantity must be greater than 0');
   }
 
-  if (item.rate === undefined || item.rate === null || item.rate < 0) {
-    errors.push('Rate must be greater than or equal to 0');
+  if (item.rate === undefined || item.rate === null || item.rate <= 0) {
+    errors.push('Rate must be greater than 0');
   }
 
   return {
@@ -148,30 +129,23 @@ export const validateLineItem = (item: SalesOrderLineItemInput | LineItem): { va
 };
 
 /**
- * Check if line item is a variant line item
+ * Check if line item is a variant line item (deprecated - kept for backward compatibility)
  */
 export const isVariantLineItem = (
   item: SalesOrderLineItemInput | LineItem | SalesOrderLineItemOutput
 ): boolean => {
-  return !!('variant_sku' in item && item.variant_sku);
+  // For Product Groups, this is always false
+  return false;
 };
 
 /**
- * Get variant display information
+ * Get variant display information (deprecated - kept for backward compatibility)
  */
 export const getVariantDisplay = (
   item: SalesOrderLineItemInput | LineItem | SalesOrderLineItemOutput
 ): { name: string; attributes: string } => {
-  const name = 'variant_name' in item ? item.variant_name || '' : '';
-  
-  let attributes = '';
-  if ('variant_details' in item && item.variant_details && Object.keys(item.variant_details).length > 0) {
-    attributes = Object.entries(item.variant_details)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join(', ');
-  }
-
-  return { name, attributes };
+  // For Product Groups, return empty values
+  return { name: '', attributes: '' };
 };
 
 /**
@@ -180,21 +154,17 @@ export const getVariantDisplay = (
 export const formatLineItemDisplay = (
   item: SalesOrderLineItemInput | LineItem | SalesOrderLineItemOutput
 ): string => {
-  const productName = 'product_name' in item ? item.product_name || 'Unknown Product' : 'Unknown Product';
+  // For Product Groups, use product_group_name
+  if ('product_group_name' in item) {
+    return item.product_group_name || 'Unknown Product Group';
+  }
   
-  if (isVariantLineItem(item)) {
-    const { name, attributes } = getVariantDisplay(item);
-    if (name) {
-      return attributes ? `${name} (${attributes})` : name;
-    }
+  // Fallback for backward compatibility
+  if ('product_name' in item) {
+    return item.product_name || 'Unknown Product';
   }
 
-  const sku = 'variant_sku' in item && item.variant_sku ? item.variant_sku : 'sku' in item ? item.sku : '';
-  if (sku) {
-    return `${productName} (${sku})`;
-  }
-
-  return productName;
+  return 'Unknown Product Group';
 };
 
 /**

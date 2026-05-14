@@ -68,6 +68,8 @@ interface SalesOrderRow {
   total_amount?: number;
   total?: number;
   line_items_count?: number;
+  line_items?: any[];
+  expected_shipment_date?: string;
 }
 
 const STATUS_CONFIG: Record<
@@ -330,10 +332,14 @@ export default function SalesOrdersPage() {
     return (o.status || 'draft').toLowerCase() === activeTab.toLowerCase();
   });
 
-  const totalAmount = salesOrders.reduce(
-    (sum, o) => sum + (o.total_amount || o.total || 0),
-    0
-  );
+  // Calculate total revenue from total_amount field
+  const totalAmount = salesOrders.reduce((sum, o) => sum + (o.total_amount || o.total || 0), 0);
+
+  // Calculate total line items count
+  const totalLineItemsCount = salesOrders.reduce((sum, o) => {
+    return sum + (Array.isArray(o.line_items) ? o.line_items.length : 0);
+  }, 0);
+
   const confirmedCount = salesOrders.filter((o) => o.status === 'paid').length;
   const draftCount = salesOrders.filter((o) => !o.status || o.status === 'draft').length;
 
@@ -366,7 +372,7 @@ export default function SalesOrdersPage() {
               Sales Orders
             </Typography>
             <Typography sx={{ fontSize: '0.875rem', color: '#64748b', mt: 0.5 }}>
-              {salesOrders.length} orders · last updated just now
+              {totalLineItemsCount} items across {salesOrders.length} order{salesOrders.length !== 1 ? 's' : ''} · last updated just now
             </Typography>
           </Box>
           <Button
@@ -399,8 +405,8 @@ export default function SalesOrdersPage() {
         <Grid container spacing={2} mb={4}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
-              label="Total Orders"
-              value={salesOrders.length}
+              label="Total Items"
+              value={totalLineItemsCount}
               icon={<InventoryIcon sx={{ fontSize: 22 }} />}
               color="#6366f1"
               bg="#eef2ff"
@@ -427,7 +433,7 @@ export default function SalesOrdersPage() {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Total Revenue"
-              value={`₹${(totalAmount / 100000).toFixed(1)}L`}
+              value={`₹${totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
               icon={<TrendingUpIcon sx={{ fontSize: 22 }} />}
               color="#0ea5e9"
               bg="#f0f9ff"
@@ -543,8 +549,7 @@ export default function SalesOrdersPage() {
                   <TableRow sx={{ bgcolor: '#f8fafc' }}>
                     {[
                       'SO Number',
-                      'Customer',
-                      'Date',
+                      'Expected Shipment Date',
                       'Items',
                       'Amount',
                       'Status',
@@ -552,7 +557,7 @@ export default function SalesOrdersPage() {
                     ].map((h, i) => (
                       <TableCell
                         key={h}
-                        align={['Items', 'Amount'].includes(h) ? 'right' : i === 6 ? 'center' : 'left'}
+                        align={['Items', 'Amount'].includes(h) ? 'right' : i === 5 ? 'center' : 'left'}
                         sx={{
                           fontSize: '0.72rem',
                           fontWeight: 700,
@@ -571,7 +576,7 @@ export default function SalesOrdersPage() {
                 <TableBody>
                   {filteredOrders.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} align="center" sx={{ py: 8, border: 0 }}>
+                      <TableCell colSpan={6} align="center" sx={{ py: 8, border: 0 }}>
                         <Box sx={{ color: '#94a3b8' }}>
                           <InventoryIcon sx={{ fontSize: 40, opacity: 0.35, mb: 1 }} />
                           <Typography sx={{ fontSize: '0.9rem', fontWeight: 500 }}>
@@ -646,32 +651,11 @@ export default function SalesOrdersPage() {
                           </Stack>
                         </TableCell>
 
-                        {/* Customer */}
-                        <TableCell>
-                          <Stack direction="row" alignItems="center" spacing={1.25}>
-                            <Avatar
-                              sx={{
-                                width: 30,
-                                height: 30,
-                                fontSize: '0.72rem',
-                                fontWeight: 700,
-                                bgcolor: `hsl(${(order.customer?.display_name?.charCodeAt(0) || 65) * 5 % 360}, 55%, 88%)`,
-                                color: `hsl(${(order.customer?.display_name?.charCodeAt(0) || 65) * 5 % 360}, 50%, 35%)`,
-                              }}
-                            >
-                              {(order.customer?.display_name || 'N')[0].toUpperCase()}
-                            </Avatar>
-                            <Typography sx={{ fontSize: '0.875rem', fontWeight: 500, color: '#1e293b' }}>
-                              {order.customer?.display_name || '—'}
-                            </Typography>
-                          </Stack>
-                        </TableCell>
-
-                        {/* Date */}
+                        {/* Expected Shipment Date */}
                         <TableCell>
                           <Typography sx={{ fontSize: '0.875rem', color: '#475569' }}>
-                            {order.so_date
-                              ? new Date(order.so_date).toLocaleDateString('en-IN', {
+                            {(order as any).expected_shipment_date
+                              ? new Date((order as any).expected_shipment_date).toLocaleDateString('en-IN', {
                                   day: '2-digit',
                                   month: 'short',
                                   year: 'numeric',

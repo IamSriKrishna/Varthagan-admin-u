@@ -4,19 +4,14 @@
 
 /**
  * Sales Order Line Item Input
- * Supports both variant and non-variant products
+ * Uses Product Groups for bundled product management
  */
 export interface SalesOrderLineItemInput {
-  product_id?: string;              // Required: Product identifier
-  product_name: string;             // Required: Product name
-  sku?: string;                     // Optional: Base product SKU or variant SKU (deprecated, use variant_sku)
-  variant_sku?: string;             // Optional: Variant-specific SKU (e.g., WB-001-RED)
-  variant_name?: string;            // Optional: Variant display name
-  quantity: number;                 // Required: Order quantity
-  rate: number;                     // Required: Unit price
-  account?: string;                 // Optional: Accounting code
-  description?: string;             // Optional: Line item description
-  variant_details?: Record<string, string>; // Optional: Variant attributes (color, size, etc.)
+  product_group_id: string;         // Required: Product Group identifier
+  product_group_name: string;       // Required: Product Group name
+  quantity: number;                 // Required: Order quantity (must be > 0)
+  rate: number;                     // Required: Unit price (must be > 0)
+  account: string;                  // Required: Accounting code (e.g., SALES)
 }
 
 /**
@@ -29,21 +24,21 @@ export interface CreateSalesOrderRequest {
   sales_order_date: string;         // Required: Sales order date (ISO 8601)
   expected_shipment_date: string;   // Required: Expected shipment date (ISO 8601)
   payment_terms: string;            // Required: Payment terms (e.g., NET30, NET60)
-  delivery_method?: string;         // Optional: Delivery method (e.g., standard_shipping)
+  delivery_method?: string;         // Optional: Delivery method (e.g., courier)
   salesperson_id?: number;          // Optional: Salesperson identifier
   line_items: SalesOrderLineItemInput[]; // Required: Line items (min 1)
   shipping_charges?: number;        // Optional: Shipping charges (default 0)
-  tax_type?: string;                // Optional: Tax type (e.g., VAT, GST, TDS)
   tax_id?: number;                  // Optional: Tax configuration ID
+  tax_rate?: number;                // Optional: Tax rate percentage (0-100)
   adjustment?: number;              // Optional: Adjustment amount (default 0)
   customer_notes?: string;          // Optional: Notes for customer
   terms_and_conditions?: string;    // Optional: Specific T&C for this order
-  attachments?: string[];           // Optional: Attachment URLs
+  created_by?: string;              // Optional: Created by user identifier
 }
 
 /**
  * Update Sales Order Request
- * All fields optional except for line_items validation
+ * All fields optional
  */
 export interface UpdateSalesOrderRequest {
   customer_id?: number;
@@ -55,19 +50,19 @@ export interface UpdateSalesOrderRequest {
   salesperson_id?: number;
   line_items?: SalesOrderLineItemInput[];
   shipping_charges?: number;
-  tax_type?: string;
   tax_id?: number;
+  tax_rate?: number;
   adjustment?: number;
   customer_notes?: string;
   terms_and_conditions?: string;
-  attachments?: string[];
 }
 
 /**
  * Update Sales Order Status Request
+ * Valid status transitions: draft → sent → confirmed → partial_delivered → delivered → paid/cancelled
  */
 export interface UpdateSalesOrderStatusRequest {
-  status: 'draft' | 'sent' | 'confirmed' | 'partial_shipped' | 'shipped' | 'delivered' | 'paid' | 'cancelled';
+  status: 'draft' | 'sent' | 'confirmed' | 'partial_delivered' | 'delivered' | 'paid' | 'cancelled';
 }
 
 // ============================================================================
@@ -109,17 +104,13 @@ export interface TaxInfo {
  */
 export interface SalesOrderLineItemOutput {
   id?: number;                      // Unique identifier
-  product_id?: string;              // Product identifier
-  product_name: string;             // Product name
-  sku: string;                      // Product/variant SKU (variant_sku if variant, otherwise product sku)
-  variant_sku?: string;             // Variant-specific SKU (if variant)
-  variant_name?: string;            // Variant display name (if variant)
-  account?: string;                 // Accounting code
-  description?: string;             // Line item description
+  product_group_id: string;         // Product Group identifier
+  product_group_name: string;       // Product Group name
+  account: string;                  // Accounting code
   quantity: number;                 // Order quantity
+  delivered_quantity: number;       // Delivered quantity
   rate: number;                     // Unit price
   amount: number;                   // Total amount (quantity × rate)
-  variant_details?: Record<string, string>; // Variant attributes
 }
 
 /**
@@ -128,33 +119,27 @@ export interface SalesOrderLineItemOutput {
  */
 export interface SalesOrderOutput {
   id: string;                       // Unique identifier
-  sales_order_no: string;           // Sales order number (e.g., SO-20260405-0001)
+  sales_order_no: string;           // Sales order number (e.g., SO-2024-0001)
   customer_id: number;              // Customer identifier
   customer?: CustomerInfo;          // Customer details
-  salesperson_id?: number;          // Salesperson identifier
-  salesperson?: SalespersonInfo;    // Salesperson details
   reference_no?: string;            // Reference number/PO number
-  sales_order_date: string;         // Sales order date (ISO 8601)
+  status: 'draft' | 'sent' | 'confirmed' | 'partial_delivered' | 'delivered' | 'paid' | 'cancelled'; // Order status
+  date: string;                     // Sales order date (ISO 8601)
   expected_shipment_date: string;   // Expected shipment date (ISO 8601)
-  payment_terms: string;            // Payment terms
   delivery_method?: string;         // Delivery method
+  payment_terms: string;            // Payment terms
   line_items: SalesOrderLineItemOutput[]; // Line items
   sub_total: number;                // Subtotal (before tax and shipping)
   shipping_charges: number;         // Shipping charges
-  tax_type?: string;                // Tax type
-  tax_id?: number;                  // Tax configuration ID
-  tax?: TaxInfo;                    // Tax details
-  tax_amount: number;               // Total tax amount
   adjustment: number;               // Adjustment amount
+  tax_rate: number;                 // Tax rate percentage
+  tax_total: number;                // Total tax amount
   total: number;                    // Total amount (including tax and shipping)
   customer_notes?: string;          // Notes for customer
   terms_and_conditions?: string;    // T&C for this order
-  status: 'draft' | 'sent' | 'confirmed' | 'partial_shipped' | 'shipped' | 'delivered' | 'paid' | 'cancelled'; // Order status
-  attachments?: string[];           // Attachment URLs
+  salesperson_id?: number;          // Salesperson identifier
   created_at: string;               // Creation timestamp
   updated_at: string;               // Last update timestamp
-  created_by?: string;              // Created by user ID
-  updated_by?: string;              // Last updated by user ID
 }
 
 // ============================================================================

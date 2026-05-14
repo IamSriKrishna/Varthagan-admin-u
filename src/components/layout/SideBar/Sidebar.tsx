@@ -45,6 +45,7 @@ import {
   Receipt,
   Plus,
   Truck,
+  CreditCard,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -136,6 +137,7 @@ const baseMenuItems: Array<{
     children: [
       { key: "vendors", icon: User, label: "Vendors", path: "/vendors" },
       { key: "purchaseOrders", icon: ShoppingCart, label: "Purchase Orders", path: "/purchase-orders" },
+      { key: "vendorPayments", icon: CreditCard, label: "Vendor Payments", path: "/vendor-payments" },
       { key: "salesOrders", icon: ShoppingCart, label: "Sales Orders", path: "/sales-orders" },
       { key: "packages", icon: Package, label: "Packages", path: "/packages" },
       { key: "bills", icon: Receipt, label: "Bills", path: "/bills" },
@@ -249,7 +251,7 @@ export default function Sidebar({
         console.log(`  Item has ${item.children.length} children`);
         
         // Always show these items regardless of access control
-        const alwaysShowItems = ['purchaseOrders', 'vendors',"bills", "invoices", "salesOrders", "packages", "shipments"];
+        const alwaysShowItems = ['purchaseOrders', 'vendors', 'vendorPayments', "bills", "invoices", "salesOrders", "packages", "shipments"];
         
         // Add employee items and items menu children if user is admin
         const isAdmin = userType === 'admin';

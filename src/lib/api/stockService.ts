@@ -318,4 +318,41 @@ export const stockService = {
       return null;
     }
   },
+
+  // ─────────────────────────────────────────────────────────────────
+  // PATCH /api/stock/mark-damaged
+  // Mark items as damaged
+  // ─────────────────────────────────────────────────────────────────
+  async markDamaged(input: {
+    product_id: string;
+    variant_sku?: string;
+    quantity: number;
+    reason: string;
+  }): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/api/stock/mark-damaged`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(input),
+    });
+
+    return handleResponse(response);
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // GET /api/stock/damaged
+  // Get damaged products list
+  // ─────────────────────────────────────────────────────────────────
+  async getDamagedProducts(limit = 50, offset = 0): Promise<any> {
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    });
+
+    const response = await fetch(`${API_BASE_URL}/api/stock/damaged?${params}`, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+
+    return handleResponse(response);
+  },
 };

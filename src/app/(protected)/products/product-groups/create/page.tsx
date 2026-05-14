@@ -21,7 +21,7 @@ import useApi from "@/hooks/useApi";
 import useFetch from "@/hooks/useFetch";
 import { showToastMessage } from "@/utils/toastUtil";
 import { products } from "@/constants/apiConstants";
-import { CreateProductGroupInput, ProductVariant } from "@/models/product-group.model";
+import { CreateProductGroupInput, ProductVariant, ProductGroupResourceInput } from "@/models/product-group.model";
 import { productGroupService } from "@/services/productGroupService";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -34,6 +34,13 @@ interface SelectedProductComponent {
   product_id: string; product_name: string;
   variant_sku: string | null; quantity: number; position: number;
   variant_details?: Record<string, string>; variants?: ProductVariant[];
+}
+interface ResourceItem {
+  id: string;
+  resource_type: string;
+  unit: string;
+  quantity: number;
+  cost: number;
 }
 interface ProductGroupFormData {
   name: string; description: string; is_active: boolean;
@@ -338,7 +345,12 @@ function SummaryPill({
 export default function CreateProductGroupPage() {
   const router = useRouter();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProductComponent[]>([]);
+  const [selectedResources, setSelectedResources] = useState<ResourceItem[]>([]);
   const [showProductDialog, setShowProductDialog] = useState(false);
+  const [showResourceDialog, setShowResourceDialog] = useState(false);
+  const [resourceFormData, setResourceFormData] = useState<Omit<ResourceItem, 'id'>>({
+    resource_type: '', unit: '', quantity: 1, cost: 0,
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -414,6 +426,32 @@ export default function CreateProductGroupPage() {
   }, 0);
   const totalProfit = totalSelling - totalCost;
 
+  // ─── Resource Handlers ──────────────────────────────────────────────
+  const handleAddResource = () => {
+    if (!resourceFormData.resource_type || !resourceFormData.unit) {
+      showToastMessage("Please fill all resource fields", "error");
+      return;
+    }
+    setSelectedResources((prev) => [
+      ...prev,
+      { id: `resource_${Date.now()}`, ...resourceFormData },
+    ]);
+    setResourceFormData({ resource_type: '', unit: '', quantity: 1, cost: 0 });
+    setShowResourceDialog(false);
+    showToastMessage("Resource added to group", "success");
+  };
+
+  const handleRemoveResource = (id: string) => {
+    setSelectedResources((prev) => prev.filter((r) => r.id !== id));
+    showToastMessage("Resource removed", "success");
+  };
+
+  const handleResourceChange = (field: keyof Omit<ResourceItem, 'id'>, value: any) => {
+    setResourceFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const totalResourceCost = selectedResources.reduce((sum, r) => sum + r.cost, 0);
+
   const handleCreateProductGroup = async (values: ProductGroupFormData) => {
     if (selectedProducts.length === 0) {
       showToastMessage("Please add at least one product to the group", "error");
@@ -429,6 +467,12 @@ export default function CreateProductGroupPage() {
           variant_sku: p.variant_sku, position: p.position,
           variant_details: p.variant_details,
         })),
+        resources: selectedResources.length > 0 ? selectedResources.map((r) => ({
+          resource_type: r.resource_type,
+          unit: r.unit,
+          quantity: r.quantity,
+          cost: r.cost,
+        })) : undefined,
       };
       const response = await productGroupService.createProductGroup(payload);
       if (response?.success) {
@@ -846,6 +890,148 @@ export default function CreateProductGroupPage() {
                   )}
                 </SectionCard>
 
+                {/* ── Resources section ──────────────────────────────────── */}
+                <SectionCard
+                  icon={Zap}
+                  title="Resources Required"
+                  badge={selectedResources.length}
+                  topAction={
+                    <Button
+                      variant="contained"
+                      size="small"
+                      startIcon={<Plus size={14} strokeWidth={2.5} />}
+                      onClick={() => setShowResourceDialog(true)}
+                      sx={{
+                        background: `linear-gradient(135deg, ${T.brand}, ${T.brandDark})`,
+                        borderRadius: "9px", textTransform: "none",
+                        fontWeight: 800, fontSize: "0.78rem",
+                        height: 32, px: 1.75,
+                        boxShadow: T.shadowBrand, border: "none",
+                        "&:hover": { boxShadow: T.shadowBrandHover, transform: "translateY(-1px)" },
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      Add Resource
+                    </Button>
+                  }
+                >
+                  {selectedResources.length === 0 ? (
+                    <Box
+                      onClick={() => setShowResourceDialog(true)}
+                      sx={{
+                        py: 5, textAlign: "center", cursor: "pointer",
+                        border: `2px dashed ${T.border}`,
+                        borderRadius: "14px",
+                        background: T.subtleBg,
+                        transition: "all 0.18s",
+                        "&:hover": {
+                          borderColor: T.brandMid,
+                          background: `linear-gradient(135deg, ${T.brandXSoft}, ${T.brandSoft})`,
+                        },
+                      }}
+                    >
+                      <Box sx={{
+                        width: 48, height: 48, borderRadius: "14px", mx: "auto", mb: 1.5,
+                        background: `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`,
+                        border: `1.5px solid ${T.brandMid}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <Plus size={20} color={T.brand} strokeWidth={2.5} />
+                      </Box>
+                      <Typography sx={{ fontWeight: 700, color: T.textMid, fontSize: "0.875rem", mb: 0.5 }}>
+                        Add resources to this group
+                      </Typography>
+                      <Typography sx={{ color: T.textLight, fontSize: "0.78rem" }}>
+                        Click here or use the button above to add required resources
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      {/* Resources table */}
+                      <Box sx={{
+                        borderRadius: "14px", overflow: "hidden",
+                        border: `1.5px solid ${T.border}`,
+                        "& .MuiTableCell-root": { borderBottom: `1px solid ${T.border}`, py: 1.5, px: 2 },
+                        "& .MuiTableCell-head": {
+                          background: `linear-gradient(180deg, #F8F9FF, ${T.subtleBg})`,
+                          color: T.textLight, fontSize: "0.65rem", fontWeight: 800,
+                          textTransform: "uppercase", letterSpacing: "0.08em",
+                          borderBottom: `2px solid ${T.border}`,
+                        },
+                        "& .MuiTableRow-root:not(.MuiTableRow-head)": {
+                          transition: "background 0.12s",
+                          "&:hover": { background: `linear-gradient(90deg, ${T.brandXSoft}80, ${T.subtleBg}50)` },
+                        },
+                        "& .MuiTableRow-root:last-child td": { borderBottom: "none" },
+                      }}>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Resource Type</TableCell>
+                              <TableCell>Unit</TableCell>
+                              <TableCell align="center">Quantity</TableCell>
+                              <TableCell align="right">Cost</TableCell>
+                              <TableCell align="center">Remove</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {selectedResources.map((resource) => (
+                              <TableRow key={resource.id}>
+                                <TableCell>
+                                  <Typography sx={{ fontWeight: 700, color: T.text, fontSize: "0.82rem" }}>
+                                    {resource.resource_type}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell>
+                                  <Typography sx={{ fontWeight: 600, color: T.textMid, fontSize: "0.82rem" }}>
+                                    {resource.unit}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell align="center">
+                                  <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: "0.82rem", color: T.textMid }}>
+                                    {resource.quantity}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell align="right">
+                                  <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 800, fontSize: "0.82rem", color: T.text }}>
+                                    ₹{resource.cost.toFixed(2)}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell align="center">
+                                  <Tooltip title="Remove" placement="top">
+                                    <IconButton
+                                      size="small" onClick={() => handleRemoveResource(resource.id)}
+                                      sx={{
+                                        color: T.danger,
+                                        background: `linear-gradient(135deg, ${T.dangerSoft}, #FEE2E2)`,
+                                        border: `1.5px solid ${T.dangerMid}`,
+                                        borderRadius: "8px", width: 30, height: 30,
+                                        "&:hover": { background: `linear-gradient(135deg, #FEE2E2, ${T.dangerMid}80)`, transform: "scale(1.08)" },
+                                        transition: "all 0.15s",
+                                      }}
+                                    >
+                                      <Trash2 size={13} />
+                                    </IconButton>
+                                  </Tooltip>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </Box>
+
+                      {/* Resource cost summary */}
+                      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} mt={2.5} flexWrap="wrap" useFlexGap>
+                        <SummaryPill
+                          label="Total Resource Cost" icon={Zap}
+                          value={`₹${totalResourceCost.toFixed(2)}`}
+                          accent={T.warning} bg={T.warningSoft}
+                        />
+                      </Stack>
+                    </>
+                  )}
+                </SectionCard>
+
                 {/* ── Footer actions ─────────────────────────────────────── */}
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                   <Button
@@ -1024,6 +1210,133 @@ export default function CreateProductGroupPage() {
             }}
           >
             Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Resource input dialog ──────────────────────────────────────────── */}
+      <Dialog
+        open={showResourceDialog}
+        onClose={() => setShowResourceDialog(false)}
+        maxWidth="sm" fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            border: `1.5px solid ${T.border}`,
+            boxShadow: T.shadowLg,
+            overflow: "hidden",
+          },
+        }}
+      >
+        {/* Dialog header */}
+        <Box sx={{
+          px: 3, pt: 2.5, pb: 2,
+          borderBottom: `1.5px solid ${T.border}`,
+          background: `linear-gradient(180deg, #F8F9FF, ${T.cardBg})`,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Box sx={{
+              p: 0.75, borderRadius: "9px",
+              background: `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`,
+              border: `1px solid ${T.brandMid}`,
+            }}>
+              <Zap size={15} color={T.brand} />
+            </Box>
+            <Typography sx={{ fontWeight: 800, color: T.text, fontSize: "0.92rem", letterSpacing: "-0.02em" }}>
+              Add Resource
+            </Typography>
+          </Stack>
+          <IconButton
+            size="small" onClick={() => setShowResourceDialog(false)}
+            sx={{ color: T.textLight, borderRadius: "8px", "&:hover": { background: T.subtleBg } }}
+          >
+            <X size={16} />
+          </IconButton>
+        </Box>
+
+        <DialogContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Resource Type */}
+          <Box>
+            <FieldLabel required>Resource Type</FieldLabel>
+            <TextField
+              fullWidth
+              placeholder="e.g., electricity, water, packaging"
+              size="small"
+              value={resourceFormData.resource_type}
+              onChange={(e) => handleResourceChange('resource_type', e.target.value)}
+              sx={inputSx}
+            />
+          </Box>
+
+          {/* Unit */}
+          <Box>
+            <FieldLabel required>Unit of Measurement</FieldLabel>
+            <TextField
+              fullWidth
+              placeholder="e.g., watt, liter, kg, unit"
+              size="small"
+              value={resourceFormData.unit}
+              onChange={(e) => handleResourceChange('unit', e.target.value)}
+              sx={inputSx}
+            />
+          </Box>
+
+          {/* Quantity */}
+          <Box>
+            <FieldLabel required>Quantity</FieldLabel>
+            <TextField
+              fullWidth
+              type="number"
+              size="small"
+              value={resourceFormData.quantity}
+              onChange={(e) => handleResourceChange('quantity', parseFloat(e.target.value) || 1)}
+              inputProps={{ step: "0.01", min: "0" }}
+              sx={inputSx}
+            />
+          </Box>
+
+          {/* Cost */}
+          <Box>
+            <FieldLabel required>Cost (₹)</FieldLabel>
+            <TextField
+              fullWidth
+              type="number"
+              size="small"
+              value={resourceFormData.cost}
+              onChange={(e) => handleResourceChange('cost', parseFloat(e.target.value) || 0)}
+              inputProps={{ step: "0.01", min: "0" }}
+              sx={inputSx}
+            />
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 2.5, borderTop: `1px solid ${T.border}`, pt: 1.5 }}>
+          <Button
+            onClick={() => {
+              setShowResourceDialog(false);
+              setResourceFormData({ resource_type: '', unit: '', quantity: 1, cost: 0 });
+            }}
+            sx={{
+              borderRadius: "10px", textTransform: "none", fontWeight: 700,
+              color: T.textMid, border: `1.5px solid ${T.border}`, px: 2.5,
+              "&:hover": { background: T.subtleBg },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddResource}
+            variant="contained"
+            sx={{
+              borderRadius: "10px", textTransform: "none", fontWeight: 800,
+              background: `linear-gradient(135deg, ${T.brand}, ${T.brandDark})`,
+              boxShadow: T.shadowBrand,
+              "&:hover": { boxShadow: T.shadowBrandHover, transform: "translateY(-1px)" },
+              transition: "all 0.15s",
+            }}
+          >
+            Add Resource
           </Button>
         </DialogActions>
       </Dialog>

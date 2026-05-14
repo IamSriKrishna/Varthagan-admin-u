@@ -34,17 +34,19 @@ import {
   Clock,
   X as CloseIcon,
 } from 'lucide-react';
-import { stockService, StockItem, ProductStockItem, VariantStockItem, StockMovement } from '@/lib/api/stockService';
+import { stockService, StockItem, StockMovement } from '@/lib/api/stockService';
+import MarkDamagedDialog from './MarkDamagedDialog';
+import { AlertTriangle } from 'lucide-react';
 
 // ============================================================================
 // Helper Functions & Type Guards
 // ============================================================================
 
-function isVariantStock(stock: any): stock is VariantStockItem {
+function isVariantStock(stock: any): stock is any {
   return 'variant_sku' in stock && stock.variant_sku !== undefined;
 }
 
-function isProductWithVariants(stock: any): stock is ProductStockItem {
+function isProductWithVariants(stock: any): stock is any {
   return stock.variants !== undefined && stock.variants.length > 0;
 }
 
@@ -57,8 +59,8 @@ function hasVariants(stock: any): boolean {
 // ============================================================================
 
 export default function StockManagement() {
-  const [stocks, setStocks] = useState<(StockItem | ProductStockItem | VariantStockItem)[]>([]);
-  const [filteredStocks, setFilteredStocks] = useState<(StockItem | ProductStockItem | VariantStockItem)[]>([]);
+  const [stocks, setStocks] = useState<any[]>([]);
+  const [filteredStocks, setFilteredStocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -73,6 +75,14 @@ export default function StockManagement() {
   const [movementsLimit] = useState(5);
   const [movementsDialogOpen, setMovementsDialogOpen] = useState(false);
   const [selectedProductName, setSelectedProductName] = useState('');
+  const [markDamagedDialogOpen, setMarkDamagedDialogOpen] = useState(false);
+  const [selectedProductForDamage, setSelectedProductForDamage] = useState<{
+    productId: string;
+    productName: string;
+    variantSku?: string;
+    variantName?: string;
+    availableStock: number;
+  } | null>(null);
 
   // Fetch stock summary on component mount
   useEffect(() => {
@@ -105,8 +115,9 @@ export default function StockManagement() {
         item.product_id.toLowerCase().includes(lowercaseSearch);
 
       // For products, also search by main SKU
-      if (!isVariantStock(item)) {
-        if ('sku' in item && item.sku.toLowerCase().includes(lowercaseSearch)) {
+      if (!isVariantStock(item) && 'sku' in item) {
+        const sku = (item as any).sku;
+        if (sku && sku.toLowerCase().includes(lowercaseSearch)) {
           return true;
         }
       }
@@ -123,7 +134,7 @@ export default function StockManagement() {
       // For products with variants, also search variant details
       if (isProductWithVariants(item) && item.variants) {
         const hasMatchingVariant = item.variants.some(
-          (v) =>
+          (v: any) =>
             v.variant_sku.toLowerCase().includes(lowercaseSearch) ||
             v.variant_name.toLowerCase().includes(lowercaseSearch)
         );
@@ -200,6 +211,36 @@ export default function StockManagement() {
     setMovementsPage(1);
   };
 
+  // Handle mark as damaged
+  const handleOpenMarkDamagedDialog = (product: any, variant?: any) => {
+    const isVariant = variant !== undefined;
+    setSelectedProductForDamage({
+      productId: product.product_id,
+      productName: product.product_name,
+      variantSku: isVariant ? variant.variant_sku : product.variant_sku,
+      variantName: isVariant ? variant.variant_name : product.variant_name,
+      availableStock: isVariant ? variant.available_stock : product.available_stock,
+    });
+    setMarkDamagedDialogOpen(true);
+  };
+
+  const handleCloseMarkDamagedDialog = () => {
+    setMarkDamagedDialogOpen(false);
+    setSelectedProductForDamage(null);
+  };
+
+  const handleMarkDamagedSuccess = async () => {
+    // Refresh stock summary after marking as damaged
+    try {
+      const response = await stockService.getStockSummary();
+      setStocks(response.stocks);
+      setFilteredStocks(response.stocks);
+      setTotalStockValue(response.total_stock_value);
+    } catch (err) {
+      console.error('Error refreshing stock after marking damaged:', err);
+    }
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -219,8 +260,9 @@ export default function StockManagement() {
     });
   };
 
-  const getStockStatus = (stock: StockItem) => {
-    const stockPercentage = (stock.available_stock / stock.purchased_total) * 100;
+  const getStockStatus = (stock: any) => {
+    const purchasedTotal = (stock.purchased_total || stock.purchased_stock || 1);
+    const stockPercentage = (stock.available_stock / purchasedTotal) * 100;
 
     if (stockPercentage === 0) {
       return { label: 'Out of Stock', color: '#dc2626', bgColor: '#fee2e2' };
@@ -457,7 +499,7 @@ export default function StockManagement() {
                                 {stock.product_name}
                               </Typography>
                               <Typography sx={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                SKU: {isVariantStock(stock) ? stock.variant_sku : stock.sku}
+                                SKU: {isVariantStock(stock) ? (stock as any).variant_sku : (stock as any).sku}
                               </Typography>
                               <Typography sx={{ fontSize: '0.7rem', color: '#cbd5e1' }}>
                                 ID: {stock.product_id}
@@ -469,7 +511,7 @@ export default function StockManagement() {
                                     {stock.variant_name}
                                   </Typography>
                                   <Stack direction="row" spacing={1} sx={{ mt: 0.25 }}>
-                                    {Object.entries(stock.variant_attributes).map(([key, value]) => (
+                                    {Object.entries(stock.variant_attributes || {}).map(([key, value]: [string, any]) => (
                                       <Box
                                         key={key}
                                         sx={{
@@ -482,7 +524,7 @@ export default function StockManagement() {
                                           fontWeight: 500,
                                         }}
                                       >
-                                        {key}: {value}
+                                        {key}: {String(value)}
                                       </Box>
                                     ))}
                                   </Stack>
@@ -504,7 +546,7 @@ export default function StockManagement() {
                                       fontWeight: 600,
                                     }}
                                   >
-                                    📦 {(stock as ProductStockItem).variants?.length || 0} variants
+                                    📦 {(stock as any).variants?.length || 0} variants
                                   </Box>
                                 </Box>
                               )}
@@ -552,25 +594,40 @@ export default function StockManagement() {
                         </Box>
                       </TableCell>
                       <TableCell align="center">
-                        <Tooltip title="View Movements">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleViewMovements(stock.product_id, stock.product_name)}
-                            sx={{
-                              borderRadius: 1.5,
-                              color: '#0f172a',
-                              '&:hover': { backgroundColor: '#f1f5f9' },
-                            }}
-                          >
-                            <Clock size={16} />
-                          </IconButton>
-                        </Tooltip>
+                        <Stack direction="row" spacing={0.5} justifyContent="center">
+                          <Tooltip title="View Movements">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleViewMovements(stock.product_id, stock.product_name)}
+                              sx={{
+                                borderRadius: 1.5,
+                                color: '#0f172a',
+                                '&:hover': { backgroundColor: '#f1f5f9' },
+                              }}
+                            >
+                              <Clock size={16} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Mark as Damaged">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleOpenMarkDamagedDialog(stock)}
+                              sx={{
+                                borderRadius: 1.5,
+                                color: '#dc2626',
+                                '&:hover': { backgroundColor: '#fee2e2' },
+                              }}
+                            >
+                              <AlertTriangle size={16} />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
                       </TableCell>
                     </TableRow>
 
                     {/* Expanded Variant Rows */}
-                    {hasVars && isExpanded && (stock as ProductStockItem).variants?.map((variant) => {
-                      const variantStatus = getStockStatus(variant);
+                    {hasVars && isExpanded && (stock as any).variants?.map((variant: any) => {
+                      const variantStatus = getStockStatus(variant as any);
                       return (
                         <TableRow
                           key={variant.id}
@@ -603,9 +660,9 @@ export default function StockManagement() {
                                 </Stack>
                               </Stack>
                               {/* Variant Attributes */}
-                              {Object.keys(variant.variant_attributes).length > 0 && (
+                              {Object.keys(variant.variant_attributes || {}).length > 0 && (
                                 <Stack direction="row" spacing={0.75} sx={{ mt: 0.75, ml: 2 }}>
-                                  {Object.entries(variant.variant_attributes).map(([key, value]) => (
+                                  {Object.entries(variant.variant_attributes || {}).map(([key, value]: [string, any]) => (
                                     <Box
                                       key={key}
                                       sx={{
@@ -618,7 +675,7 @@ export default function StockManagement() {
                                         fontWeight: 500,
                                       }}
                                     >
-                                      {key}: {value}
+                                      {key}: {String(value)}
                                     </Box>
                                   ))}
                                 </Stack>
@@ -665,19 +722,34 @@ export default function StockManagement() {
                             </Box>
                           </TableCell>
                           <TableCell align="center">
-                            <Tooltip title="View Movements">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleViewMovements(variant.product_id, variant.variant_name)}
-                                sx={{
-                                  borderRadius: 1.5,
-                                  color: '#0f172a',
-                                  '&:hover': { backgroundColor: '#f1f5f9' },
-                                }}
-                              >
-                                <Clock size={16} />
-                              </IconButton>
-                            </Tooltip>
+                            <Stack direction="row" spacing={0.5} justifyContent="center">
+                              <Tooltip title="View Movements">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleViewMovements(variant.product_id, variant.variant_name)}
+                                  sx={{
+                                    borderRadius: 1.5,
+                                    color: '#0f172a',
+                                    '&:hover': { backgroundColor: '#f1f5f9' },
+                                  }}
+                                >
+                                  <Clock size={16} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Mark as Damaged">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleOpenMarkDamagedDialog(stock, variant)}
+                                  sx={{
+                                    borderRadius: 1.5,
+                                    color: '#dc2626',
+                                    '&:hover': { backgroundColor: '#fee2e2' },
+                                  }}
+                                >
+                                  <AlertTriangle size={16} />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
                           </TableCell>
                         </TableRow>
                       );
@@ -854,6 +926,20 @@ export default function StockManagement() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Mark Damaged Dialog */}
+      {selectedProductForDamage && (
+        <MarkDamagedDialog
+          open={markDamagedDialogOpen}
+          onClose={handleCloseMarkDamagedDialog}
+          onSuccess={handleMarkDamagedSuccess}
+          productId={selectedProductForDamage.productId}
+          productName={selectedProductForDamage.productName}
+          variantSku={selectedProductForDamage.variantSku}
+          variantName={selectedProductForDamage.variantName}
+          availableStock={selectedProductForDamage.availableStock}
+        />
+      )}
     </Stack>
   );
 }
