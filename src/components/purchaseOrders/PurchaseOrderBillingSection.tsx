@@ -47,23 +47,24 @@ export const PurchaseOrderBillingSection: React.FC<PurchaseOrderBillingProps> = 
 
   const calculations = useMemo(() => {
     const subTotal = calculateSubTotal(formik.values.line_items);
+    const discountType = (formik.values.discount_type || 'amount') as 'percentage' | 'amount';
     const discountAmount = calculateDiscountAmount(
       subTotal,
       formik.values.discount,
-      formik.values.discount_type
+      discountType
     );
     const selectedTax = taxes.find((t: Tax) => t.id === formik.values.tax_id);
     const taxRate = selectedTax?.rate || 0;
     const taxAmount = calculateTaxAmount(
       subTotal,
       formik.values.discount,
-      formik.values.discount_type,
+      discountType,
       taxRate
     );
     const total = calculateTotal(
       subTotal,
       formik.values.discount,
-      formik.values.discount_type,
+      discountType,
       taxAmount,
       formik.values.adjustment
     );

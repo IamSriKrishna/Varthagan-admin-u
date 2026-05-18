@@ -193,7 +193,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ companyId 
               >
                 <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#9c27b0' }}>
                   ₹
-                  {(employees.reduce((sum, e) => sum + e.monthly_salary, 0) / 100000).toFixed(1)}
+                  {(employees.reduce((sum, e) => sum + (e.monthly_salary || 0), 0) / 100000).toFixed(1)}
                   L
                 </Box>
                 <Box sx={{ color: '#666', marginTop: 1 }}>Total Monthly Salary</Box>
@@ -213,7 +213,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ companyId 
                 <Box sx={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#e91e63' }}>
                   ₹
                   {(
-                    employees.reduce((sum, e) => sum + e.monthly_salary, 0) /
+                    employees.reduce((sum, e) => sum + (e.monthly_salary || 0), 0) /
                     Math.max(employees.length, 1) /
                     1000
                   ).toFixed(0)}
@@ -234,7 +234,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ companyId 
                 }}
               >
                 <Box sx={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#2e7d32' }}>
-                  ₹{Math.max(0, ...employees.map((e) => e.monthly_salary)).toLocaleString()}
+                  ₹{Math.max(0, ...employees.map((e) => e.monthly_salary || 0)).toLocaleString()}
                 </Box>
                 <Box sx={{ color: '#666', marginTop: 1 }}>Highest Salary</Box>
               </Box>
@@ -251,7 +251,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ companyId 
                 }}
               >
                 <Box sx={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#d84315' }}>
-                  ₹{Math.min(...employees.map((e) => e.monthly_salary)).toLocaleString()}
+                  ₹{Math.min(...employees.map((e) => e.monthly_salary || 0)).toLocaleString()}
                 </Box>
                 <Box sx={{ color: '#666', marginTop: 1 }}>Lowest Salary</Box>
               </Box>
@@ -304,7 +304,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ companyId 
                     <tr key={emp.id}>
                       <td>{emp.name}</td>
                       <td>{emp.employee_type}</td>
-                      <td>₹{emp.monthly_salary.toLocaleString()}</td>
+                      <td>₹{(emp.monthly_salary || 0).toLocaleString()}</td>
                       <td>{emp.document_url ? '✓ Yes' : '✗ No'}</td>
                       <td>{new Date(emp.created_at).toLocaleDateString()}</td>
                     </tr>

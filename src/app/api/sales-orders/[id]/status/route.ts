@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 /**
  * GET /api/sales-orders/[id]/status - Get sales order
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const salesOrderId = params.id;
+    const { id: salesOrderId } = await params;
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8088";
 
     const response = await fetch(`${baseUrl}/sales-orders/${salesOrderId}`, {
@@ -32,9 +32,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 /**
  * PATCH /api/sales-orders/[id]/status - Update sales order status
  */
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const salesOrderId = params.id;
+    const { id: salesOrderId } = await params;
     const body = await request.json();
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8088";
 
@@ -70,9 +70,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 /**
  * PUT /api/sales-orders/[id] - Update sales order
  */
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const salesOrderId = params.id;
+    const { id: salesOrderId } = await params;
     const body = await request.json();
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8088";
 
@@ -101,9 +101,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 /**
  * DELETE /api/sales-orders/[id] - Delete sales order
  */
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const salesOrderId = params.id;
+    const { id: salesOrderId } = await params;
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8088";
 
     const response = await fetch(`${baseUrl}/sales-orders/${salesOrderId}`, {

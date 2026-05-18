@@ -23,14 +23,9 @@ export interface IProductAttributeDefinition {
 
 // Product details section
 export interface IProductDetails {
-  unit: string;
+  unit?: string;
   base_sku?: string;
-  upc?: string;
-  ean?: string;
-  mpn?: string;
-  isbn?: string;
-  description: string;
-  manufacturer_id?: number;
+  description?: string;
   attribute_definitions?: IProductAttributeDefinition[];
   variants?: IProductVariant[];
 }
@@ -48,7 +43,6 @@ export interface IPurchaseInfo {
   account?: string;
   cost_price?: number;
   currency?: string;
-  preferred_vendor_id?: string;
   description?: string;
 }
 
@@ -65,13 +59,25 @@ export interface IReturnPolicy {
   returnable: boolean;
 }
 
-// Main form interface - Create Product
+// Resource product fields
+export interface IResourceProduct {
+  resource_name: string;
+  resource_unit: string;
+  resource_cost_per_unit: number;
+}
+
+// Main form interface - Create Product (supports both regular and resource products)
 export interface IProductForm {
   name: string;
-  product_details: IProductDetails;
-  sales_info: ISalesInfo;
+  is_resource?: boolean; // Indicates if this is a resource product
+  // Resource product fields (only when is_resource: true)
+  resource_name?: string;
+  resource_unit?: string;
+  resource_cost_per_unit?: number;
+  // Regular product fields (only when is_resource: false)
+  product_details?: IProductDetails;
+  sales_info?: ISalesInfo;
   purchase_info?: IPurchaseInfo;
-  inventory?: IInventory;
   return_policy?: IReturnPolicy;
   has_style?: boolean; // For UI state, whether to show style/variant builder
 }

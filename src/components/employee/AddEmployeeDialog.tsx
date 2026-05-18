@@ -43,7 +43,9 @@ export const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
     number: '',
     address: '',
     employee_type: 'full-time' as const,
+    salary_type: 'monthly' as 'monthly' | 'weekly',
     monthly_salary: '',
+    weekly_salary: '',
     document_file: null as File | null,
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -89,9 +91,15 @@ export const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
     if (!formData.name.trim()) errors.name = 'Name is required';
     if (!formData.number.trim()) errors.number = 'Phone number is required';
     if (!formData.address.trim()) errors.address = 'Address is required';
-    if (!formData.monthly_salary) errors.monthly_salary = 'Monthly salary is required';
-    else if (parseFloat(formData.monthly_salary) <= 0)
-      errors.monthly_salary = 'Salary must be greater than 0';
+    
+    const salaryField = formData.salary_type === 'monthly' ? 'monthly_salary' : 'weekly_salary';
+    const salary = formData.salary_type === 'monthly' ? formData.monthly_salary : formData.weekly_salary;
+    
+    if (!salary) {
+      errors[salaryField] = `${formData.salary_type === 'monthly' ? 'Monthly' : 'Weekly'} salary is required`;
+    } else if (parseFloat(salary) <= 0) {
+      errors[salaryField] = 'Salary must be greater than 0';
+    }
 
     if (!editingEmployeeId && !formData.document_file) {
       errors.document_file = 'Document is required for new employees';
@@ -111,15 +119,22 @@ export const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
 
 
       if (editingEmployeeId) {
+        const salary = formData.salary_type === 'monthly' ? 
+          parseFloat(formData.monthly_salary) : 
+          parseFloat(formData.weekly_salary);
+
         const updateData: EmployeeUpdateRequest = {
           name: formData.name || undefined,
           email: formData.email || undefined,
           number: formData.number || undefined,
           address: formData.address || undefined,
           employee_type: formData.employee_type,
-          monthly_salary: parseFloat(formData.monthly_salary),
+          salary_type: formData.salary_type,
+          ...(formData.salary_type === 'monthly' 
+            ? { monthly_salary: salary }
+            : { weekly_salary: salary }
+          ),
         };
-
 
         const response = await employeeService.updateEmployee(editingEmployeeId, updateData);
         if (response.success) {
@@ -133,13 +148,18 @@ export const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
         }
       } else {
         // Create FormData with all fields and document file
+        const salary = formData.salary_type === 'monthly' ? 
+          formData.monthly_salary : 
+          formData.weekly_salary;
+
         const formDataObj = new FormData();
         formDataObj.append("name", formData.name);
         if (formData.email) formDataObj.append("email", formData.email);
         formDataObj.append("number", formData.number);
         formDataObj.append("address", formData.address);
         formDataObj.append("employee_type", formData.employee_type);
-        formDataObj.append("monthly_salary", formData.monthly_salary);
+        formDataObj.append("salary_type", formData.salary_type);
+        formDataObj.append(formData.salary_type === 'monthly' ? "monthly_salary" : "weekly_salary", salary);
         if (formData.document_file) {
           formDataObj.append("document", formData.document_file);
         }
@@ -169,7 +189,9 @@ export const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
       number: '',
       address: '',
       employee_type: 'full-time',
+      salary_type: 'monthly',
       monthly_salary: '',
+      weekly_salary: '',
       document_file: null,
     });
     setValidationErrors({});
@@ -329,28 +351,77 @@ export const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
               </FormControl>
             </Box>
 
-            {/* Monthly Salary */}
+            {/* Salary Type */}
             <Box>
               <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                Monthly Salary *
+                Salary Type *
               </Typography>
-              <TextField
-                fullWidth
-                placeholder="Enter monthly salary"
-                name="monthly_salary"
-                type="number"
-                value={formData.monthly_salary}
-                onChange={handleInputChange}
-                error={!!validationErrors.monthly_salary}
-                helperText={validationErrors.monthly_salary}
-                inputProps={{ step: '0.01', min: '0' }}
-                size="small"
-                sx={{ mt: 0.5 }}
-                InputProps={{
-                  startAdornment: '₹',
-                }}
-              />
+              <FormControl fullWidth size="small" sx={{ mt: 0.5 }}>
+                <Select
+                  name="salary_type"
+                  value={formData.salary_type}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      salary_type: e.target.value as 'monthly' | 'weekly',
+                    }))
+                  }
+                >
+                  <MenuItem value="monthly">Monthly</MenuItem>
+                  <MenuItem value="weekly">Weekly</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
+
+            {/* Monthly Salary */}
+            {formData.salary_type === 'monthly' && (
+              <Box>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                  Monthly Salary *
+                </Typography>
+                <TextField
+                  fullWidth
+                  placeholder="Enter monthly salary"
+                  name="monthly_salary"
+                  type="number"
+                  value={formData.monthly_salary}
+                  onChange={handleInputChange}
+                  error={!!validationErrors.monthly_salary}
+                  helperText={validationErrors.monthly_salary}
+                  inputProps={{ step: '0.01', min: '0' }}
+                  size="small"
+                  sx={{ mt: 0.5 }}
+                  InputProps={{
+                    startAdornment: '₹',
+                  }}
+                />
+              </Box>
+            )}
+
+            {/* Weekly Salary */}
+            {formData.salary_type === 'weekly' && (
+              <Box>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                  Weekly Salary *
+                </Typography>
+                <TextField
+                  fullWidth
+                  placeholder="Enter weekly salary"
+                  name="weekly_salary"
+                  type="number"
+                  value={formData.weekly_salary}
+                  onChange={handleInputChange}
+                  error={!!validationErrors.weekly_salary}
+                  helperText={validationErrors.weekly_salary}
+                  inputProps={{ step: '0.01', min: '0' }}
+                  size="small"
+                  sx={{ mt: 0.5 }}
+                  InputProps={{
+                    startAdornment: '₹',
+                  }}
+                />
+              </Box>
+            )}
 
             {/* Document Upload */}
             <Box>

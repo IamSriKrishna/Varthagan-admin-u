@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { status: string } }
+  { params }: { params: Promise<{ status: string }> }
 ) {
   try {
-    const status = params.status;
+    const { status } = await params;
     const searchParams = request.nextUrl.searchParams;
     const page = searchParams.get("page") || "1";
     const limit = searchParams.get("limit") || "10";

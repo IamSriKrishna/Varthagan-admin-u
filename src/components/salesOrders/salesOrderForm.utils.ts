@@ -6,7 +6,7 @@ import {
   SalesOrderLineItemOutput,
 } from '@/models/salesOrder.model';
 
-export const initialSalesOrderValues: SalesOrder = {
+export const initialSalesOrderValues: Partial<SalesOrder> = {
   customer_id: 0,
   reference_no: '',
   sales_order_date: new Date().toISOString().split('T')[0],
@@ -24,14 +24,14 @@ export const initialSalesOrderValues: SalesOrder = {
 
 /**
  * Create a new blank line item with optional defaults
- * Uses Product Groups for bundled products
+ * Uses Manufacturers for manufacturing batch management
  */
 export const createBlankLineItem = (
   overrides?: Partial<SalesOrderLineItemInput>
 ): SalesOrderLineItemInput => {
   return {
-    product_group_id: '',
-    product_group_name: '',
+    manufacturer_id: '',
+    manufacturer_name: '',
     account: 'SALES',
     quantity: 1,
     rate: 0,
@@ -59,21 +59,21 @@ export const transformSOToPayload = (
   const payload: any = {
     customer_id: so.customer_id,
     reference_no: so.reference_no,
-    sales_order_date: formatDateToISO(so.sales_order_date),
-    expected_shipment_date: formatDateToISO(so.expected_shipment_date),
+    sales_order_date: formatDateToISO(so.sales_order_date || new Date().toISOString().split('T')[0]),
+    expected_shipment_date: formatDateToISO(so.expected_shipment_date || new Date().toISOString().split('T')[0]),
     payment_terms: so.payment_terms,
     delivery_method: so.delivery_method,
     line_items: so.line_items.map((item, index) => {
-      // Validate required fields for product groups
-      if (!item.product_group_id) throw new Error(`Line item ${index + 1}: product group is required`);
-      if (!item.product_group_name) throw new Error(`Line item ${index + 1}: product group name is required`);
+      // Validate required fields for manufacturers
+      if (!item.manufacturer_id) throw new Error(`Line item ${index + 1}: manufacturer is required`);
+      if (!item.manufacturer_name) throw new Error(`Line item ${index + 1}: manufacturer name is required`);
       if (item.quantity === undefined || item.quantity === null) throw new Error(`Line item ${index + 1}: quantity is required`);
       if (item.rate === undefined || item.rate === null) throw new Error(`Line item ${index + 1}: rate is required`);
       if (!item.account) throw new Error(`Line item ${index + 1}: account is required`);
 
       const lineItem: any = {
-        product_group_id: item.product_group_id,
-        product_group_name: item.product_group_name,
+        manufacturer_id: item.manufacturer_id,
+        manufacturer_name: item.manufacturer_name,
         quantity: item.quantity,
         rate: item.rate,
         account: item.account,
@@ -102,12 +102,12 @@ export const transformSOToPayload = (
 export const validateLineItem = (item: SalesOrderLineItemInput | LineItem): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
-  if (!item.product_group_id) {
-    errors.push('Product Group ID is required');
+  if (!item.manufacturer_id) {
+    errors.push('Manufacturer ID is required');
   }
 
-  if (!item.product_group_name) {
-    errors.push('Product Group name is required');
+  if (!item.manufacturer_name) {
+    errors.push('Manufacturer name is required');
   }
 
   if (!item.account) {
@@ -132,7 +132,7 @@ export const validateLineItem = (item: SalesOrderLineItemInput | LineItem): { va
  * Check if line item is a variant line item (deprecated - kept for backward compatibility)
  */
 export const isVariantLineItem = (
-  item: SalesOrderLineItemInput | LineItem | SalesOrderLineItemOutput
+  _item: SalesOrderLineItemInput | LineItem | SalesOrderLineItemOutput
 ): boolean => {
   // For Product Groups, this is always false
   return false;
@@ -142,7 +142,7 @@ export const isVariantLineItem = (
  * Get variant display information (deprecated - kept for backward compatibility)
  */
 export const getVariantDisplay = (
-  item: SalesOrderLineItemInput | LineItem | SalesOrderLineItemOutput
+  _item: SalesOrderLineItemInput | LineItem | SalesOrderLineItemOutput
 ): { name: string; attributes: string } => {
   // For Product Groups, return empty values
   return { name: '', attributes: '' };
@@ -152,11 +152,11 @@ export const getVariantDisplay = (
  * Format line item for display
  */
 export const formatLineItemDisplay = (
-  item: SalesOrderLineItemInput | LineItem | SalesOrderLineItemOutput
+  item: any
 ): string => {
-  // For Product Groups, use product_group_name
-  if ('product_group_name' in item) {
-    return item.product_group_name || 'Unknown Product Group';
+  // For Manufacturers, use manufacturer_name
+  if ('manufacturer_name' in item) {
+    return item.manufacturer_name || 'Unknown Manufacturer';
   }
   
   // Fallback for backward compatibility
@@ -164,7 +164,7 @@ export const formatLineItemDisplay = (
     return item.product_name || 'Unknown Product';
   }
 
-  return 'Unknown Product Group';
+  return 'Unknown Manufacturer';
 };
 
 /**

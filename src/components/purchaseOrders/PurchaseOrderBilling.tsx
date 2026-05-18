@@ -135,11 +135,12 @@ export const PurchaseOrderBilling: React.FC<PurchaseOrderBillingProps> = ({ form
 
   const calc = useMemo(() => {
     const sub = calculateSubTotal(formik.values.line_items);
-    const disc = calculateDiscountAmount(sub, formik.values.discount, formik.values.discount_type);
+    const discountType = (formik.values.discount_type || 'amount') as 'percentage' | 'amount';
+    const disc = calculateDiscountAmount(sub, formik.values.discount, discountType);
     const selectedTax = taxes.find((t: Tax) => t.id === formik.values.tax_id);
     const taxRate = selectedTax?.rate || 0;
-    const tax = calculateTaxAmount(sub, formik.values.discount, formik.values.discount_type, taxRate);
-    const total = calculateTotal(sub, formik.values.discount, formik.values.discount_type, tax, formik.values.adjustment);
+    const tax = calculateTaxAmount(sub, formik.values.discount, discountType, taxRate);
+    const total = calculateTotal(sub, formik.values.discount, discountType, tax, formik.values.adjustment);
     return {
       sub:  Number(sub)  || 0,
       disc: Number(disc) || 0,

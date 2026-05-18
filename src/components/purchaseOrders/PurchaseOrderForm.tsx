@@ -243,7 +243,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
   const { getPurchaseOrder, createPurchaseOrder, updatePurchaseOrder, loading, error } =
     usePurchaseOrder();
   const [tabValue, setTabValue]       = useState(0);
-  const [initialValues, setInitialValues] = useState<PurchaseOrder>(initialPurchaseOrderValues);
+  const [initialValues, setInitialValues] = useState<PurchaseOrder>(initialPurchaseOrderValues as any);
   const [pageError, setPageError]     = useState<string | null>(null);
   const [saved, setSaved]             = useState(false);
   const isEdit = purchaseOrderId && purchaseOrderId !== 'new';

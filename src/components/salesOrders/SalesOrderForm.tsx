@@ -46,7 +46,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId }) => {
   const router = useRouter();
   const { getSalesOrder, createSalesOrder, updateSalesOrder, loading } = useSalesOrder();
   const [activeStep, setActiveStep] = useState(0);
-  const [initialValues, setInitialValues] = useState<SalesOrder>(initialSalesOrderValues);
+  const [initialValues, setInitialValues] = useState<SalesOrder>(initialSalesOrderValues as any);
   const [pageError, setPageError] = useState<string | null>(null);
   const [openCreateSalesperson, setOpenCreateSalesperson] = useState(false);
   const [salespersonRefreshTrigger, setSalespersonRefreshTrigger] = useState(0);
@@ -355,7 +355,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId }) => {
                 salespersonRefreshTrigger={salespersonRefreshTrigger}
               />
             )}
-            {activeStep === 1 && <SalesOrderLineItems formik={formik} />}
+            {activeStep === 1 && <SalesOrderLineItems formik={formik} customerId={formik.values.customer_id} />}
             {activeStep === 2 && <SalesOrderBilling formik={formik} />}
 
             {/* ── Step Navigation ── */}

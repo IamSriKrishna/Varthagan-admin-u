@@ -5,7 +5,9 @@ export interface Employee {
   number: string;
   address: string;
   employee_type: 'full-time' | 'part-time';
-  monthly_salary: number;
+  salary_type: 'monthly' | 'weekly';
+  monthly_salary?: number;
+  weekly_salary?: number;
   document_url?: string;
   user_id: number;
   company_id: number;
@@ -19,7 +21,9 @@ export interface EmployeeCreateRequest {
   number: string;
   address: string;
   employee_type: 'full-time' | 'part-time';
-  monthly_salary: number;
+  salary_type: 'monthly' | 'weekly';
+  monthly_salary?: number;
+  weekly_salary?: number;
   document?: File;
 }
 
@@ -29,7 +33,9 @@ export interface EmployeeUpdateRequest {
   number?: string;
   address?: string;
   employee_type?: 'full-time' | 'part-time';
+  salary_type?: 'monthly' | 'weekly';
   monthly_salary?: number;
+  weekly_salary?: number;
 }
 
 export interface EmployeeResponse {

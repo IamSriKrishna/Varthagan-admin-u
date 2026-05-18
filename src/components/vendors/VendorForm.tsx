@@ -455,7 +455,7 @@ export const VendorForm: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const vendorData = await getVendor(vendorId);
+      const vendorData = await getVendor(vendorId!);
       setInitialData(vendorData);
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || "Failed to load vendor details";

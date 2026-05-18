@@ -19,33 +19,47 @@ export interface Variant {
 }
 
 export interface ProductDetails {
-  unit: string;
-  base_sku: string;
-  upc?: string;
-  description: string;
-  attribute_definitions: AttributeDefinition[];
-  manufacturer_id: number;
-  variants: Variant[];
+  unit?: string;
+  base_sku?: string;
+  description?: string;
+  attribute_definitions?: AttributeDefinition[];
+  variants?: Variant[];
 }
 
 export interface SalesInfo {
-  account: string;
-  selling_price: number;
-  markup_percent?: number;
+  account?: string;
+  selling_price?: number;
+  currency?: string;
+  description?: string;
 }
 
 export interface PurchaseInfo {
-  account: string;
-  cost_price: number;
+  account?: string;
+  cost_price?: number;
+  currency?: string;
+  description?: string;
+}
+
+// ─── Resource Product ────────────────────────────────────────────────────────
+
+export interface ResourceProduct {
+  resource_name: string;
+  resource_unit: string;
+  resource_cost_per_unit: number;
 }
 
 // ─── Request ──────────────────────────────────────────────────────────────────
 
 export interface CreateProductRequest {
   name: string;
-  product_details: ProductDetails;
-  sales_info: SalesInfo;
-  purchase_info: PurchaseInfo;
+  is_resource?: boolean;
+  product_details?: ProductDetails;
+  sales_info?: SalesInfo;
+  purchase_info?: PurchaseInfo;
+  return_policy?: ReturnPolicy;
+  resource_name?: string;
+  resource_unit?: string;
+  resource_cost_per_unit?: number;
 }
 
 export interface UpdateProductRequest extends Partial<CreateProductRequest> {}
@@ -57,9 +71,9 @@ export interface Manufacturer {
   name: string;
 }
 
-export interface ProductDetailsResponse extends Omit<ProductDetails, 'manufacturer_id'> {
-  manufacturer_id: number;
-  manufacturer: Manufacturer;
+export interface ProductDetailsResponse extends ProductDetails {
+  manufacturer_id?: number;
+  manufacturer?: Manufacturer;
 }
 
 export interface Inventory {
@@ -166,5 +180,118 @@ export const productService = {
   async getManufacturers(): Promise<{ data: Manufacturer[] } | { manufacturers: Manufacturer[] }> {
     const response = await apiService.get('/manufacturers');
     return response.data ?? response;
+  },
+
+  /**
+   * Check compatibility between bottle and cap
+   */
+  async checkCompatibility(bottleId: number, capId: number): Promise<{ compatible: boolean }> {
+    const response = await apiService.get(`/bottles/${bottleId}/caps/${capId}/compatible`);
+    return response.data ?? response;
+  },
+};
+
+// ─── Bottle Service ───────────────────────────────────────────────────────────
+
+const BOTTLES_ENDPOINT = '/bottles';
+
+export const bottleService = {
+  async getBottles(page: number = 1, limit: number = 10): Promise<{ data: any[] }> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    const response = await apiService.get(`${BOTTLES_ENDPOINT}?${params}`);
+    return response.data ? { data: response.data } : { data: [] };
+  },
+
+  async getBottle(id: number): Promise<any> {
+    const response = await apiService.get(`${BOTTLES_ENDPOINT}/${id}`);
+    return response.data ?? response;
+  },
+
+  async createBottle(data: any): Promise<any> {
+    const response = await apiService.post(BOTTLES_ENDPOINT, data);
+    return response.data ?? response;
+  },
+
+  async updateBottle(id: number, data: any): Promise<any> {
+    const response = await apiService.put(`${BOTTLES_ENDPOINT}/${id}`, data);
+    return response.data ?? response;
+  },
+
+  async deleteBottle(id: number): Promise<{ success: boolean }> {
+    await apiService.delete(`${BOTTLES_ENDPOINT}/${id}`);
+    return { success: true };
+  },
+};
+
+// ─── Bottle Size Service ──────────────────────────────────────────────────────
+
+const BOTTLE_SIZES_ENDPOINT = '/bottle-sizes';
+
+export const bottleSizeService = {
+  async getBottleSizes(page: number = 1, limit: number = 10): Promise<{ data: any[] }> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    const response = await apiService.get(`${BOTTLE_SIZES_ENDPOINT}?${params}`);
+    return response.data ? { data: response.data } : { data: [] };
+  },
+
+  async getBottleSize(id: number): Promise<any> {
+    const response = await apiService.get(`${BOTTLE_SIZES_ENDPOINT}/${id}`);
+    return response.data ?? response;
+  },
+
+  async createBottleSize(data: any): Promise<any> {
+    const response = await apiService.post(BOTTLE_SIZES_ENDPOINT, data);
+    return response.data ?? response;
+  },
+
+  async updateBottleSize(id: number, data: any): Promise<any> {
+    const response = await apiService.put(`${BOTTLE_SIZES_ENDPOINT}/${id}`, data);
+    return response.data ?? response;
+  },
+
+  async deleteBottleSize(id: number): Promise<{ success: boolean }> {
+    await apiService.delete(`${BOTTLE_SIZES_ENDPOINT}/${id}`);
+    return { success: true };
+  },
+};
+
+// ─── Cap Service ──────────────────────────────────────────────────────────────
+
+const CAPS_ENDPOINT = '/caps';
+
+export const capService = {
+  async getCaps(page: number = 1, limit: number = 10): Promise<{ data: any[] }> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    const response = await apiService.get(`${CAPS_ENDPOINT}?${params}`);
+    return response.data ? { data: response.data } : { data: [] };
+  },
+
+  async getCap(id: number): Promise<any> {
+    const response = await apiService.get(`${CAPS_ENDPOINT}/${id}`);
+    return response.data ?? response;
+  },
+
+  async createCap(data: any): Promise<any> {
+    const response = await apiService.post(CAPS_ENDPOINT, data);
+    return response.data ?? response;
+  },
+
+  async updateCap(id: number, data: any): Promise<any> {
+    const response = await apiService.put(`${CAPS_ENDPOINT}/${id}`, data);
+    return response.data ?? response;
+  },
+
+  async deleteCap(id: number): Promise<{ success: boolean }> {
+    await apiService.delete(`${CAPS_ENDPOINT}/${id}`);
+    return { success: true };
   },
 };

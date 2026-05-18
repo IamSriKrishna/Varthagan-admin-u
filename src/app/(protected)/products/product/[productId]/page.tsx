@@ -29,31 +29,60 @@ import { headerBox } from "./AddProductForm.styles";
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required("Product Name is required"),
-  product_details: Yup.object().shape({
-    description: Yup.string().required("Description is required"),
-    unit: Yup.string().required("Unit is required"),
-    base_sku: Yup.string(),
-    upc: Yup.string(),
-    ean: Yup.string(),
-    mpn: Yup.string(),
-    isbn: Yup.string(),
+  is_resource: Yup.boolean(),
+  // Resource product fields
+  resource_name: Yup.string().when("is_resource", {
+    is: true,
+    then: (schema) => schema.required("Resource Name is required"),
+    otherwise: (schema) => schema.notRequired(),
   }),
-  sales_info: Yup.object().shape({
-    selling_price: Yup.number()
-      .typeError("Selling Price must be a number")
-      .required("Selling Price is required")
-      .min(0, "Price must be at least 0"),
-    currency: Yup.string(),
-    account: Yup.string(),
+  resource_unit: Yup.string().when("is_resource", {
+    is: true,
+    then: (schema) => schema.required("Resource Unit is required"),
+    otherwise: (schema) => schema.notRequired(),
   }),
-  purchase_info: Yup.object().shape({
-    cost_price: Yup.number()
-      .typeError("Cost Price must be a number")
-      .min(0, "Cost Price must be at least 0"),
+  resource_cost_per_unit: Yup.number().when("is_resource", {
+    is: true,
+    then: (schema) =>
+      schema
+        .typeError("Cost must be a number")
+        .required("Resource Cost Per Unit is required")
+        .min(0, "Cost must be at least 0"),
+    otherwise: (schema) => schema.notRequired(),
   }),
-  inventory: Yup.object().shape({
-    track_inventory: Yup.boolean(),
-    reorder_point: Yup.number().min(0),
+  // Regular product fields
+  product_details: Yup.object().when("is_resource", {
+    is: false,
+    then: (schema) =>
+      schema.shape({
+        description: Yup.string().required("Description is required"),
+        unit: Yup.string().required("Unit is required"),
+        base_sku: Yup.string(),
+      }),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  sales_info: Yup.object().when("is_resource", {
+    is: false,
+    then: (schema) =>
+      schema.shape({
+        selling_price: Yup.number()
+          .typeError("Selling Price must be a number")
+          .required("Selling Price is required")
+          .min(0, "Price must be at least 0"),
+        currency: Yup.string(),
+        account: Yup.string(),
+      }),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  purchase_info: Yup.object().when("is_resource", {
+    is: false,
+    then: (schema) =>
+      schema.shape({
+        cost_price: Yup.number()
+          .typeError("Cost Price must be a number")
+          .min(0, "Cost Price must be at least 0"),
+      }),
+    otherwise: (schema) => schema.notRequired(),
   }),
 });
 interface IVariant {
@@ -84,14 +113,14 @@ const convertUIVariantToProductVariant = (v: IVariant): any => ({
 
 const initialValues: IProductForm = {
   name: "",
+  is_resource: false,
+  resource_name: "",
+  resource_unit: "",
+  resource_cost_per_unit: 0,
   product_details: {
     unit: "",
     description: "",
     base_sku: "",
-    upc: "",
-    ean: "",
-    mpn: "",
-    isbn: "",
     variants: [],
     attribute_definitions: [],
   },
@@ -106,11 +135,6 @@ const initialValues: IProductForm = {
     currency: "INR",
     account: "",
     description: "",
-  },
-  inventory: {
-    track_inventory: false,
-    inventory_account: "",
-    reorder_point: 0,
   },
   return_policy: {
     returnable: false,
@@ -177,41 +201,45 @@ const AddProduct = () => {
         return initialValues;
       }
 
-      // Map old API structure to new form structure
+      // Check if this is a resource product
+      if (product.is_resource) {
+        return {
+          name: product.name ?? "",
+          is_resource: true,
+          resource_name: product.resource_name ?? "",
+          resource_unit: product.resource_unit ?? "",
+          resource_cost_per_unit: product.resource_cost_per_unit ?? 0,
+          // Set other fields to undefined to avoid conflicts
+          product_details: undefined,
+          sales_info: undefined,
+          purchase_info: undefined,
+          inventory: undefined,
+          return_policy: undefined,
+        } as IProductForm;
+      }
+
+      // Regular product mapping
       return {
         name: product.product_name ?? product.name ?? "",
+        is_resource: false,
         product_details: {
-          unit: product.unit ?? product.type ?? "piece",
-          description: product.description ?? "",
-          base_sku: product.base_sku ?? product.sku ?? product.id ?? "",
-          upc: product.upc ?? "",
-          ean: product.ean ?? "",
-          mpn: product.mpn ?? "",
-          isbn: product.isbn ?? "",
-          manufacturer_id: product.manufacturer_id,
+          unit: product.unit ?? product.type ?? product.product_details?.unit ?? "piece",
+          description: product.description ?? product.product_details?.description ?? "",
+          base_sku: product.base_sku ?? product.sku ?? product.product_details?.base_sku ?? product.id ?? "",
           variants: product.variants ?? product.product_details?.variants ?? [],
           attribute_definitions: product.attribute_definitions ?? product.product_details?.attribute_definitions ?? [],
         },
         sales_info: {
           account: product.sales_info?.account ?? product.account ?? "",
-          // Use the new structure first, fall back to old fields
           selling_price: product.sales_info?.selling_price ?? product.list_price ?? product.deal_amount ?? 0,
           currency: product.sales_info?.currency ?? product.currency ?? "INR",
           description: product.sales_info?.description ?? product.description ?? "",
         },
         purchase_info: {
           account: product.purchase_info?.account ?? "",
-          // Try new structure first, then old fields
           cost_price: product.purchase_info?.cost_price ?? product.cost_price ?? 0,
           currency: product.purchase_info?.currency ?? product.currency ?? "INR",
-          preferred_vendor_id: product.purchase_info?.preferred_vendor_id ?? product.preferred_vendor_id,
           description: product.purchase_info?.description ?? "",
-        },
-        inventory: {
-          track_inventory: product.inventory?.track_inventory ?? product.track_inventory ?? false,
-          inventory_account: product.inventory?.inventory_account ?? product.inventory_account ?? "",
-          inventory_valuation_method: product.inventory?.inventory_valuation_method ?? product.inventory_valuation_method ?? "",
-          reorder_point: product.inventory?.reorder_point ?? product.reorder_point ?? 0,
         },
         return_policy: {
           returnable: product.return_policy?.returnable ?? product.returnable ?? false,
@@ -243,16 +271,32 @@ const AddProduct = () => {
 
   const handleProductSubmit = async (values: IProductForm) => {
     try {
-      // If we have variant data from the VariantBuilder, convert and include it
       let submitValues = values;
-      if (initialVariantData?.variants && initialVariantData.variants.length > 0) {
+
+      // For regular products with variants from VariantBuilder
+      if (!values.is_resource && initialVariantData?.variants && initialVariantData.variants.length > 0) {
         submitValues = {
           ...values,
           product_details: {
-            ...values.product_details,
+            ...(values.product_details || {}),
             variants: initialVariantData.variants.map(convertUIVariantToProductVariant),
           },
         };
+      }
+
+      // Clean up values based on product type before submission
+      if (values.is_resource) {
+        // For resource products, only include resource-specific fields
+        submitValues = {
+          name: values.name,
+          is_resource: true,
+          resource_name: values.resource_name || "",
+          resource_unit: values.resource_unit || "",
+          resource_cost_per_unit: values.resource_cost_per_unit || 0,
+          product_details: {
+            unit: values.resource_unit || "", // Include unit for API consistency
+          },
+        } as IProductForm;
       }
 
       const response = await addOrUpdateProduct(submitValues, isEdit ? productId : undefined);
@@ -289,9 +333,9 @@ const AddProduct = () => {
             <Box sx={{ mb: 2 }}>
               <BBTitle
                 title={
-                  tab == 0 ? (isEdit ? "Edit Product" : "Add a New Product") : tab == 1 ? "Product Media" : "Style Data"
+                  tab == 0 ? (isEdit ? `Edit ${values.is_resource ? "Resource" : "Product"}` : `Add a New ${values.is_resource ? "Resource" : "Product"}`) : tab == 1 ? "Product Media" : "Style Data"
                 }
-                subtitle={isEdit ? `Editing product ${productId}` : "Create a new product"}
+                subtitle={isEdit ? `Editing product ${productId}` : `Create a new ${values.is_resource ? "resource" : "product"}`}
                 rightContent={
                   <Box sx={{ display: "flex", gap: 1 }}>
                     <BBButton variant="outlined" onClick={handleBack} startIcon={<ArrowLeft size={20} />}>
@@ -304,7 +348,7 @@ const AddProduct = () => {
                       disabled={loading}
                       loading={loading}
                     >
-                      {isEdit ? "Update Product" : "Create Product"}
+                      {isEdit ? `Update ${values.is_resource ? "Resource" : "Product"}` : `Create ${values.is_resource ? "Resource" : "Product"}`}
                     </BBButton>
                   </Box>
                 }
@@ -318,8 +362,8 @@ const AddProduct = () => {
               >
                 <Tab label={isEdit ? "Edit Product" : "Add Product"} sx={getTabSx(tab === 0, 0)} />
 
-                {isEdit && <Tab label="Product Images" sx={getTabSx(tab === 1, 1)} />}
-                {values.has_style && <Tab label="Style Data" sx={getTabSx(tab === (isEdit ? 2 : 1), isEdit ? 2 : 1)} />}
+                {isEdit && !values.is_resource && <Tab label="Product Images" sx={getTabSx(tab === 1, 1)} />}
+                {!values.is_resource && values.has_style && <Tab label="Style Data" sx={getTabSx(tab === (isEdit && !values.is_resource ? 2 : 1), isEdit && !values.is_resource ? 2 : 1)} />}
               </Tabs>
             </Box>
             {tab == 0 && (
@@ -335,104 +379,109 @@ const AddProduct = () => {
                     <Typography fontWeight={500}>Product Information</Typography>
                   </Box>
                   {authError && <Alert severity="error">{authError}</Alert>}
-                  <Alert severity="info" sx={{ mt: 2 }}>
-                    Enable <strong>Has Style</strong> to manage style variants.
-                  </Alert>
+
+                  {/* Product Type Toggle */}
                   <Grid container spacing={3} component="div">
                     <Grid size={{ xs: 12, md: 6 }} component="div">
                       <BBInput name="name" label="Product Name" disabled={authLoading} />
                     </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="product_details.unit" label="Unit" placeholder="e.g., piece, kg, liter" />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="product_details.base_sku" label="Base SKU" />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="sales_info.selling_price" label="Selling Price" type="number" />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="purchase_info.cost_price" label="Cost Price" type="number" />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="product_details.upc" label="UPC" />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="product_details.ean" label="EAN" />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="product_details.mpn" label="MPN" />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="product_details.isbn" label="ISBN" />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="sales_info.currency" label="Currency" placeholder="INR" />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="sales_info.account" label="Sales Account" />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="purchase_info.currency" label="Purchase Currency" placeholder="INR" />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="purchase_info.account" label="Purchase Account" />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="inventory.inventory_account" label="Inventory Account" />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="inventory.inventory_valuation_method" label="Valuation Method" placeholder="e.g., FIFO, LIFO, Weighted Average" />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }} component="div">
-                      <BBInput name="inventory.reorder_point" label="Reorder Point" type="number" />
-                    </Grid>
-
-                    <Grid size={{ xs: 12 }} component="div">
-                      <BBRichTextEditor
-                        name="sales_info.description"
-                        label="Sales Description"
-                        placeholder="Enter sales related description..."
-                      />
-                    </Grid>
-
-                    <Grid size={{ xs: 12 }} component="div">
-                      <BBRichTextEditor
-                        name="purchase_info.description"
-                        label="Purchase Description"
-                        placeholder="Enter purchase related description..."
-                      />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 3 }} component="div" display="flex" alignItems="center">
-                      <BBSwitch name="inventory.track_inventory" label="Track Inventory" />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 3 }} component="div" display="flex" alignItems="center">
-                      <BBSwitch name="return_policy.returnable" label="Returnable" />
-                    </Grid>
-
-                    <Grid size={{ xs: 12 }} component="div">
-                      <BBRichTextEditor
-                        name="product_details.description"
-                        label="Product Description"
-                        placeholder="Enter detailed description..."
+                    <Grid size={{ xs: 12, md: 6 }} component="div" display="flex" alignItems="center">
+                      <BBSwitch
+                        name="is_resource"
+                        label="This is a Resource Product"
                       />
                     </Grid>
                   </Grid>
+
+                  {/* Resource Product Fields */}
+                  {values.is_resource && (
+                    <>
+                      <Alert severity="info">
+                        Resource products are consumption-based items like Water, Electricity, or Natural Gas. They don't have variants or inventory tracking.
+                      </Alert>
+                      <Grid container spacing={3} component="div">
+                        <Grid size={{ xs: 12, md: 6 }} component="div">
+                          <BBInput name="resource_name" label="Resource Name" placeholder="e.g., Water, Electricity" />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }} component="div">
+                          <BBInput name="resource_unit" label="Unit of Measurement" placeholder="e.g., liter, watt, cubic_meter" />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }} component="div">
+                          <BBInput name="resource_cost_per_unit" label="Cost Per Unit" type="number" />
+                        </Grid>
+                      </Grid>
+                    </>
+                  )}
+
+                  {/* Regular Product Fields */}
+                  {!values.is_resource && (
+                    <>
+                      <Alert severity="info" sx={{ mt: 2 }}>
+                        Enable <strong>Has Style</strong> to manage style variants.
+                      </Alert>
+                      <Grid container spacing={3} component="div">
+                        <Grid size={{ xs: 12, md: 6 }} component="div">
+                          <BBInput name="product_details.unit" label="Unit" placeholder="e.g., piece, kg, liter" />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }} component="div">
+                          <BBInput name="product_details.base_sku" label="Base SKU" />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }} component="div">
+                          <BBInput name="sales_info.selling_price" label="Selling Price" type="number" />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }} component="div">
+                          <BBInput name="purchase_info.cost_price" label="Cost Price" type="number" />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }} component="div">
+                          <BBInput name="sales_info.currency" label="Currency" placeholder="INR" />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }} component="div">
+                          <BBInput name="sales_info.account" label="Sales Account" />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }} component="div">
+                          <BBInput name="purchase_info.currency" label="Purchase Currency" placeholder="INR" />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }} component="div">
+                          <BBInput name="purchase_info.account" label="Purchase Account" />
+                        </Grid>
+
+                        <Grid size={{ xs: 12 }} component="div">
+                          <BBRichTextEditor
+                            name="sales_info.description"
+                            label="Sales Description"
+                            placeholder="Enter sales related description..."
+                          />
+                        </Grid>
+
+                        <Grid size={{ xs: 12 }} component="div">
+                          <BBRichTextEditor
+                            name="purchase_info.description"
+                            label="Purchase Description"
+                            placeholder="Enter purchase related description..."
+                          />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 3 }} component="div" display="flex" alignItems="center">
+                          <BBSwitch name="return_policy.returnable" label="Returnable" />
+                        </Grid>
+
+                        <Grid size={{ xs: 12 }} component="div">
+                          <BBRichTextEditor
+                            name="product_details.description"
+                            label="Product Description"
+                            placeholder="Enter detailed description..."
+                          />
+                        </Grid>
+                      </Grid>
+                    </>
+                  )}
                 </Stack>
               </Card>
             )}

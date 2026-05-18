@@ -118,7 +118,47 @@ function ProductAvatar({ name }: { name: string }) {
 }
 
 // ─── Price Cell ───────────────────────────────────────────────────────────────
-function PriceCell({ cost, selling }: { cost: number; selling: number }) {
+function PriceCell({ 
+  cost, selling, isResource, resourceCostPerUnit 
+}: { 
+  cost: number; 
+  selling: number; 
+  isResource?: boolean;
+  resourceCostPerUnit?: number;
+}) {
+  // For resource products with no sales/purchase info, show resource cost
+  if (isResource && !selling && resourceCostPerUnit) {
+    return (
+      <Stack spacing={0.4}>
+        <Stack direction="row" alignItems="center" spacing={0.75}>
+          <Tooltip title="Resource Cost Per Unit">
+            <Typography
+              sx={{
+                fontFamily: "'DM Mono', monospace", fontWeight: 800,
+                color: T.text, fontSize: "0.88rem", letterSpacing: "-0.02em",
+              }}
+            >
+              ₹{typeof resourceCostPerUnit?.toFixed === "function" ? resourceCostPerUnit.toFixed(2) : resourceCostPerUnit}
+            </Typography>
+          </Tooltip>
+          <Chip 
+            icon={<Zap size={12} />}
+            label="Resource" 
+            size="small" 
+            sx={{ 
+              height: 20, 
+              fontSize: "0.65rem", 
+              background: T.brandSoft,
+              border: `1px solid ${T.brandMid}`,
+              color: T.brand,
+            }} 
+          />
+        </Stack>
+      </Stack>
+    );
+  }
+
+  // Regular product pricing
   const profit = selling - cost;
   const isUp = profit >= 0;
   const markup = cost > 0 ? ((profit / cost) * 100).toFixed(1) : null;
@@ -417,7 +457,9 @@ export default function Products() {
           }}
         >
           <Typography sx={{ fontWeight: 700, color: T.textMid, fontSize: "0.72rem" }}>
-            {row.product_details?.unit ?? "—"}
+            {row.is_resource 
+              ? row.resource_unit ?? "—"
+              : row.product_details?.unit ?? "—"}
           </Typography>
         </Box>
       ),
@@ -449,6 +491,8 @@ export default function Products() {
         <PriceCell
           cost={row.purchase_info?.cost_price ?? 0}
           selling={row.sales_info?.selling_price ?? 0}
+          isResource={row.is_resource}
+          resourceCostPerUnit={row.resource_cost_per_unit}
         />
       ),
       cellStyle: { minWidth: 150 },

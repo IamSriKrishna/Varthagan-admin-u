@@ -48,6 +48,7 @@ export const getAccessMapFromRole = (role?: Role): IAccessMap => {
     // ============================================
     nav["vendors"] = true;
     nav["purchaseOrders"] = true;  
+    nav["Manufacturing"] = true;
     nav["bills"] = true;  
 
     // ============================================
@@ -97,6 +98,7 @@ export const getAccessMapFromRole = (role?: Role): IAccessMap => {
     // Add parent menu access for regular users
     nav["purchases"] = true;       // ✅ Parent menu
     nav["vendors"] = true;         // ✅ Child menu
+    nav["Manufacturing"] = true;   // ✅ Manufacturing menu
     nav["bills"] = true;           // ✅ Bills access
   }
   

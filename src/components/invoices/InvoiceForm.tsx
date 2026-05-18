@@ -237,7 +237,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ initialData, onSuccess
       console.log('Result keys:', Object.keys(result || {}));
 
       // Handle different response formats
-      let lineItemsData = result?.line_items || result?.data?.line_items || result?.lineItems || [];
+      const lineItemsData = result?.line_items || result?.data?.line_items || result?.lineItems || [];
       
       console.log('Line items data:', lineItemsData);
       console.log('Line items count:', lineItemsData.length);

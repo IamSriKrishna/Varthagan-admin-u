@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const invoiceId = params.id;
+    const { id: invoiceId } = await params;
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8088";
 
     const response = await fetch(`${baseUrl}/invoices/${invoiceId}`, {
@@ -28,9 +28,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 /**
  * PUT /api/invoices/[id] - Update invoice
  */
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const invoiceId = params.id;
+    const { id: invoiceId } = await params;
     const body = await request.json();
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8088";
 
@@ -59,9 +59,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 /**
  * PATCH /api/invoices/[id]/status - Update invoice status
  */
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const invoiceId = params.id;
+    const { id: invoiceId } = await params;
+
     const body = await request.json();
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8088";
 
@@ -83,16 +87,19 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error updating invoice status:", error);
-    return NextResponse.json({ success: false, message: "Failed to update invoice status" }, { status: 500 });
+
+    return NextResponse.json(
+      { success: false, message: "Failed to update invoice status" },
+      { status: 500 }
+    );
   }
 }
-
 /**
  * DELETE /api/invoices/[id] - Delete invoice
  */
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const invoiceId = params.id;
+    const { id: invoiceId } = await params;
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8088";
 
     const response = await fetch(`${baseUrl}/invoices/${invoiceId}`, {

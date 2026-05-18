@@ -4,11 +4,11 @@
 
 /**
  * Sales Order Line Item Input
- * Uses Product Groups for bundled product management
+ * Uses Manufacturers for manufacturing batch management
  */
 export interface SalesOrderLineItemInput {
-  product_group_id: string;         // Required: Product Group identifier
-  product_group_name: string;       // Required: Product Group name
+  manufacturer_id: string;          // Required: Manufacturer identifier
+  manufacturer_name: string;        // Required: Manufacturer name
   quantity: number;                 // Required: Order quantity (must be > 0)
   rate: number;                     // Required: Unit price (must be > 0)
   account: string;                  // Required: Accounting code (e.g., SALES)
@@ -104,13 +104,19 @@ export interface TaxInfo {
  */
 export interface SalesOrderLineItemOutput {
   id?: number;                      // Unique identifier
-  product_group_id: string;         // Product Group identifier
-  product_group_name: string;       // Product Group name
+  manufacturer_id: string;          // Manufacturer identifier
+  manufacturer_name: string;        // Manufacturer name
   account: string;                  // Accounting code
   quantity: number;                 // Order quantity
   delivered_quantity: number;       // Delivered quantity
   rate: number;                     // Unit price
   amount: number;                   // Total amount (quantity × rate)
+  // Item details (optional, included in some responses)
+  item_id?: string;                 // Item identifier
+  item?: any;                       // Item details object
+  variant_sku?: string;             // Variant SKU
+  variant?: any;                    // Variant details object
+  variant_details?: any;            // Variant details mapping
 }
 
 /**
@@ -125,6 +131,7 @@ export interface SalesOrderOutput {
   reference_no?: string;            // Reference number/PO number
   status: 'draft' | 'sent' | 'confirmed' | 'partial_delivered' | 'delivered' | 'paid' | 'cancelled'; // Order status
   date: string;                     // Sales order date (ISO 8601)
+  sales_order_date?: string;        // Sales order date alias (for backward compatibility)
   expected_shipment_date: string;   // Expected shipment date (ISO 8601)
   delivery_method?: string;         // Delivery method
   payment_terms: string;            // Payment terms
@@ -132,6 +139,8 @@ export interface SalesOrderOutput {
   sub_total: number;                // Subtotal (before tax and shipping)
   shipping_charges: number;         // Shipping charges
   adjustment: number;               // Adjustment amount
+  tax_id?: number;                  // Tax configuration ID
+  tax_type?: string;                // Tax type
   tax_rate: number;                 // Tax rate percentage
   tax_total: number;                // Total tax amount
   total: number;                    // Total amount (including tax and shipping)
@@ -191,12 +200,10 @@ export interface LineItem extends SalesOrderLineItemInput {
 export interface SalesOrder extends SalesOrderOutput {
   sales_order_id?: string;
   so_date?: string;
-  date?: string;
   delivery_date?: string;
   shipment_preference?: string;
   subtotal?: number;
   shipping?: number;
-  tax_rate?: number;
   total_amount?: number;
   notes?: string;
   line_items_count?: number;

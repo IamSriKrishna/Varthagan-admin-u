@@ -41,7 +41,7 @@ const PartnerView: React.FC = () => {
   const router = useRouter();
   const params = useParams();
   const partnerIdRaw = params?.partnerId;
-  const partnerId = Array.isArray(partnerIdRaw) ? partnerIdRaw[0] : partnerIdRaw;
+  const partnerId = (Array.isArray(partnerIdRaw) ? partnerIdRaw[0] : partnerIdRaw) || '';
   const [page, setPage] = useState(0);
   const [filteropen, setFilterOpen] = useState<boolean>(false);
   const ordersRef = useRef<HTMLDivElement | null>(null);

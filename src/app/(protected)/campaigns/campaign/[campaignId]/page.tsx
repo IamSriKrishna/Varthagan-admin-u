@@ -75,7 +75,7 @@ const AddCampaign = () => {
   const { loading: authLoading, error: authError } = useSelector((state: RootState) => state.auth);
   const campaignIdRaw = params?.campaignId;
 
-  const campaignId = Array.isArray(campaignIdRaw) ? campaignIdRaw[0] : campaignIdRaw;
+  const campaignId = (Array.isArray(campaignIdRaw) ? campaignIdRaw[0] : campaignIdRaw) || '';
   const isEdit = !!campaignId && campaignId !== "new";
 
   const { mutateApi: submitCampaign, loading: campaignloading } = useApi<CampaignApiResponse>(

@@ -64,9 +64,10 @@ const getToken = (): string => {
 
 interface SalesOrderLineItemsProps {
   formik: FormikProps<SalesOrder>;
+  customerId?: number | string;
 }
 
-interface ProductGroup {
+interface Manufacturer {
   id: string;
   name: string;
   description?: string;
@@ -122,61 +123,149 @@ function Field({ label, required, children }: { label: string; required?: boolea
 }
 
 const EMPTY_ITEM: SalesOrderLineItemInput = {
-  product_group_id: '',
-  product_group_name: '',
+  manufacturer_id: '',
+  manufacturer_name: '',
   quantity: 1,
   rate: 0,
   account: 'SALES',
 };
 
-export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps) {
-  const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
-  const [loadingProductGroups, setLoadingProductGroups] = useState(true);
+export default function SalesOrderLineItems({ formik, customerId }: SalesOrderLineItemsProps) {
+  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
+  const [loadingManufacturers, setLoadingManufacturers] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState<SalesOrderLineItemInput>(EMPTY_ITEM);
-  const [selectedProductGroup, setSelectedProductGroup] = useState<ProductGroup | null>(null);
+  const [selectedManufacturer, setSelectedManufacturer] = useState<Manufacturer | null>(null);
+  const [loadingCustomerPricing, setLoadingCustomerPricing] = useState(false);
+  const [manufacturerDetails, setManufacturerDetails] = useState<any>(null);
+  const [loadingManufacturerDetails, setLoadingManufacturerDetails] = useState(false);
 
-  // Fetch product groups
+  // Fetch manufacturers
   useEffect(() => {
-    setLoadingProductGroups(true);
-    const fetchProductGroups = async () => {
+    setLoadingManufacturers(true);
+    const fetchManufacturers = async () => {
       try {
         const token = getToken();
-        const response = await fetch('http://127.0.0.1:8088/product-groups', {
+        const response = await fetch('http://127.0.0.1:8088/manufacturers', {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           }
         });
         const result = await response.json();
-        if (result.data && Array.isArray(result.data)) {
-          setProductGroups(result.data);
+        if (result.data && Array.isArray(result.data.manufacturers)) {
+          setManufacturers(result.data.manufacturers);
         }
       } catch (error) {
-        console.error('Failed to fetch product groups:', error);
+        console.error('Failed to fetch manufacturers:', error);
       } finally {
-        setLoadingProductGroups(false);
+        setLoadingManufacturers(false);
       }
     };
-    fetchProductGroups();
+    fetchManufacturers();
   }, []);
+
+  // Fetch customer pricing for a specific manufacturer
+  const fetchCustomerPricing = async (manufacturerId: string): Promise<number | null> => {
+    if (!customerId || !manufacturerId) return null;
+    
+    try {
+      setLoadingCustomerPricing(true);
+      const token = getToken();
+      const response = await fetch(
+        `http://127.0.0.1:8088/customer-pricing/customer?customer_id=${customerId}&offset=0&limit=100`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        console.warn('Failed to fetch customer pricing');
+        return null;
+      }
+
+      const result = await response.json();
+      
+      // Handle nested structure: result.data.pricings or result.data array
+      const pricingList = result.data?.pricings || result.data || [];
+      const pricingsArray = Array.isArray(pricingList) ? pricingList : [];
+      
+      if (pricingsArray.length === 0) {
+        console.warn('No pricing data found');
+        return null;
+      }
+
+      // Find pricing for this manufacturer (handle both string and number IDs)
+      const pricing = pricingsArray.find(
+        (p: any) => String(p.manufacturer_id) === String(manufacturerId)
+      );
+      
+      if (pricing && pricing.rate) {
+        console.log(`Found pricing for manufacturer ${manufacturerId}: ₹${pricing.rate}`);
+        return pricing.rate;
+      }
+      
+      console.warn(`No matching pricing found for manufacturer ${manufacturerId}`);
+      return null;
+    } catch (error) {
+      console.error('Failed to fetch customer pricing:', error);
+      return null;
+    } finally {
+      setLoadingCustomerPricing(false);
+    }
+  };
+
+  // Fetch detailed manufacturer information
+  const fetchManufacturerDetails = async (manufacturerId: string) => {
+    try {
+      setLoadingManufacturerDetails(true);
+      const token = getToken();
+      const response = await fetch(`http://127.0.0.1:8088/manufacturers/${manufacturerId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+      
+      if (!response.ok) {
+        console.warn('Failed to fetch manufacturer details');
+        setManufacturerDetails(null);
+        return;
+      }
+
+      const result = await response.json();
+      if (result.data) {
+        setManufacturerDetails(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch manufacturer details:', error);
+      setManufacturerDetails(null);
+    } finally {
+      setLoadingManufacturerDetails(false);
+    }
+  };
 
   const openDialog = (index?: number) => {
     if (index !== undefined) {
       const item = formik.values.line_items[index];
       setFormData(item as SalesOrderLineItemInput);
       setEditIndex(index);
-      if (item.product_group_id) {
-        const productGroup = productGroups.find(pg => pg.id === item.product_group_id);
-        if (productGroup) {
-          setSelectedProductGroup(productGroup);
+      if (item.manufacturer_id) {
+        const manufacturer = manufacturers.find(m => m.id === item.manufacturer_id);
+        if (manufacturer) {
+          setSelectedManufacturer(manufacturer);
+          fetchManufacturerDetails(item.manufacturer_id);
         }
       }
     } else {
       setEditIndex(null);
       setFormData(EMPTY_ITEM);
-      setSelectedProductGroup(null);
+      setSelectedManufacturer(null);
+      setManufacturerDetails(null);
     }
     setDialogOpen(true);
   };
@@ -184,11 +273,12 @@ export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps
   const closeDialog = () => {
     setDialogOpen(false);
     setEditIndex(null);
-    setSelectedProductGroup(null);
+    setSelectedManufacturer(null);
+    setManufacturerDetails(null);
   };
 
   const handleSave = () => {
-    if (!formData.product_group_id || !formData.product_group_name || !formData.quantity || !formData.rate || !formData.account) {
+    if (!formData.manufacturer_id || !formData.manufacturer_name || !formData.quantity || !formData.rate || !formData.account) {
       alert('Please fill in all required fields');
       return;
     }
@@ -211,24 +301,43 @@ export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps
     );
   };
 
-  const handleProductGroupChange = (value: any) => {
+  const handleManufacturerChange = (value: any) => {
     if (!value?.id) {
-      setSelectedProductGroup(null);
+      setSelectedManufacturer(null);
       setFormData(EMPTY_ITEM);
+      setManufacturerDetails(null);
       return;
     }
+
+    // Set initial form data with manufacturer's default selling price
     setFormData((p) => ({
       ...p,
-      product_group_id: value.id,
-      product_group_name: value.name,
+      manufacturer_id: value.id,
+      manufacturer_name: value.name,
       rate: value.selling_price || 0,
     }));
-    setSelectedProductGroup(value);
+    setSelectedManufacturer(value);
+
+    // Fetch detailed manufacturer information
+    fetchManufacturerDetails(value.id);
+
+    // Fetch customer pricing if customer is selected
+    if (customerId) {
+      fetchCustomerPricing(value.id).then((customerRate) => {
+        if (customerRate !== null) {
+          // Update rate with customer-specific pricing
+          setFormData((p) => ({
+            ...p,
+            rate: customerRate,
+          }));
+        }
+      });
+    }
   };
 
   const subtotal = formik.values.line_items.reduce((s, i) => s + ((i as any).amount || 0), 0);
   const lineCount = formik.values.line_items.length;
-  const selectedProductGroupOption = productGroups.find((pg) => pg.id === formData.product_group_id);
+  const selectedManufacturerOption = manufacturers.find((m) => m.id === formData.manufacturer_id);
 
   return (
     <Stack spacing={3}>
@@ -415,7 +524,7 @@ export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps
                             </Box>
                             <Box>
                               <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}>
-                                {item.product_group_name}
+                                {item.manufacturer_name}
                               </Typography>
                               <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                                 {item.account}
@@ -577,23 +686,23 @@ export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps
         </Box>
 
         <DialogContent sx={{ p: 3 }}>
-          {loadingProductGroups ? (
+          {loadingManufacturers ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
               <CircularProgress size={32} sx={{ color: '#0f172a' }} />
             </Box>
           ) : (
             <Stack spacing={2.5}>
-              {/* Product Group select */}
+              {/* Manufacturer select */}
               <Box>
                 <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', mb: 1 }}>
-                  Product Group <span style={{ color: '#dc2626' }}>*</span>
+                  Manufacturer <span style={{ color: '#dc2626' }}>*</span>
                 </Typography>
                 <Autocomplete
                   size="small"
-                  options={productGroups}
+                  options={manufacturers}
                   getOptionLabel={(o) => `${o.name || ''}`}
-                  value={selectedProductGroupOption || null}
-                  onChange={(_, val) => handleProductGroupChange(val)}
+                  value={selectedManufacturerOption || null}
+                  onChange={(_, val) => handleManufacturerChange(val)}
                   renderOption={(props, option) => (
                     <Box component="li" {...props} sx={{ py: '10px !important', gap: 1.5 }}>
                       <Box
@@ -627,11 +736,140 @@ export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps
                     </Box>
                   )}
                   renderInput={(params) => (
-                    <TextField {...params} placeholder="Search and select a product group…" sx={{ mb: 0 }} />
+                    <TextField {...params} placeholder="Search and select a manufacturer…" sx={{ mb: 0 }} />
                   )}
-                  noOptionsText="No product groups found"
+                  noOptionsText="No manufacturers found"
                 />
               </Box>
+
+              {/* Customer Pricing Info */}
+              {customerId && selectedManufacturer && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    px: 2,
+                    py: 1.25,
+                    bgcolor: '#f0fdf4',
+                    borderRadius: 2,
+                    border: '1px solid #86EFAC',
+                  }}
+                >
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography sx={{ fontSize: '0.825rem', color: '#15803D', fontWeight: 500 }}>
+                      {loadingCustomerPricing ? 'Fetching customer pricing...' : `Customer rate: ₹${formData.rate.toFixed(2)}`}
+                    </Typography>
+                  </Stack>
+                  {loadingCustomerPricing && (
+                    <CircularProgress size={16} sx={{ color: '#15803D' }} />
+                  )}
+                </Box>
+              )}
+
+              {/* Manufacturer Details */}
+              {selectedManufacturer && (
+                <Box
+                  sx={{
+                    p: 2,
+                    bgcolor: '#f8fafc',
+                    borderRadius: 2,
+                    border: '1px solid #e2e8f0',
+                  }}
+                >
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', mb: 1, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Manufacturing Details
+                  </Typography>
+                  
+                  {loadingManufacturerDetails ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                      <CircularProgress size={24} sx={{ color: '#0f172a' }} />
+                    </Box>
+                  ) : manufacturerDetails ? (
+                    <Stack spacing={1.25}>
+                      {/* Quantity */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography sx={{ fontSize: '0.8rem', color: '#64748b' }}>Quantity Available</Typography>
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#0f172a' }}>
+                          {manufacturerDetails.quantity || '—'}
+                        </Typography>
+                      </Box>
+
+                      {/* Status */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography sx={{ fontSize: '0.8rem', color: '#64748b' }}>Status</Typography>
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            px: 1.5,
+                            py: 0.4,
+                            borderRadius: 1,
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            bgcolor:
+                              manufacturerDetails.status === 'completed'
+                                ? '#f0fdf4'
+                                : manufacturerDetails.status === 'in_progress'
+                                ? '#fffbeb'
+                                : '#f1f5f9',
+                            color:
+                              manufacturerDetails.status === 'completed'
+                                ? '#15803d'
+                                : manufacturerDetails.status === 'in_progress'
+                                ? '#b45309'
+                                : '#64748b',
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 5,
+                              height: 5,
+                              borderRadius: '50%',
+                              bgcolor: 'currentColor',
+                            }}
+                          />
+                          {manufacturerDetails.status || '—'}
+                        </Box>
+                      </Box>
+
+                      {/* Description */}
+                      {manufacturerDetails.description && (
+                        <Box>
+                          <Typography sx={{ fontSize: '0.8rem', color: '#64748b', mb: 0.5 }}>Description</Typography>
+                          <Typography sx={{ fontSize: '0.8rem', color: '#475569', fontStyle: 'italic' }}>
+                            {manufacturerDetails.description}
+                          </Typography>
+                        </Box>
+                      )}
+
+                      {/* Employees / Service Costs */}
+                      {manufacturerDetails.employees && manufacturerDetails.employees.length > 0 && (
+                        <Box>
+                          <Typography sx={{ fontSize: '0.8rem', color: '#64748b', mb: 0.75 }}>Service Costs</Typography>
+                          <Stack spacing={0.5}>
+                            {manufacturerDetails.employees.map((emp: any, idx: number) => (
+                              <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                                <Typography sx={{ color: '#475569' }}>
+                                  Employee {emp.employee_id} ({emp.cost_type})
+                                </Typography>
+                                <Typography sx={{ fontWeight: 600, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                                  ₹{emp.service_cost.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                </Typography>
+                              </Box>
+                            ))}
+                          </Stack>
+                        </Box>
+                      )}
+                    </Stack>
+                  ) : (
+                    <Typography sx={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                      No details available
+                    </Typography>
+                  )}
+                </Box>
+              )}
 
               {/* Account Selection */}
               <Box>
@@ -735,7 +973,7 @@ export default function SalesOrderLineItems({ formik }: SalesOrderLineItemsProps
           </Button>
           <Button
             onClick={handleSave}
-            disabled={!formData.product_group_id || !formData.quantity || !formData.rate || !formData.account}
+            disabled={!formData.manufacturer_id || !formData.quantity || !formData.rate || !formData.account}
             sx={{
               borderRadius: 2,
               px: 2.5,

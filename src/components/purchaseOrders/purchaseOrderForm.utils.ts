@@ -5,7 +5,7 @@ import {
   PurchaseOrderLineItemInput,
 } from '@/models/purchaseOrder.model';
 
-export const initialPurchaseOrderValues: PurchaseOrder = {
+export const initialPurchaseOrderValues: Partial<PurchaseOrder> = {
   vendor_id: 0,
   delivery_address_type: 'organization',
   organization_name: '',

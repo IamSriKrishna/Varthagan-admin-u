@@ -58,7 +58,7 @@ const CustomerForm: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getCustomer(customerId);
+      const data = await getCustomer(customerId!);
       setInitialData(data);
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || "Failed to load customer";

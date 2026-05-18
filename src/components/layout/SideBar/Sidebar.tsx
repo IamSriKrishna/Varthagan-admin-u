@@ -98,15 +98,6 @@ const baseMenuItems: Array<{
     ],
   },
   {
-    key: "items",
-    icon: BoxIcon,
-    label: "Items",
-    children: [
-      { key: "item", icon: BoxIcon, label: "Item", path: "/items" },
-      { key: "itemGroups", icon: Boxes, label: "Item Groups", path: "/item-groups" },
-    ],
-  },
-  {
     key: "products",
     icon: Package,
     label: "Products",
@@ -138,8 +129,11 @@ const baseMenuItems: Array<{
       { key: "vendors", icon: User, label: "Vendors", path: "/vendors" },
       { key: "purchaseOrders", icon: ShoppingCart, label: "Purchase Orders", path: "/purchase-orders" },
       { key: "vendorPayments", icon: CreditCard, label: "Vendor Payments", path: "/vendor-payments" },
+      { key: "customerPayments", icon: CreditCard, label: "Customer Payments", path: "/customer-payments" },
       { key: "salesOrders", icon: ShoppingCart, label: "Sales Orders", path: "/sales-orders" },
       { key: "packages", icon: Package, label: "Packages", path: "/packages" },
+      { key: "manufacturing", icon: Factory, label: "Manufacturing", path: "/manufacturing" },
+      { key: "customerPricing", icon: IndianRupee, label: "Customer Pricing", path: "/admin/manufacturing-pricing" },
       { key: "bills", icon: Receipt, label: "Bills", path: "/bills" },
       { key: "invoices", icon: Receipt, label: "Invoices", path: "/invoices" },
     ],
@@ -157,9 +151,7 @@ const baseMenuItems: Array<{
     key: "Manufacturing",
     icon: Factory,
     label: "Manufacturing",
-    children: [
-      { key: "production", icon: Factory, label: "Production Orders", path: "/production-orders" },
-    ],
+    children: [{ key: "production", icon: Factory, label: "Production Orders", path: "/production-orders" }],
   },
   {
     key: "settings",
@@ -201,7 +193,7 @@ export default function Sidebar({
     children: (typeof baseMenuItems)[0]["children"];
   } | null>(null);
   const [closeTimeout, setCloseTimeout] = useState<NodeJS.Timeout | null>(null);
-  
+
   useEffect(() => {
     const savedOpenMenuKey = localStorage.getItem("sidebar-open-menu");
     if (savedOpenMenuKey) {
@@ -220,24 +212,24 @@ export default function Sidebar({
   // ============================================
   // 🔍 DEBUG LOGGING - START
   // ============================================
-  console.group('🔍 SIDEBAR DEBUG - Access Map');
-  console.log('Full accessMap:', accessMap);
-  console.log('accessMap.nav:', accessMap?.nav);
-  console.log('purchases key:', accessMap?.nav?.purchases);
-  console.log('purchaseOrders key:', accessMap?.nav?.purchaseOrders);
-  console.log('vendors key:', accessMap?.nav?.vendors);
+  console.group("🔍 SIDEBAR DEBUG - Access Map");
+  console.log("Full accessMap:", accessMap);
+  console.log("accessMap.nav:", accessMap?.nav);
+  console.log("purchases key:", accessMap?.nav?.purchases);
+  console.log("purchaseOrders key:", accessMap?.nav?.purchaseOrders);
+  console.log("vendors key:", accessMap?.nav?.vendors);
   console.groupEnd();
 
-  console.group('👤 USER INFO');
-  console.log('User Type:', userType);
-  console.log('User Name:', userName);
-  console.log('Full User Object:', user);
+  console.group("👤 USER INFO");
+  console.log("User Type:", userType);
+  console.log("User Name:", userName);
+  console.log("Full User Object:", user);
   console.groupEnd();
 
-  console.group('📋 BASE MENU ITEMS');
-  const purchasesItem = baseMenuItems.find(item => item.key === 'purchases');
-  console.log('Purchases menu item:', purchasesItem);
-  console.log('Purchases children:', purchasesItem?.children);
+  console.group("📋 BASE MENU ITEMS");
+  const purchasesItem = baseMenuItems.find((item) => item.key === "purchases");
+  console.log("Purchases menu item:", purchasesItem);
+  console.log("Purchases children:", purchasesItem?.children);
   console.groupEnd();
   // ============================================
   // 🔍 DEBUG LOGGING - END
@@ -246,28 +238,43 @@ export default function Sidebar({
   const menuItems = baseMenuItems
     .map((item) => {
       console.log(`\n--- Processing item: ${item.key} ---`);
-      
+
       if (item.children && item.children.length > 0) {
         console.log(`  Item has ${item.children.length} children`);
-        
+
         // Always show these items regardless of access control
-        const alwaysShowItems = ['purchaseOrders', 'vendors', 'vendorPayments', "bills", "invoices", "salesOrders", "packages", "shipments"];
-        
+        const alwaysShowItems = [
+          "purchaseOrders",
+          "vendors",
+          "vendorPayments",
+          "customerPayments",
+          "bills",
+          "invoices",
+          "salesOrders",
+          "packages",
+          "manufacturing",
+          "customerPricing",
+          "shipments",
+        ];
+
         // Add employee items and items menu children if user is admin
-        const isAdmin = userType === 'admin';
+        const isAdmin = userType === "admin";
         if (isAdmin) {
-          alwaysShowItems.push('employees', 'employeeAttendance', 'item', 'itemGroups', 'productList', 'productGroups');
+          alwaysShowItems.push("employees", "employeeAttendance", "item", "itemGroups", "productList", "productGroups");
         }
-        
+
         const filteredChildren = item.children.filter((child) => {
           const hasAccess = (accessMap?.nav as Record<string, boolean | undefined>)?.[child.key];
           console.log(`    Child: ${child.key}, Access: ${hasAccess}`);
           return hasAccess || alwaysShowItems.includes(child.key);
         });
-        
+
         console.log(`  Filtered children count: ${filteredChildren.length}`);
-        console.log(`  Filtered children:`, filteredChildren.map(c => c.key));
-        
+        console.log(
+          `  Filtered children:`,
+          filteredChildren.map((c) => c.key),
+        );
+
         return { ...item, children: filteredChildren };
       }
       return item;
@@ -282,35 +289,35 @@ export default function Sidebar({
       const hasVisibleChildren = !!item.children && item.children.length > 0;
 
       // Show employee menu only for admin users
-      if (item.key === 'employee') {
-        const shouldShow = userType === 'admin';
+      if (item.key === "employee") {
+        const shouldShow = userType === "admin";
         console.log(`  ${item.key}: Admin check - ${userType} === 'admin' = ${shouldShow}`);
         return shouldShow;
       }
 
       // Show items menu only for admin users
-      if (item.key === 'items') {
-        const shouldShow = userType === 'admin';
+      if (item.key === "items") {
+        const shouldShow = userType === "admin";
         console.log(`  ${item.key}: Admin check - ${userType} === 'admin' = ${shouldShow}`);
         return shouldShow;
       }
 
       // Show products menu only for admin users
-      if (item.key === 'products') {
-        const shouldShow = userType === 'admin';
+      if (item.key === "products") {
+        const shouldShow = userType === "admin";
         console.log(`  ${item.key}: Admin check - ${userType} === 'admin' = ${shouldShow}`);
         return shouldShow;
       }
 
       // Show shipments menu for all users
-      if (item.key === 'shipments') {
+      if (item.key === "shipments") {
         console.log(`  ${item.key}: Showing for all users`);
         return true;
       }
 
       // Hide settings menu for admin users
-      if (item.key === 'settings') {
-        const shouldShow = userType !== 'admin';
+      if (item.key === "settings") {
+        const shouldShow = userType !== "admin";
         console.log(`  ${item.key}: Hiding from admin - ${userType} !== 'admin' = ${shouldShow}`);
         return shouldShow;
       }
@@ -323,12 +330,15 @@ export default function Sidebar({
       return hasAccess || hasVisibleChildren;
     });
 
-  console.group('✅ FINAL MENU ITEMS');
-  console.log('Total menu items:', menuItems.length);
-  console.log('Menu item keys:', menuItems.map(item => item.key));
-  const finalPurchases = menuItems.find(item => item.key === 'purchases');
-  console.log('Purchases in final menu:', finalPurchases);
-  console.log('Purchases children in final menu:', finalPurchases?.children);
+  console.group("✅ FINAL MENU ITEMS");
+  console.log("Total menu items:", menuItems.length);
+  console.log(
+    "Menu item keys:",
+    menuItems.map((item) => item.key),
+  );
+  const finalPurchases = menuItems.find((item) => item.key === "purchases");
+  console.log("Purchases in final menu:", finalPurchases);
+  console.log("Purchases children in final menu:", finalPurchases?.children);
   console.groupEnd();
 
   const handleLogout = async () => {
@@ -404,6 +414,7 @@ export default function Sidebar({
               <Box key={key}>
                 <Tooltip title={!drawerOpen ? label : ""} placement="right" arrow>
                   <ListItemButton
+                    data-no-loading
                     onMouseEnter={(e) => handlePopoverOpen(e, children)}
                     onMouseLeave={handlePopoverClose}
                     onClick={() => {

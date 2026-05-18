@@ -42,13 +42,13 @@ export const VendorContactPersons: React.FC<VendorContactPersonsProps> = ({
       </Box>
       <Divider sx={{ mb: 3 }} />
       
-      {values.contact_persons.map((contact, index) => (
+      {values.contact_persons && values.contact_persons.map((contact, index) => (
         <Box key={index} sx={{ mb: 4, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="subtitle1" fontWeight={600}>
               Contact Person {index + 1}
             </Typography>
-            {values.contact_persons.length > 1 && (
+            {values.contact_persons && values.contact_persons.length > 1 && (
               <IconButton
                 size="small"
                 onClick={() => remove(index)}

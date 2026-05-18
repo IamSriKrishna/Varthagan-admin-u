@@ -159,7 +159,7 @@ export const EmployeeManager: React.FC<EmployeeManagerProps> = ({ companyId }) =
         number: employee.number,
         address: employee.address,
         employee_type: employee.employee_type,
-        monthly_salary: employee.monthly_salary.toString(),
+        monthly_salary: (employee.monthly_salary || 0).toString(),
         document_file: null,
       });
     } else {
@@ -395,7 +395,7 @@ export const EmployeeManager: React.FC<EmployeeManagerProps> = ({ companyId }) =
                       variant="outlined"
                     />
                   </TableCell>
-                  <TableCell align="right">₹{employee.monthly_salary.toLocaleString()}</TableCell>
+                  <TableCell align="right">₹{(employee.monthly_salary || 0).toLocaleString()}</TableCell>
                   <TableCell align="center">
                     <Tooltip title="Edit">
                       <IconButton

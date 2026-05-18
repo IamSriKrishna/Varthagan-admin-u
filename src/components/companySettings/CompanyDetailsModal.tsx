@@ -233,7 +233,7 @@ export default function CompanyDetailsModal({
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: "primary.main" }}>
                 Bank Details
               </Typography>
-              {company.bank_details.map((bank, idx) => (
+              {company.bank_details.map((bank: any, idx) => (
                 <Box key={idx} sx={{ mb: idx < company.bank_details!.length - 1 ? 2 : 0 }}>
                   <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
                     <Box>
@@ -241,7 +241,7 @@ export default function CompanyDetailsModal({
                         Bank Name
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {bank.bank_name}
+                        {bank.bank?.name || bank.bank?.bank_name || 'N/A'}
                       </Typography>
                     </Box>
                     <Box>
@@ -265,7 +265,7 @@ export default function CompanyDetailsModal({
                         IFSC Code
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {bank.ifsc_code}
+                        {bank.bank?.ifsc_code || 'N/A'}
                       </Typography>
                     </Box>
                     {bank.is_primary && (

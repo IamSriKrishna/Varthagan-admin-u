@@ -199,8 +199,8 @@ export function calculateStockSummary(response: StockManagementResponse | { stoc
     summary.total_stock_value += stock.stock_value;
     summary.total_units += stock.current_stock;
     summary.total_in_transit += stock.in_transit_stock || 0;
-    summary.total_cost_value += stock.current_stock * stock.average_cost;
-    summary.total_selling_value += stock.current_stock * (stock.selling_price || 0);
+    summary.total_cost_value = (summary.total_cost_value || 0) + stock.current_stock * stock.average_cost;
+    summary.total_selling_value = (summary.total_selling_value || 0) + stock.current_stock * (stock.selling_price || 0);
     
     if (isLowStock(stock)) summary.low_stock_items++;
     if (isOutOfStock(stock)) summary.out_of_stock_items++;

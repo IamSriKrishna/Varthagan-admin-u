@@ -104,6 +104,9 @@ export interface TaxInfo {
   rate: number;
 }
 
+// Alias for backward compatibility
+export type Tax = TaxInfo;
+
 export interface PurchaseOrderLineItemOutput {
   id: number;
   product_id?: string;

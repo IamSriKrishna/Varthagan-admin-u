@@ -71,6 +71,7 @@ export interface ProductOutput {
   sku: string;
   cost_price?: number;
   selling_price?: number;
+  is_resource?: boolean;  // Optional: Whether this is a resource product
 }
 
 // ============================================================================
@@ -81,6 +82,11 @@ export interface ProductVariant {
   sku: string;
   variant_name: string;
   attribute_map: Record<string, string>;
+  cost_price?: number;
+  selling_price?: number;
+  stock_quantity?: number;
+  reorder_level?: number;
+  is_active?: boolean;
 }
 
 // ============================================================================

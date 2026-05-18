@@ -33,6 +33,7 @@ import { employeeService } from "@/lib/api/employeeService";
 import { attendanceService, AttendanceRecord } from "@/lib/api/attendanceService";
 import { Employee } from "@/models/employee.model";
 import { showToastMessage } from "@/utils/toastUtil";
+import SalaryView from "@/components/salary/SalaryView";
 
 /* ─── Design tokens ──────────────────────────────────────────── */
 const COLORS = {
@@ -701,6 +702,11 @@ export default function EmployeeAttendancePage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ── Salary View Section ──────────────────────────────– */}
+      <Box sx={{ mt: 4 }}>
+        <SalaryView />
+      </Box>
     </Box>
   );
 }

@@ -77,7 +77,7 @@ export default function ProductForm({
     if (!bottleId || !capId) return;
     setCheckingCompatibility(true);
     try {
-      const result = await productService.checkCompatibility(bottleId, capId);
+      const result = await productService.checkCompatibility(Number(bottleId), Number(capId));
       setCompatibility(result);
     } catch (err: any) {
       setCompatibility(null);
@@ -92,19 +92,11 @@ export default function ProductForm({
     try {
       if (initialData?.id) {
         await productService.updateProduct(initialData.id, {
-          product_name: values.product_name,
-          bottle_id: Number(values.bottle_id),
-          cap_id: Number(values.cap_id),
-          quantity: Number(values.quantity),
-          mrp: Number(values.mrp),
+          name: values.product_name,
         });
       } else {
         await productService.createProduct({
-          product_name: values.product_name,
-          bottle_id: Number(values.bottle_id),
-          cap_id: Number(values.cap_id),
-          quantity: Number(values.quantity),
-          mrp: Number(values.mrp),
+          name: values.product_name,
         });
       }
       onSuccess();

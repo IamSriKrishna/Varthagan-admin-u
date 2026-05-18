@@ -115,20 +115,20 @@ export default function ProductManagement() {
     try {
       if (tabValue === 0) {
         const res = await bottleSizeService.getBottleSizes(bottleSizesPage, PAGE_SIZE);
-        setBottleSizes(res.data || []);
-        setBottleSizesTotal(res.total_count || 0);
+        setBottleSizes((res as any).data || []);
+        setBottleSizesTotal((res as any).total_count || 0);
       } else if (tabValue === 1) {
         const res = await bottleService.getBottles(bottlesPage, PAGE_SIZE);
-        setBottles(res.data || []);
-        setBottlesTotal(res.total_count || 0);
+        setBottles((res as any).data || []);
+        setBottlesTotal((res as any).total_count || 0);
       } else if (tabValue === 2) {
         const res = await capService.getCaps(capsPage, PAGE_SIZE);
-        setCaps(res.data || []);
-        setCapsTotal(res.total_count || 0);
+        setCaps((res as any).data || []);
+        setCapsTotal((res as any).total_count || 0);
       } else if (tabValue === 3) {
         const res = await productService.getProducts(productsPage, PAGE_SIZE);
-        setProducts(res.data || []);
-        setProductsTotal(res.total_count || 0);
+        setProducts(res.products || []);
+        setProductsTotal(res.total || 0);
       }
     } catch (err: any) {
       setError(err.message || "Failed to load data");
@@ -148,7 +148,7 @@ export default function ProductManagement() {
       } else if (deleteConfirm.type === "cap") {
         await capService.deleteCap(deleteConfirm.id);
       } else if (deleteConfirm.type === "product") {
-        await productService.deleteProduct(deleteConfirm.id);
+        await productService.deleteProduct(String(deleteConfirm.id));
       }
       setDeleteConfirm(null);
       loadData();

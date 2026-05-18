@@ -21,12 +21,12 @@ export const salesOrderValidationSchema = Yup.object({
   line_items: Yup.array()
     .of(
       Yup.object({
-        product_group_id: Yup.string()
-          .required('Product Group is required')
-          .min(1, 'Product Group must be selected'),
-        product_group_name: Yup.string()
-          .required('Product Group name is required')
-          .min(1, 'Product Group name cannot be empty'),
+        manufacturer_id: Yup.string()
+          .required('Manufacturer is required')
+          .min(1, 'Manufacturer must be selected'),
+        manufacturer_name: Yup.string()
+          .required('Manufacturer name is required')
+          .min(1, 'Manufacturer name cannot be empty'),
         account: Yup.string()
           .required('Account is required')
           .min(1, 'Account cannot be empty'),

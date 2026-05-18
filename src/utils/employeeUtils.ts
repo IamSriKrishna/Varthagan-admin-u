@@ -101,7 +101,8 @@ export function validateEmployeeData(data: Record<string, any>): EmployeeValidat
 /**
  * Format salary with currency
  */
-export function formatSalary(salary: number, currency: string = 'INR'): string {
+export function formatSalary(salary: number | undefined, currency: string = 'INR'): string {
+  if (!salary) return '-';
   const formatter = new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: currency,

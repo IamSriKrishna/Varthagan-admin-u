@@ -362,8 +362,8 @@ export default function CreateProductGroupPage() {
       id: p.id,
       sku: p.product_details?.base_sku || p.sku || "",
       name: p.name,
-      cost_price: p.purchase_info?.cost_price || 0,
-      selling_price: p.sales_info?.selling_price || 0,
+      cost_price: p.is_resource ? (p.resource_cost_per_unit || 0) : (p.purchase_info?.cost_price || 0),
+      selling_price: p.is_resource ? 0 : (p.sales_info?.selling_price || 0),
       variants: p.product_details?.variants || [],
     })) || [];
 
@@ -736,6 +736,7 @@ export default function CreateProductGroupPage() {
                               <TableCell>#</TableCell>
                               <TableCell>Product</TableCell>
                               <TableCell>Variant</TableCell>
+                              <TableCell align="right">Price</TableCell>
                               <TableCell align="center">Qty</TableCell>
                               <TableCell align="right">Cost</TableCell>
                               <TableCell align="right">Selling</TableCell>
@@ -746,6 +747,9 @@ export default function CreateProductGroupPage() {
                             {selectedProducts.map((product, index) => {
                               const productData = availableProducts.find((p) => p.id === product.product_id);
                               const hasVariants = product.variants && product.variants.length > 0;
+                              const selectedVariant = product.variants?.find((v) => v.sku === product.variant_sku);
+                              const unitCostPrice = selectedVariant?.cost_price ?? productData?.cost_price ?? 0;
+                              const unitSellingPrice = selectedVariant?.selling_price ?? productData?.selling_price ?? 0;
                               const { bg, fg, border } = colorFromString(product.product_name);
                               const initials = product.product_name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
@@ -807,39 +811,72 @@ export default function CreateProductGroupPage() {
                                     )}
                                   </TableCell>
 
+                                  {/* Price (from variant or product) */}
+                                  <TableCell align="right">
+                                    <Stack spacing={0.25} alignItems="flex-end">
+                                      <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: "0.75rem", color: T.textLight }}>
+                                        Cost: ₹{unitCostPrice.toFixed(2)}
+                                      </Typography>
+                                      {unitSellingPrice > 0 && (
+                                        <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: "0.75rem", color: T.text }}>
+                                          Sell: ₹{unitSellingPrice.toFixed(2)}
+                                        </Typography>
+                                      )}
+                                    </Stack>
+                                  </TableCell>
+
                                   {/* Qty */}
                                   <TableCell align="center">
-                                    <TextField
-                                      type="number" size="small"
-                                      value={product.quantity}
-                                      onChange={(e) => handleQtyChange(index, e.target.value)}
-                                      inputProps={{ min: "1" }}
-                                      sx={{
-                                        width: 72,
-                                        "& .MuiOutlinedInput-root": {
-                                          borderRadius: "9px", backgroundColor: T.subtleBg,
-                                          fontSize: "0.82rem", fontWeight: 700,
-                                          fontFamily: "'DM Mono', monospace",
-                                          "& fieldset": { borderColor: T.border, borderWidth: "1.5px" },
-                                          "&:hover fieldset": { borderColor: T.brandMid },
-                                          "&.Mui-focused fieldset": { borderColor: T.brand },
-                                        },
-                                      }}
-                                    />
+                                    <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.75}>
+                                      <TextField
+                                        type="number" size="small"
+                                        value={product.quantity}
+                                        onChange={(e) => handleQtyChange(index, e.target.value)}
+                                        inputProps={{ min: "1" }}
+                                        sx={{
+                                          width: 80,
+                                          "& .MuiOutlinedInput-root": {
+                                            borderRadius: "9px", backgroundColor: T.subtleBg,
+                                            fontSize: "0.82rem", fontWeight: 700,
+                                            fontFamily: "'DM Mono', monospace",
+                                            "& .MuiOutlinedInput-input": {
+                                              textAlign: "center",
+                                              padding: "8px 12px",
+                                            },
+                                            "& fieldset": { borderColor: T.border, borderWidth: "1.5px" },
+                                            "&:hover fieldset": { borderColor: T.brandMid },
+                                            "&.Mui-focused fieldset": { borderColor: T.brand },
+                                          },
+                                        }}
+                                      />
+                                      <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: "0.8rem", color: T.textLight }}>
+                                        ×
+                                      </Typography>
+                                    </Stack>
                                   </TableCell>
 
                                   {/* Cost */}
                                   <TableCell align="right">
-                                    <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: "0.82rem", color: T.textMid }}>
-                                      ₹{((productData?.cost_price || 0) * product.quantity).toFixed(2)}
-                                    </Typography>
+                                    <Stack alignItems="flex-end" spacing={0.25}>
+                                      <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: "0.75rem", color: T.textLight }}>
+                                        {product.quantity} × {unitCostPrice.toFixed(2)}
+                                      </Typography>
+                                      <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 800, fontSize: "0.85rem", color: T.textMid }}>
+                                        ₹{(unitCostPrice * product.quantity).toFixed(2)}
+                                      </Typography>
+                                    </Stack>
                                   </TableCell>
 
                                   {/* Selling */}
                                   <TableCell align="right">
-                                    <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 800, fontSize: "0.82rem", color: T.text }}>
-                                      ₹{((productData?.selling_price || 0) * product.quantity).toFixed(2)}
-                                    </Typography>
+                                    <Stack alignItems="flex-end" spacing={0.25}>
+                                      <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: "0.75rem", color: T.textLight }}>
+                                        {product.quantity} × {unitSellingPrice.toFixed(2)}
+                                      </Typography>
+                                      <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 800, fontSize: "0.85rem", color: T.text }}>
+                                        ₹{(unitSellingPrice * product.quantity).toFixed(2)}
+                                      </Typography>
+                                    </Stack>
                                   </TableCell>
 
                                   {/* Remove */}

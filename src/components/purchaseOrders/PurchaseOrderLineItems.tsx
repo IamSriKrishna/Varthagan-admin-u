@@ -108,7 +108,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
   useEffect(() => {
     setLoadingProducts(true);
     productService.getProducts(1, 100)
-      .then((r) => { if (r.products) setProducts(r.products); })
+      .then((r) => { if (r.products) setProducts(r.products as any); })
       .catch(console.error)
       .finally(() => setLoadingProducts(false));
   }, []);
@@ -320,7 +320,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                                       borderRadius: '3px', fontSize: '0.6rem', fontWeight: 500,
                                     }}
                                   >
-                                    {k}: {v}
+                                    {k}: {String(v)}
                                   </Box>
                                 ))}
                               </Box>
@@ -636,7 +636,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                                   borderRadius: T.radiusSm, fontSize: '0.7rem', fontWeight: 600,
                                 }}
                               >
-                                {k}: {v}
+                                {k}: {String(v)}
                               </Box>
                             ))}
                           </Box>

@@ -17,15 +17,8 @@ import {
 } from "lucide-react";
 import { showToastMessage } from "@/utils/toastUtil";
 import { productService, CreateProductRequest } from "@/lib/api/productService";
-import { CreateManufacturerDialog } from "@/components/products/CreateManufacturerDialog";
-import AddIcon from "@mui/icons-material/Add";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Manufacturer {
-  id: string | number;
-  name: string;
-}
 
 interface AttributeDefinitionForm {
   key: string;
@@ -49,10 +42,12 @@ interface VariantForm {
 
 interface ProductFormData {
   name: string;
-  manufacturer_id: string;
+  is_resource: boolean;
+  resource_name?: string;
+  resource_unit?: string;
+  resource_cost_per_unit?: number;
   unit: string;
   base_sku: string;
-  upc: string;
   description: string;
   selling_account: string;
   selling_price: number;
@@ -138,20 +133,61 @@ function generateVariants(
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required("Product name is required"),
-  manufacturer_id: Yup.string().required("Manufacturer is required"),
-  unit: Yup.string().required("Unit is required"),
-  base_sku: Yup.string().required("Base SKU is required"),
-  description: Yup.string().required("Description is required"),
-  selling_price: Yup.number().required("Selling price is required").min(0),
-  cost_price: Yup.number().required("Cost price is required").min(0),
+  is_resource: Yup.boolean(),
+  resource_name: Yup.string().when("is_resource", {
+    is: true,
+    then: (schema) => schema.required("Resource Name is required"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  resource_unit: Yup.string().when("is_resource", {
+    is: true,
+    then: (schema) => schema.required("Resource Unit is required"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  resource_cost_per_unit: Yup.number().when("is_resource", {
+    is: true,
+    then: (schema) =>
+      schema
+        .typeError("Cost must be a number")
+        .required("Resource Cost Per Unit is required")
+        .min(0, "Cost must be at least 0"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  unit: Yup.string().when("is_resource", {
+    is: false,
+    then: (schema) => schema.required("Unit is required"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  base_sku: Yup.string().when("is_resource", {
+    is: false,
+    then: (schema) => schema.required("Base SKU is required"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  description: Yup.string().when("is_resource", {
+    is: false,
+    then: (schema) => schema.required("Description is required"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  selling_price: Yup.number().when("is_resource", {
+    is: false,
+    then: (schema) => schema.required("Selling price is required").min(0),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  cost_price: Yup.number().when("is_resource", {
+    is: false,
+    then: (schema) => schema.required("Cost price is required").min(0),
+    otherwise: (schema) => schema.notRequired(),
+  }),
 });
 
 const initialValues: ProductFormData = {
   name: "",
-  manufacturer_id: "",
+  is_resource: false,
+  resource_name: "",
+  resource_unit: "",
+  resource_cost_per_unit: 0,
   unit: "pieces",
   base_sku: "",
-  upc: "",
   description: "",
   selling_account: "SALES_REVENUE",
   selling_price: 0,
@@ -234,76 +270,78 @@ export default function CreateProductPage() {
   const [newAttrKey, setNewAttrKey] = useState("");
   const [newAttrOption, setNewAttrOption] = useState("");
   const [editingAttrIdx, setEditingAttrIdx] = useState<number | null>(null);
-  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
-  const [createManufacturerOpen, setCreateManufacturerOpen] = useState(false);
-  const [loadingManufacturers, setLoadingManufacturers] = useState(true);
   const [variantForm, setVariantForm] = useState<Partial<VariantForm>>({
     attribute_map: {}, stock_quantity: 0, is_active: true,
   });
-
-  // ── Fetch Manufacturers ───────────────────────────────────────────────────
-
-  useEffect(() => {
-    const fetchManufacturers = async () => {
-      try {
-        setLoadingManufacturers(true);
-        const response = await productService.getManufacturers();
-        const manufacturers = 'data' in response ? response.data : response.manufacturers;
-        setManufacturers(manufacturers || []);
-      } catch (err) {
-        console.error('Failed to fetch manufacturers:', err);
-        showToastMessage('Failed to load manufacturers', 'error');
-      } finally {
-        setLoadingManufacturers(false);
-      }
-    };
-    fetchManufacturers();
-  }, []);
-
-  const handleAddManufacturer = (manufacturer: Manufacturer) => {
-    setManufacturers((prev) => [...prev, manufacturer]);
-    setCreateManufacturerOpen(false);
-  };
 
   // ── Submit ────────────────────────────────────────────────────────────────
 
   const handleSubmit = async (values: ProductFormData) => {
     try {
       setLoading(true);
-      const markup = values.cost_price > 0
-        ? ((values.selling_price - values.cost_price) / values.cost_price) * 100 : 0;
 
-      const payload: CreateProductRequest = {
-        name: values.name,
-        product_details: {
-          unit: values.unit,
-          base_sku: values.base_sku,
-          upc: values.upc || undefined,
-          description: values.description,
-          attribute_definitions: values.attribute_definitions,
-          manufacturer_id: parseInt(values.manufacturer_id),
-          variants: values.variants.map((v) => ({
-            ...v,
-            reorder_level: v.reorder_level ?? 0,
-          })),
-        },
-        sales_info: {
-          account: values.selling_account,
-          selling_price: values.selling_price,
-          markup_percent: parseFloat(markup.toFixed(2)),
-        },
-        purchase_info: {
-          account: values.purchase_account,
-          cost_price: values.cost_price,
-        },
-      };
+      if (values.is_resource) {
+        // Resource product payload
+        const payload: any = {
+          name: values.name,
+          is_resource: true,
+          resource_name: values.resource_name || "",
+          resource_unit: values.resource_unit || "",
+          resource_cost_per_unit: values.resource_cost_per_unit || 0,
+          product_details: {
+            unit: values.resource_unit || "",
+          },
+        };
 
-      const response = await productService.createProduct(payload);
-      if (response?.id) {
-        showToastMessage("Product created successfully!", "success");
-        router.push("/products");
+        const response = await productService.createProduct(payload);
+        if (response?.id) {
+          showToastMessage("Resource created successfully!", "success");
+          router.push("/products");
+        } else {
+          showToastMessage("Failed to create resource", "error");
+        }
       } else {
-        showToastMessage("Failed to create product", "error");
+        // Regular product payload
+        const markup = values.cost_price > 0
+          ? ((values.selling_price - values.cost_price) / values.cost_price) * 100 : 0;
+
+        const payload: CreateProductRequest = {
+          name: values.name,
+          is_resource: false,
+          product_details: {
+            unit: values.unit,
+            base_sku: values.base_sku,
+            description: values.description,
+            attribute_definitions: values.attribute_definitions,
+            variants: values.variants.map((v) => ({
+              ...v,
+              reorder_level: v.reorder_level ?? 0,
+            })),
+          },
+          sales_info: {
+            account: values.selling_account,
+            selling_price: values.selling_price,
+            currency: "INR",
+            description: "",
+          },
+          purchase_info: {
+            account: values.purchase_account,
+            cost_price: values.cost_price,
+            currency: "INR",
+            description: "",
+          },
+          return_policy: {
+            returnable: false,
+          },
+        };
+
+        const response = await productService.createProduct(payload);
+        if (response?.id) {
+          showToastMessage("Product created successfully!", "success");
+          router.push("/products");
+        } else {
+          showToastMessage("Failed to create product", "error");
+        }
       }
     } catch (err: any) {
       showToastMessage(err?.message ?? "Failed to create product", "error");
@@ -434,6 +472,7 @@ export default function CreateProductPage() {
                     </Box>
                     <Box sx={{ p: 3 }}>
                       <Stack spacing={3}>
+                        {/* Product Name + Resource Toggle */}
                         <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
                           <Box sx={{ flex: 2 }}>
                             <Label required>Product Name</Label>
@@ -441,90 +480,80 @@ export default function CreateProductPage() {
                               placeholder="e.g., Water Bottle" error={touched.name && !!errors.name} helperText={touched.name && errors.name}
                               size="small" sx={inputSx} />
                           </Box>
-                          <Box sx={{ flex: 1 }}>
-                            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.75}>
-                              <Label required>Manufacturer</Label>
-                              {manufacturers.length === 0 && !loadingManufacturers && (
-                                <Button
-                                  size="small"
-                                  startIcon={<AddIcon sx={{ fontSize: "14px !important" }} />}
-                                  onClick={() => setCreateManufacturerOpen(true)}
-                                  sx={{
-                                    fontSize: "0.72rem",
-                                    fontWeight: 600,
-                                    textTransform: "none",
-                                    color: "#0f172a",
-                                    bgcolor: "#f1f5f9",
-                                    borderRadius: 1.5,
-                                    px: 1.25,
-                                    py: 0.4,
-                                    minHeight: 0,
-                                    "&:hover": { bgcolor: "#e2e8f0" },
-                                  }}
-                                >
-                                  Add New
-                                </Button>
-                              )}
+                          <Box sx={{ flex: 1, display: "flex", alignItems: "flex-end", pb: 0.5 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 500, color: C.text }}>Resource</Typography>
+                              <Switch checked={values.is_resource} onChange={(e) => setFieldValue("is_resource", e.target.checked)} />
+                            </Box>
+                          </Box>
+                        </Stack>
+
+                        {/* Resource Product Fields */}
+                        {values.is_resource && (
+                          <>
+                            <Box sx={{ p: 2, borderRadius: "8px", backgroundColor: C.brandSoft, border: `1px solid ${C.brandMid}` }}>
+                              <Typography variant="body2" sx={{ fontSize: "0.85rem", color: C.text }}>
+                                Resource products are consumption-based items like Water, Electricity, or Natural Gas. They don't have variants.
+                              </Typography>
+                            </Box>
+                            <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
+                              <Box sx={{ flex: 1 }}>
+                                <Label required>Resource Name</Label>
+                                <TextField fullWidth name="resource_name" value={values.resource_name} onChange={handleChange}
+                                  placeholder="e.g., Water" error={touched.resource_name && !!errors.resource_name} helperText={touched.resource_name && errors.resource_name}
+                                  size="small" sx={inputSx} />
+                              </Box>
+                              <Box sx={{ flex: 1 }}>
+                                <Label required>Unit of Measurement</Label>
+                                <TextField fullWidth name="resource_unit" value={values.resource_unit} onChange={handleChange}
+                                  placeholder="e.g., liter" error={touched.resource_unit && !!errors.resource_unit} helperText={touched.resource_unit && errors.resource_unit}
+                                  size="small" sx={inputSx} />
+                              </Box>
+                              <Box sx={{ flex: 1 }}>
+                                <Label required>Cost Per Unit (₹)</Label>
+                                <TextField fullWidth name="resource_cost_per_unit" type="number" value={values.resource_cost_per_unit} onChange={handleChange}
+                                  placeholder="e.g., 25.50" error={touched.resource_cost_per_unit && !!errors.resource_cost_per_unit} helperText={touched.resource_cost_per_unit && errors.resource_cost_per_unit}
+                                  inputProps={{ step: "0.01", min: "0" }} size="small" sx={inputSx} />
+                              </Box>
                             </Stack>
-                            <Select
-                              fullWidth
-                              name="manufacturer_id"
-                              value={values.manufacturer_id}
-                              onChange={handleChange}
-                              size="small"
-                              displayEmpty
-                              disabled={loadingManufacturers}
-                              sx={selectSx}
-                            >
-                              <MenuItem value="" disabled>
-                                <em style={{ color: C.textLight }}>
-                                  {loadingManufacturers ? "Loading..." : "Select…"}
-                                </em>
-                              </MenuItem>
-                              {manufacturers.map((manufacturer) => (
-                                <MenuItem key={manufacturer.id} value={manufacturer.id}>
-                                  {manufacturer.name}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          </Box>
-                        </Stack>
+                          </>
+                        )}
 
-                        <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
-                          <Box sx={{ flex: 1 }}>
-                            <Label required>Unit</Label>
-                            <TextField fullWidth name="unit" value={values.unit} onChange={handleChange}
-                              placeholder="e.g., pieces" size="small" sx={inputSx} />
-                          </Box>
-                          <Box sx={{ flex: 1 }}>
-                            <Label required>Base SKU</Label>
-                            <Tooltip title="Used as prefix when auto-generating variant SKUs" placement="top">
-                              <TextField fullWidth name="base_sku" value={values.base_sku} onChange={handleChange}
-                                placeholder="e.g., WB-001" error={touched.base_sku && !!errors.base_sku} helperText={touched.base_sku && errors.base_sku}
+                        {/* Regular Product Fields */}
+                        {!values.is_resource && (
+                          <>
+                            <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
+                              <Box sx={{ flex: 1 }}>
+                                <Label required>Unit</Label>
+                                <TextField fullWidth name="unit" value={values.unit} onChange={handleChange}
+                                  placeholder="e.g., pieces" size="small" sx={inputSx} />
+                              </Box>
+                              <Box sx={{ flex: 1 }}>
+                                <Label required>Base SKU</Label>
+                                <Tooltip title="Used as prefix when auto-generating variant SKUs" placement="top">
+                                  <TextField fullWidth name="base_sku" value={values.base_sku} onChange={handleChange}
+                                    placeholder="e.g., WB-001" error={touched.base_sku && !!errors.base_sku} helperText={touched.base_sku && errors.base_sku}
+                                    size="small" sx={inputSx} />
+                                </Tooltip>
+                              </Box>
+                            </Stack>
+
+                            <Box>
+                              <Label required>Description</Label>
+                              <TextField fullWidth name="description" value={values.description} onChange={handleChange}
+                                placeholder="Describe the product — materials, use cases, key features…" multiline rows={4}
+                                error={touched.description && !!errors.description} helperText={touched.description && errors.description}
                                 size="small" sx={inputSx} />
-                            </Tooltip>
-                          </Box>
-                          <Box sx={{ flex: 1 }}>
-                            <Label>UPC</Label>
-                            <TextField fullWidth name="upc" value={values.upc} onChange={handleChange}
-                              placeholder="e.g., 123456789012" size="small" sx={inputSx} />
-                          </Box>
-                        </Stack>
-
-                        <Box>
-                          <Label required>Description</Label>
-                          <TextField fullWidth name="description" value={values.description} onChange={handleChange}
-                            placeholder="Describe the product — materials, use cases, key features…" multiline rows={4}
-                            error={touched.description && !!errors.description} helperText={touched.description && errors.description}
-                            size="small" sx={inputSx} />
-                        </Box>
+                            </Box>
+                          </>
+                        )}
                       </Stack>
                     </Box>
                   </Card>
                 )}
 
                 {/* ══ STEP 1: Pricing ═══════════════════════════════════════════════ */}
-                {step === 1 && (
+                {step === 1 && !values.is_resource && (
                   <Stack spacing={3}>
                     <Card sx={{ borderRadius: "16px", border: `1px solid ${C.border}`, boxShadow: "none", overflow: "hidden" }}>
                       <Box sx={{ p: 3, borderBottom: `1px solid ${C.border}` }}>
@@ -593,7 +622,7 @@ export default function CreateProductPage() {
                 )}
 
                 {/* ══ STEP 2: Variants ══════════════════════════════════════════════ */}
-                {step === 2 && (
+                {step === 2 && !values.is_resource && (
                   <Stack spacing={3}>
 
                     {/* Attribute definitions */}
@@ -1164,12 +1193,12 @@ export default function CreateProductPage() {
                     {step === 0 ? "Cancel" : "Back"}
                   </Button>
 
-                  {step < STEPS.length - 1 ? (
+                  {step < STEPS.length - 1 && !values.is_resource ? (
                     <Button variant="contained" endIcon={<ChevronRight size={16} />}
                       onClick={async () => {
                         const errs = await validateForm();
                         const stepFields: Record<number, string[]> = {
-                          0: ["name", "manufacturer_id", "unit", "base_sku", "description"],
+                          0: ["name", "unit", "base_sku", "description"],
                           1: ["selling_price", "cost_price"],
                         };
                         const relevant = stepFields[step] ?? [];
@@ -1187,7 +1216,7 @@ export default function CreateProductPage() {
                   ) : (
                     <BBButton type="submit" disabled={loading} loading={loading}
                       sx={{ backgroundColor: C.brand, borderRadius: "8px", textTransform: "none", fontWeight: 700, px: 4, "&:hover": { backgroundColor: "#1D4ED8" } }}>
-                      {loading ? "Creating…" : "Create Product"}
+                      {loading ? "Creating…" : values.is_resource ? "Create Resource" : "Create Product"}
                     </BBButton>
                   )}
                 </Stack>
@@ -1196,12 +1225,6 @@ export default function CreateProductPage() {
           }}
         </Formik>
       </Box>
-
-      <CreateManufacturerDialog
-        open={createManufacturerOpen}
-        onClose={() => setCreateManufacturerOpen(false)}
-        onSuccess={handleAddManufacturer}
-      />
     </Box>
   );
 }

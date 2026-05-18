@@ -502,22 +502,7 @@ const Dashboard = () => {
               </Card>
             </Grid>
 
-            {/* Invoice Metrics */}
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <Card elevation={0} sx={classes.statsCard}>
-                <CardContent sx={classes.statsCardContent}>
-                  <Typography variant="subtitle2" sx={classes.statsLabel}>
-                    Invoice Revenue
-                  </Typography>
-                  <Typography variant="h5">
-                    ₹{(dashboardMetrics.invoice_metrics.total_amount / 100000).toFixed(1)}L
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
-                    Outstanding: ₹{(dashboardMetrics.invoice_metrics.outstanding_amount / 1000).toFixed(0)}K
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
+        
 
             {/* Sales Order Metrics */}
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>

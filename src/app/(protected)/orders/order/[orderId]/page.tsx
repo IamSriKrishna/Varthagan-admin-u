@@ -28,7 +28,7 @@ const OrderInvoice = () => {
   const router = useRouter();
   const params = useParams();
   const componentRef = useRef<HTMLDivElement>(null);
-  const orderId = Array.isArray(params?.orderId) ? params.orderId[0] : params?.orderId;
+  const orderId = (Array.isArray(params?.orderId) ? params.orderId[0] : params?.orderId) || '';
   const { loading: authLoading } = useSelector((state: RootState) => state.auth);
 
   const { data: rawOrderData, loading: orderLoading } = useFetch<ApiResponse<IOrderList>>({

@@ -1,0 +1,552 @@
+
+/home/sri-krishna/Desktop/admin-ui/src/components/AdminUserSelector.tsx
+   3:31  error  'useRef' is defined but never used        @typescript-eslint/no-unused-vars
+  57:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/banks/BanksContainer.tsx
+   19:16  error    'BankResponse' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+   46:6   warning  React Hook useEffect has a missing dependency: 'fetchBankData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  119:21  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  130:52  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/banks/BanksTable.tsx
+   77:3   error    'onRefresh' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+   91:6   warning  React Hook useEffect has a missing dependency: 'fetchBanks'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  102:19  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  119:19  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/bills/BillBasicInfo.tsx
+   17:3   error  'InputLabel' is defined but never used               @typescript-eslint/no-unused-vars
+  113:10  error  'loadingVendors' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  141:45  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  192:34  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  262:65  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/bills/BillBilling.tsx
+  67:10  error  'loadingTaxes' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sri-krishna/Desktop/admin-ui/src/components/bills/BillForm.tsx
+  51:21  error    Unexpected any. Specify a different type                                                                                              @typescript-eslint/no-explicit-any
+  64:23  error    Unexpected any. Specify a different type                                                                                              @typescript-eslint/no-explicit-any
+  72:6   warning  React Hook useEffect has missing dependencies: 'formik', 'getBill', and 'isEdit'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/sri-krishna/Desktop/admin-ui/src/components/bills/BillLineItems.tsx
+   25:3   error  'CircularProgress' is defined but never used          @typescript-eslint/no-unused-vars
+   52:38  error  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   53:10  error  'loadingItems' is assigned a value but never used     @typescript-eslint/no-unused-vars
+   55:66  error  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   56:10  error  'selectedVariant' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   56:58  error  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   60:82  error  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   87:41  error  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  115:66  error  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  386:88  error  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  396:70  error  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/category/CategoryForm/CategoryForm.tsx
+  73:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/companySettings/CompaniesTable.tsx
+   16:3   error    'Chip' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+  103:3   error    'onRefresh' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+  119:6   warning  React Hook useEffect has a missing dependency: 'fetchCompanies'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  128:19  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  141:19  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/companySettings/CompanyDetailsModal.tsx
+   49:6   warning  React Hook useEffect has a missing dependency: 'fetchCompanyDetails'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   58:19  error    Unexpected any. Specify a different type                                                                                @typescript-eslint/no-explicit-any
+  236:48  error    Unexpected any. Specify a different type                                                                                @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/companySettings/CompanyProfileView.tsx
+   3:27  error  'useEffect' is defined but never used         @typescript-eslint/no-unused-vars
+  10:3   error  'CircularProgress' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sri-krishna/Desktop/admin-ui/src/components/companySettings/CompanySettingsContainer.tsx
+  32:6  warning  React Hook useEffect has a missing dependency: 'fetchCompanyData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/sri-krishna/Desktop/admin-ui/src/components/companySettings/CompanySetupWizard.tsx
+  132:55  error  'onClose' is defined but never used       @typescript-eslint/no-unused-vars
+  187:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  222:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/companySettings/steps/AddressDetailsStep.tsx
+  21:42  warning  React Hook useEffect has a missing dependency: 'fetchCountries'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  49:38  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/companySettings/steps/CompanyDetailsStep.tsx
+  17:10  error  'error' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  32:38  error  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/companySettings/steps/PaymentDetailsStep.tsx
+   34:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  101:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  111:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/companySettings/steps/ReviewStep.tsx
+  38:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  59:97  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/companySettings/steps/SettingsStep.tsx
+  43:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  44:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  45:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/companySettings/steps/shared.tsx
+  12:3  error  'MenuItem' is defined but never used          @typescript-eslint/no-unused-vars
+  13:3  error  'FormControlLabel' is defined but never used  @typescript-eslint/no-unused-vars
+  14:3  error  'Checkbox' is defined but never used          @typescript-eslint/no-unused-vars
+
+/home/sri-krishna/Desktop/admin-ui/src/components/customer/CustomerPricingForm.tsx
+  273:7   error    'getToken' is assigned a value but never used                                                                 @typescript-eslint/no-unused-vars
+  319:7   warning  The attribute aria-expanded is not supported by the role textbox. This role is implicit on the element input  jsx-a11y/role-supports-aria-props
+  361:11  error    An interface declaring no members is equivalent to its supertype                                              @typescript-eslint/no-empty-object-type
+
+/home/sri-krishna/Desktop/admin-ui/src/components/customer/CustomerPricingScreen.tsx
+  123:3   error  'customerName' is defined but never used  @typescript-eslint/no-unused-vars
+  151:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/customers/CustomerAddress.tsx
+   5:3   error  'Divider' is defined but never used       @typescript-eslint/no-unused-vars
+  21:10  error  'SectionLabel' is defined but never used  @typescript-eslint/no-unused-vars
+  21:74  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/customers/CustomerBasicInfo.tsx
+   9:23  error  'Mail' is defined but never used          @typescript-eslint/no-unused-vars
+   9:29  error  'Globe' is defined but never used         @typescript-eslint/no-unused-vars
+  12:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/customers/CustomerForm.tsx
+    8:45  error    'ChevronRight' is defined but never used                                                                             @typescript-eslint/no-unused-vars
+   55:6   warning  React Hook useEffect has a missing dependency: 'loadCustomerData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   63:19  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+   85:14  error    'error' is already declared in the upper scope on line 48 column 10                                                  no-shadow
+   85:21  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+   91:42  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  123:13  error    'handleSubmit' is already declared in the upper scope on line 72 column 9                                            no-shadow
+
+/home/sri-krishna/Desktop/admin-ui/src/components/customers/CustomerOtherDetails.tsx
+  2:50  error  'FormControlLabel' is defined but never used  @typescript-eslint/no-unused-vars
+  5:34  error  'Clock' is defined but never used             @typescript-eslint/no-unused-vars
+  5:41  error  'Globe' is defined but never used             @typescript-eslint/no-unused-vars
+  9:54  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/customers/customerForm.utils.ts
+  64:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/customers/customerForm.validation.ts
+  3:42  error  'isEdit' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sri-krishna/Desktop/admin-ui/src/components/employee/AddEmployeeDialog.tsx
+  14:3   error  'InputLabel' is defined but never used             @typescript-eslint/no-unused-vars
+  20:18  error  'X' is defined but never used                      @typescript-eslint/no-unused-vars
+  22:10  error  'EmployeeCreateRequest' is defined but never used  @typescript-eslint/no-unused-vars
+  67:34  error  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/employee/EmployeeDashboard.tsx
+  25:10  error    'selectedEmployee' is assigned a value but never used                                                              @typescript-eslint/no-unused-vars
+  31:5   error    'currentPage' is assigned a value but never used                                                                   @typescript-eslint/no-unused-vars
+  32:5   error    'rowsPerPage' is assigned a value but never used                                                                   @typescript-eslint/no-unused-vars
+  34:5   error    'updateEmployee' is assigned a value but never used                                                                @typescript-eslint/no-unused-vars
+  41:6   warning  React Hook useEffect has a missing dependency: 'fetchEmployees'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/sri-krishna/Desktop/admin-ui/src/components/employee/EmployeeManager.tsx
+    7:3   error    'Card' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+   35:20  error    'EmployeeCreateRequest' is defined but never used                                                                  @typescript-eslint/no-unused-vars
+   55:67  error    'companyId' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   82:6   warning  React Hook useEffect has a missing dependency: 'fetchEmployees'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  205:34  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/employees/EmployeeSelect.tsx
+  14:10  error    'User' is defined but never used                                                                                                                                                                     @typescript-eslint/no-unused-vars
+  58:3   error    'label' is assigned a value but never used                                                                                                                                                           @typescript-eslint/no-unused-vars
+  62:3   error    'required' is assigned a value but never used                                                                                                                                                        @typescript-eslint/no-unused-vars
+  67:10  error    'selectedEmployee' is assigned a value but never used                                                                                                                                                @typescript-eslint/no-unused-vars
+  74:9   warning  The 'employees' logical expression could make the dependencies of useEffect Hook (at line 84) change on every render. To fix this, wrap the initialization of 'employees' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  86:32  error    Unexpected any. Specify a different type                                                                                                                                                             @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/invoices/CreateSalespersonDialog.tsx
+  25:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  41:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  41:63  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  70:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/invoices/InvoiceForm.tsx
+    3:10   error    'invoices' is defined but never used                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   14:10   error    'itemService' is defined but never used                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+   19:56   error    'FormControlLabel' is defined but never used                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+   20:3    error    'Radio' is defined but never used                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  161:27   error    'setLoadingProducts' is assigned a value but never used                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+  165:50   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  166:56   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  167:62   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  169:10   error    'loadingSOPODetails' is assigned a value but never used                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+  177:105  error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  182:101  error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  207:35   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  231:28   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  247:70   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  273:21   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  282:31   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  292:35   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  292:59   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  296:23   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  302:24   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  327:117  error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  335:17   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  346:36   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  355:34   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  374:14   warning  React Hook useEffect has a missing dependency: 'setFieldValue'. Either include it or remove the dependency array. If 'setFieldValue' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+  702:70   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  758:87   error    Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/itemGroups/ItemGroupDrawer.tsx
+   29:3   error  'ListItemIcon' is defined but never used                             @typescript-eslint/no-unused-vars
+   30:3   error  'ListItemText' is defined but never used                             @typescript-eslint/no-unused-vars
+   32:13  error  'Plus' is defined but never used                                     @typescript-eslint/no-unused-vars
+   34:21  error  'ItemGroupComponent' is defined but never used                       @typescript-eslint/no-unused-vars
+   35:10  error  'useItemGroups' is defined but never used                            @typescript-eslint/no-unused-vars
+   43:23  error  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+   99:66  error  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  148:52  error  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  178:19  error  'error' is already declared in the upper scope on line 83 column 10  no-shadow
+  261:16  error  'error' is already declared in the upper scope on line 83 column 10  no-shadow
+
+/home/sri-krishna/Desktop/admin-ui/src/components/itemGroups/ItemGroupsTable.tsx
+  22:10  error  'Package' is defined but never used          @typescript-eslint/no-unused-vars
+  26:9   error  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  53:38  error  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/items/ItemForm.tsx
+    7:3   error  'Chip' is defined but never used          @typescript-eslint/no-unused-vars
+    9:31  error  'useRef' is defined but never used        @typescript-eslint/no-unused-vars
+   13:47  error  'FileText' is defined but never used      @typescript-eslint/no-unused-vars
+   19:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  119:9   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  149:72  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  237:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  240:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/items/StockOverview.tsx
+  23:9  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/items/item_drawer.tsx
+   19:3   error  'Chip' is defined but never used           @typescript-eslint/no-unused-vars
+   25:16  error  'ItemType' is defined but never used       @typescript-eslint/no-unused-vars
+   25:26  error  'ItemStructure' is defined but never used  @typescript-eslint/no-unused-vars
+   44:25  error  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  138:52  error  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  146:82  error  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  169:69  error  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  185:28  error  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  243:19  error  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/layout/MainLayout.tsx
+   3:15  error  'CssBaseline' is defined but never used           @typescript-eslint/no-unused-vars
+   8:8   error  'Navbar' is defined but never used                @typescript-eslint/no-unused-vars
+  11:7   error  'drawerWidth' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sri-krishna/Desktop/admin-ui/src/components/layout/SideBar/Sidebar.tsx
+  28:3   error  'Handshake' is defined but never used   @typescript-eslint/no-unused-vars
+  30:3   error  'LayoutGrid' is defined but never used  @typescript-eslint/no-unused-vars
+  35:3   error  'Ticket' is defined but never used      @typescript-eslint/no-unused-vars
+  42:10  error  'BoxIcon' is defined but never used     @typescript-eslint/no-unused-vars
+  43:3   error  'User2Icon' is defined but never used   @typescript-eslint/no-unused-vars
+  44:3   error  'BoxesIcon' is defined but never used   @typescript-eslint/no-unused-vars
+  46:3   error  'Plus' is defined but never used        @typescript-eslint/no-unused-vars
+
+/home/sri-krishna/Desktop/admin-ui/src/components/manufacturing/ManufacturerForm.tsx
+   67:10  error  'selectedProductGroup' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   68:10  error  'selectedEmployeeData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  141:29  error  Unexpected any. Specify a different type                   @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/manufacturing/ManufacturersTable-updated.tsx
+   43:3   error  'onView' is defined but never used        @typescript-eslint/no-unused-vars
+  171:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  292:76  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/manufacturing/ManufacturersTable.tsx
+   41:3   error  'onView' is defined but never used        @typescript-eslint/no-unused-vars
+  178:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  304:76  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/packages/PackageBasicInfo.tsx
+  12:3   error  'alpha' is defined but never used                      @typescript-eslint/no-unused-vars
+  16:3   error  'Card' is defined but never used                       @typescript-eslint/no-unused-vars
+  17:3   error  'CardContent' is defined but never used                @typescript-eslint/no-unused-vars
+  19:3   error  'Chip' is defined but never used                       @typescript-eslint/no-unused-vars
+  71:10  error  'loadingCustomers' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sri-krishna/Desktop/admin-ui/src/components/packages/PackageForm.tsx
+    9:3   error  'CircularProgress' is defined but never used  @typescript-eslint/no-unused-vars
+   14:3   error  'Alert' is defined but never used             @typescript-eslint/no-unused-vars
+   36:62  error  'error' is assigned a value but never used    @typescript-eslint/no-unused-vars
+   70:21  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   80:50  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  143:49  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/packages/PackageLineItems.tsx
+  16:3   error  'alpha' is defined but never used         @typescript-eslint/no-unused-vars
+  58:66  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  61:66  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  62:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/productGroups/ProductGroupAutocomplete.tsx
+  3:17  error  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sri-krishna/Desktop/admin-ui/src/components/productGroups/ProductGroupSelect.tsx
+  32:3   error    'label' is assigned a value but never used                                                                                                                                                                   @typescript-eslint/no-unused-vars
+  36:3   error    'required' is assigned a value but never used                                                                                                                                                                @typescript-eslint/no-unused-vars
+  41:10  error    'selectedGroup' is assigned a value but never used                                                                                                                                                           @typescript-eslint/no-unused-vars
+  48:9   warning  The 'productGroups' logical expression could make the dependencies of useEffect Hook (at line 58) change on every render. To fix this, wrap the initialization of 'productGroups' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  60:32  error    Unexpected any. Specify a different type                                                                                                                                                                     @typescript-eslint/no-explicit-any
+  89:17  error    'selectedGroup' is already declared in the upper scope on line 41 column 10                                                                                                                                  no-shadow
+
+/home/sri-krishna/Desktop/admin-ui/src/components/productGroups/ProductGroupSelectionExample.tsx
+   3:27  error  'useEffect' is defined but never used                    @typescript-eslint/no-unused-vars
+  49:5   error  'clearSelectedGroup' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sri-krishna/Desktop/admin-ui/src/components/products/BottleForm.tsx
+  24:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  55:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  67:14  error  'err' is defined but never used           @typescript-eslint/no-unused-vars
+  72:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  95:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/products/BottleSizeForm.tsx
+  23:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  46:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  63:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/products/CapForm.tsx
+  24:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  60:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  85:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/products/CreateManufacturerDialog.tsx
+  26:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  63:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  63:63  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  82:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/products/ProductForm.tsx
+   15:3   error  'Chip' is defined but never used                            @typescript-eslint/no-unused-vars
+   26:17  error  Unexpected any. Specify a different type                    @typescript-eslint/no-explicit-any
+   52:42  error  Unexpected any. Specify a different type                    @typescript-eslint/no-explicit-any
+   53:36  error  Unexpected any. Specify a different type                    @typescript-eslint/no-explicit-any
+   54:54  error  Unexpected any. Specify a different type                    @typescript-eslint/no-explicit-any
+   55:10  error  'checkingCompatibility' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   71:14  error  'err' is defined but never used                             @typescript-eslint/no-unused-vars
+   82:14  error  'err' is defined but never used                             @typescript-eslint/no-unused-vars
+   82:19  error  Unexpected any. Specify a different type                    @typescript-eslint/no-explicit-any
+   89:39  error  Unexpected any. Specify a different type                    @typescript-eslint/no-explicit-any
+  104:19  error  Unexpected any. Specify a different type                    @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/products/ProductManagement.tsx
+   28:3   error    'Skeleton' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   29:3   error    'Container' is defined but never used                                                                        @typescript-eslint/no-unused-vars
+   30:3   error    'useTheme' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   75:50  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+   79:64  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+   86:42  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+   90:56  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+   93:36  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+   97:50  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  100:44  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  104:58  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  110:6   warning  React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  118:32  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  119:37  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  122:28  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  123:33  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  126:25  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  127:30  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  133:19  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  155:19  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/products/productForm.utils.ts
+    6:3   error  'ProductDetailsInput' is defined but never used  @typescript-eslint/no-unused-vars
+  134:12  error  'key' is defined but never used                  @typescript-eslint/no-unused-vars
+  196:40  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/purchaseOrders/PurchaseOrderBasicInfo.tsx
+    9:3   error    'InputLabel' is defined but never used                                                                     @typescript-eslint/no-unused-vars
+   13:3   error    'RadioGroup' is defined but never used                                                                     @typescript-eslint/no-unused-vars
+   14:3   error    'Radio' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+   15:3   error    'FormControlLabel' is defined but never used                                                               @typescript-eslint/no-unused-vars
+   17:3   error    'Button' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   19:3   error    'alpha' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+   24:8   error    'CalendarTodayIcon' is defined but never used                                                              @typescript-eslint/no-unused-vars
+   25:8   error    'LocalShippingIcon' is defined but never used                                                              @typescript-eslint/no-unused-vars
+  143:10  error    'loadingVendors' is assigned a value but never used                                                        @typescript-eslint/no-unused-vars
+  144:10  error    'loadingCustomers' is assigned a value but never used                                                      @typescript-eslint/no-unused-vars
+  172:6   warning  React Hook useEffect has a missing dependency: 'formik'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  202:32  error    Unexpected any. Specify a different type                                                                   @typescript-eslint/no-explicit-any
+  306:40  error    Unexpected any. Specify a different type                                                                   @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/purchaseOrders/PurchaseOrderBilling.tsx
+  97:24  error  'prefix' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sri-krishna/Desktop/admin-ui/src/components/purchaseOrders/PurchaseOrderForm.tsx
+   12:3   error  'CardContent' is defined but never used   @typescript-eslint/no-unused-vars
+   13:3   error  'Divider' is defined but never used       @typescript-eslint/no-unused-vars
+  246:99  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  281:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/purchaseOrders/PurchaseOrderLineItems.tsx
+    8:3   error  'Button' is defined but never used                                @typescript-eslint/no-unused-vars
+   17:3   error  'DialogTitle' is defined but never used                           @typescript-eslint/no-unused-vars
+   19:3   error  'DialogActions' is defined but never used                         @typescript-eslint/no-unused-vars
+   29:3   error  'alpha' is defined but never used                                 @typescript-eslint/no-unused-vars
+   85:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+   86:11  error  'ProductOption' is defined but never used                         @typescript-eslint/no-unused-vars
+  106:58  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  111:64  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  118:55  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  126:76  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  167:21  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  186:64  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  292:41  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  292:71  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  295:39  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  297:43  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  301:39  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  303:48  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  306:40  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  306:69  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  308:48  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  312:39  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  312:84  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  314:58  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  571:41  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  571:74  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  574:85  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  592:73  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  612:29  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  615:33  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  626:41  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+  659:39  error  Unexpected any. Specify a different type                          @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/purchaseOrders/purchaseOrderForm.utils.ts
+  46:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  52:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/salary/SalaryView.tsx
+   28:10  error  'Download' is defined but never used                     @typescript-eslint/no-unused-vars
+   31:35  error  'SalaryCalculationListOutput' is defined but never used  @typescript-eslint/no-unused-vars
+   43:3   error  'companyId' is defined but never used                    @typescript-eslint/no-unused-vars
+  102:16  error  'error' is defined but never used                        @typescript-eslint/no-unused-vars
+  130:14  error  'error' is defined but never used                        @typescript-eslint/no-unused-vars
+  150:14  error  'error' is defined but never used                        @typescript-eslint/no-unused-vars
+
+/home/sri-krishna/Desktop/admin-ui/src/components/salesOrders/CreateSalespersonDialog.tsx
+  30:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  68:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  68:63  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  85:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/salesOrders/SalesOrderBasicInfo.tsx
+  325:63  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/salesOrders/SalesOrderBilling.tsx
+   22:8   error    'LocalShippingOutlinedIcon' is defined but never used                                                      @typescript-eslint/no-unused-vars
+   23:8   error    'TuneOutlinedIcon' is defined but never used                                                               @typescript-eslint/no-unused-vars
+  113:6   warning  React Hook useEffect has a missing dependency: 'formik'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  115:35  error    Unexpected any. Specify a different type                                                                   @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/salesOrders/SalesOrderForm.tsx
+   49:93  error    Unexpected any. Specify a different type                                                                                             @typescript-eslint/no-explicit-any
+   65:6   warning  React Hook useEffect has missing dependencies: 'getSalesOrder' and 'isEditMode'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+   94:23  error    Unexpected any. Specify a different type                                                                                             @typescript-eslint/no-explicit-any
+  129:41  error    Unexpected any. Specify a different type                                                                                             @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/salesOrders/SalesOrderFormWithPricing.tsx
+  15:3   error    'MenuItem' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+  26:27  error    'CustomerPricingLineItem' is defined but never used                                                                      @typescript-eslint/no-unused-vars
+  32:31  error    Unexpected any. Specify a different type                                                                                 @typescript-eslint/no-explicit-any
+  33:23  error    Unexpected any. Specify a different type                                                                                 @typescript-eslint/no-explicit-any
+  42:25  error    'setManufacturers' is assigned a value but never used                                                                    @typescript-eslint/no-unused-vars
+  57:6   warning  React Hook useEffect has a missing dependency: 'fetchCustomerPricing'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/sri-krishna/Desktop/admin-ui/src/components/salesOrders/SalesOrderLineItems.tsx
+   19:3   error  'DialogTitle' is defined but never used        @typescript-eslint/no-unused-vars
+   21:3   error  'DialogActions' is defined but never used      @typescript-eslint/no-unused-vars
+   27:3   error  'Divider' is defined but never used            @typescript-eslint/no-unused-vars
+   30:3   error  'Avatar' is defined but never used             @typescript-eslint/no-unused-vars
+   31:3   error  'InputAdornment' is defined but never used     @typescript-eslint/no-unused-vars
+   32:3   error  'alpha' is defined but never used              @typescript-eslint/no-unused-vars
+   40:8   error  'EditOutlinedIcon' is defined but never used   @typescript-eslint/no-unused-vars
+   41:8   error  'WarningIcon' is defined but never used        @typescript-eslint/no-unused-vars
+   44:10  error  'apiService' is defined but never used         @typescript-eslint/no-unused-vars
+   78:15  error  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+   95:7   error  'inputSx' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  106:7   error  'selectSx' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  114:10  error  'Field' is defined but never used              @typescript-eslint/no-unused-vars
+  141:66  error  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  204:13  error  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  287:49  error  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  304:44  error  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  338:73  error  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  563:41  error  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  852:70  error  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/salesOrders/salesOrderForm.utils.ts
+   59:18  error    Unexpected any. Specify a different type                        @typescript-eslint/no-explicit-any
+   74:23  error    Unexpected any. Specify a different type                        @typescript-eslint/no-explicit-any
+  135:3   error    '_item' is defined but never used                               @typescript-eslint/no-unused-vars
+  145:3   error    '_item' is defined but never used                               @typescript-eslint/no-unused-vars
+  155:9   error    Unexpected any. Specify a different type                        @typescript-eslint/no-explicit-any
+  302:1   warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+/home/sri-krishna/Desktop/admin-ui/src/components/stock/StockManagement.tsx
+    9:3    error  'Paper' is defined but never used         @typescript-eslint/no-unused-vars
+   37:24   error  'StockItem' is defined but never used     @typescript-eslint/no-unused-vars
+   45:32   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   45:47   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   49:39   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   49:54   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   53:29   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   62:40   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   63:56   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  119:30   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  137:15   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  185:51   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  215:49   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  215:64   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  263:34   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  502:73   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  502:102  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  514:113  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  549:51   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  629:57   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  629:86   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  630:71   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  665:113  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/vendors/VendorAddress.tsx
+  3:20  error  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sri-krishna/Desktop/admin-ui/src/components/vendors/VendorBankDetails.tsx
+  18:10  error  'banks' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  32:93  error  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  40:21  error  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/vendors/VendorForm.tsx
+   16:10  error    'BBButton' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+   16:20  error    'BBTitle' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+  452:6   warning  React Hook useEffect has a missing dependency: 'loadVendorData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  460:19  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  482:14  error    'error' is already declared in the upper scope on line 444 column 10                                               no-shadow
+  482:21  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  488:42  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  508:65  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  538:13  error    'handleSubmit' is already declared in the upper scope on line 469 column 9                                         no-shadow
+
+/home/sri-krishna/Desktop/admin-ui/src/components/vendors/vendorForm.utils.ts
+  87:59  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sri-krishna/Desktop/admin-ui/src/components/vendors/vendorForm.validation.ts
+  3:40  error  'isEdit' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 399 problems (378 errors, 21 warnings)
+

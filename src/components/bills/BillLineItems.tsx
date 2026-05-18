@@ -364,7 +364,7 @@ export const BillLineItems: React.FC<BillLineItemsProps> = ({ formik }) => {
                 if (value) {
                   try {
                     const res = await itemService.getItem(value.id);
-                    setSelectedItemDetails(res.data || res);
+                    setSelectedItemDetails(res);
                     setNewItem({ ...newItem, item_id: value.id, variant_sku: '', variant_details: {} });
                     setSelectedVariant(null);
                   } catch (e) { console.error(e); }

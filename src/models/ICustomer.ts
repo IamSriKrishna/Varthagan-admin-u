@@ -30,6 +30,14 @@ export interface ICustomerAddress {
   postal_code?: string;
   phone?: string;
   phone_code?: string;
+  // Additional delivery address fields
+  full_name?: string;
+  is_default?: boolean;
+  phone_number?: string;
+  address?: string;
+  landmark?: string;
+  latitude?: number;
+  longitude?: number;
   created_at?: string;
   updated_at?: string;
 }

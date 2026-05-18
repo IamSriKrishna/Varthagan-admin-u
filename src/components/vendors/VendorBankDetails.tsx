@@ -71,13 +71,13 @@ export const VendorBankDetails: React.FC<VendorBankDetailsProps> = ({ values, pu
       </Box>
       <Divider sx={{ mb: 3 }} />
 
-      {values.bank_details.map((bank, index) => (
+      {values.bank_details && values.bank_details.map((bank, index) => (
         <Box key={index} sx={{ mb: 4, p: 2, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
             <Typography variant="subtitle1" fontWeight={600}>
               Bank Account {index + 1}
             </Typography>
-            {values.bank_details.length > 1 && (
+            {values.bank_details && values.bank_details.length > 1 && (
               <IconButton size="small" onClick={() => remove(index)} color="error">
                 <Trash2 size={16} />
               </IconButton>
