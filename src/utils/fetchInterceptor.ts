@@ -40,8 +40,7 @@ async function performRefresh(stored: LoginResponse | null): Promise<LoginRespon
   const refreshToken = stored?.refresh_token;
   if (!refreshToken) throw new Error("no-refresh-token");
 
-  const refreshDomain = process.env.NEXT_PUBLIC_LOGIN_DOMAIN ?? "";
-  const refreshUrl = `${refreshDomain.replace(/\/$/, "")}${usermangement.refreshToken}`;
+  const refreshUrl = "/api/auth/refresh-token";
 
   const r = await fetch(refreshUrl, {
     method: "POST",

@@ -22,7 +22,7 @@ const validationSchema = Yup.object().shape({
 export default function LoginForm() {
   const dispatch = useDispatch();
   const { loading } = useSelector((state: RootState) => state.auth);
-  const { mutateApi: loginUser } = useApi<LoginResponse>(login.postLogin, "POST", undefined, config.loginDomain);
+  const { mutateApi: loginUser } = useApi<LoginResponse>("/api/auth/login/password", "POST");
   const handleSubmit = async (
     values: { email: string; password: string },
     { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void },
