@@ -14,6 +14,7 @@ import { Box, Stack, Typography } from "@mui/material";
 import { Formik } from "formik";
 import { useDispatch, useSelector } from "react-redux";
 import * as Yup from "yup";
+
 const validationSchema = Yup.object().shape({
   email: Yup.string().email("Enter a valid email address").required("Email is required"),
   password: Yup.string().required("Password is required"),
@@ -22,7 +23,8 @@ const validationSchema = Yup.object().shape({
 export default function LoginForm() {
   const dispatch = useDispatch();
   const { loading } = useSelector((state: RootState) => state.auth);
-  const { mutateApi: loginUser } = useApi<LoginResponse>("/api/auth/login/password", "POST");
+  const { mutateApi: loginUser } = useApi<LoginResponse>(login.postLogin, "POST", undefined, config.loginDomain);
+
   const handleSubmit = async (
     values: { email: string; password: string },
     { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void },
@@ -55,7 +57,6 @@ export default function LoginForm() {
         errorMessage.toLowerCase().includes("unauthorized") ||
         errorMessage.toLowerCase().includes("401")
       ) {
-        // errorMessage = errorMessage || "Invalid email or password. Please use the correct username or password.";
         errorMessage = "Invalid email or password. Please use the correct username or password.";
       }
 

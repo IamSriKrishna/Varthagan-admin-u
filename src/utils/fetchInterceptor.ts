@@ -40,7 +40,7 @@ async function performRefresh(stored: LoginResponse | null): Promise<LoginRespon
   const refreshToken = stored?.refresh_token;
   if (!refreshToken) throw new Error("no-refresh-token");
 
-  const refreshUrl = "/api/auth/refresh-token";
+  const refreshUrl = "/auth/refresh-token";
 
   const r = await fetch(refreshUrl, {
     method: "POST",
