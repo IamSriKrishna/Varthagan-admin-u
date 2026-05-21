@@ -9,8 +9,8 @@
 
 export interface CalculateSalaryRequest {
   employee_id: number;
-  month: number; // 1-12
-  year: number; // 2000+
+  from_date: string; // YYYY-MM-DD format
+  to_date: string; // YYYY-MM-DD format
 }
 
 export interface ApproveSalaryRequest {

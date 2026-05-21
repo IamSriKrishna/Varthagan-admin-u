@@ -24,36 +24,34 @@ import {
   Stack,
   TextField,
   Tooltip,
+  Avatar,
+  LinearProgress,
+  Divider,
+  IconButton,
 } from '@mui/material';
-import { Download, Eye, Check, Clock } from 'lucide-react';
+import { Download, Eye, Check, Clock, TrendingUp, Users, IndianRupee, AlertCircle, X, CalendarDays, Banknote, ChevronRight, Zap } from 'lucide-react';
 import { salaryService } from '@/lib/api/salaryService';
 import { employeeService } from '@/lib/api/employeeService';
 import { SalaryCalculationOutput, SalaryCalculationListOutput } from '@/models/salary.model';
 import { Employee } from '@/models/employee.model';
 import { showToastMessage } from '@/utils/toastUtil';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 
 interface SalaryViewProps {
   companyId?: number;
-  selectedMonth?: number;
-  selectedYear?: number;
 }
 
-export default function SalaryView({
-  companyId,
-  selectedMonth = dayjs().month() + 1,
-  selectedYear = dayjs().year(),
-}: SalaryViewProps) {
+export default function SalaryView({ companyId }: SalaryViewProps) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [salaries, setSalaries] = useState<Map<number, SalaryCalculationOutput>>(new Map());
   const [loading, setLoading] = useState(false);
   const [calculating, setCalculating] = useState(false);
   const [selectedSalary, setSelectedSalary] = useState<SalaryCalculationOutput | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [month, setMonth] = useState(selectedMonth);
-  const [year, setYear] = useState(selectedYear);
+  const [fromDate, setFromDate] = useState<Dayjs>(dayjs().startOf('month'));
+  const [toDate, setToDate] = useState<Dayjs>(dayjs().endOf('month'));
+  const [calculatingIds, setCalculatingIds] = useState<Set<number>>(new Set());
 
-  // Fetch employees
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
@@ -63,81 +61,79 @@ export default function SalaryView({
           setEmployees(response.data);
         }
       } catch (error) {
-        console.error('Failed to fetch employees:', error);
         showToastMessage('Failed to fetch employees', 'error');
       } finally {
         setLoading(false);
       }
     };
-
     fetchEmployees();
   }, []);
 
-  // Calculate salary for all employees
   const handleCalculateAllSalaries = async () => {
     if (employees.length === 0) {
       showToastMessage('No employees found', 'info');
       return;
     }
-
     setCalculating(true);
     const newSalaries = new Map(salaries);
     let successCount = 0;
     let errorCount = 0;
-
     for (const employee of employees) {
       try {
-        const response = await salaryService.calculateSalary({
+        const payload: any = {
           employee_id: employee.id,
-          month,
-          year,
-        });
-
+          from_date: fromDate.format('YYYY-MM-DD'),
+          to_date: toDate.format('YYYY-MM-DD'),
+        };
+        const response = await salaryService.calculateSalary(payload);
         if (response.success && response.data) {
           newSalaries.set(employee.id, response.data);
           successCount++;
         } else {
           errorCount++;
         }
-      } catch (error) {
+      } catch {
         errorCount++;
       }
     }
-
     setSalaries(newSalaries);
     setCalculating(false);
     showToastMessage(
       `Calculated ${successCount} salaries${errorCount > 0 ? `, ${errorCount} errors` : ''}`,
-        errorCount > 0 ? 'info' : 'success'
+      errorCount > 0 ? 'info' : 'success'
     );
   };
 
-  // Calculate salary for a single employee
   const handleCalculateSalary = async (employeeId: number) => {
+    setCalculatingIds(prev => new Set(prev).add(employeeId));
     try {
-      const response = await salaryService.calculateSalary({
+      const payload: any = {
         employee_id: employeeId,
-        month,
-        year,
-      });
-
+        from_date: fromDate.format('YYYY-MM-DD'),
+        to_date: toDate.format('YYYY-MM-DD'),
+      };
+      const response = await salaryService.calculateSalary(payload);
       if (response.success && response.data) {
         setSalaries(new Map(salaries).set(employeeId, response.data));
         showToastMessage('Salary calculated successfully', 'success');
       } else {
         showToastMessage(response.message || 'Failed to calculate salary', 'error');
       }
-    } catch (error) {
+    } catch {
       showToastMessage('Failed to calculate salary', 'error');
+    } finally {
+      setCalculatingIds(prev => {
+        const next = new Set(prev);
+        next.delete(employeeId);
+        return next;
+      });
     }
   };
 
-  // Approve salary
   const handleApproveSalary = async (salaryId: number) => {
     try {
       const response = await salaryService.approveSalary(salaryId);
       if (response.success) {
-        // Update the salary status locally
         const updatedSalary = selectedSalary ? { ...selectedSalary, status: 'approved' } : null;
         if (updatedSalary) {
           setSelectedSalary(updatedSalary as SalaryCalculationOutput);
@@ -147,467 +143,813 @@ export default function SalaryView({
       } else {
         showToastMessage(response.message || 'Failed to approve salary', 'error');
       }
-    } catch (error) {
+    } catch {
       showToastMessage('Failed to approve salary', 'error');
     }
   };
 
-  const getStatusChip = (status: string) => {
-    if (status === 'approved') {
-      return (
-        <Chip
-          icon={<Check size={16} />}
-          label="Approved"
-          color="success"
-          variant="outlined"
-          size="small"
-        />
-      );
-    }
-    return (
-      <Chip
-        icon={<Clock size={16} />}
-        label="Pending"
-        color="warning"
-        variant="outlined"
-        size="small"
-      />
-    );
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
-  };
+
+  const getInitials = (name: string) =>
+    name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
+
+  const avatarColors = [
+    '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e',
+    '#f97316', '#10b981', '#06b6d4', '#3b82f6',
+  ];
+  const getAvatarColor = (id: number) => avatarColors[id % avatarColors.length];
+
+  const totalNet = Array.from(salaries.values()).reduce((s, v) => s + v.net_salary, 0);
+  const pendingCount = Array.from(salaries.values()).filter(s => s.status === 'pending').length;
+  const approvedCount = Array.from(salaries.values()).filter(s => s.status === 'approved').length;
+
+  const summaryCards = [
+    {
+      label: 'Employees',
+      value: `${salaries.size}/${employees.length}`,
+      icon: <Users size={18} />,
+      color: '#6366f1',
+      bg: '#eef2ff',
+    },
+    {
+      label: 'Total Payout',
+      value: salaries.size > 0 ? formatCurrency(totalNet) : '—',
+      icon: <IndianRupee size={18} />,
+      color: '#10b981',
+      bg: '#ecfdf5',
+    },
+    {
+      label: 'Pending',
+      value: pendingCount,
+      icon: <Clock size={18} />,
+      color: '#f59e0b',
+      bg: '#fffbeb',
+    },
+    {
+      label: 'Approved',
+      value: approvedCount,
+      icon: <Check size={18} />,
+      color: '#3b82f6',
+      bg: '#eff6ff',
+    },
+  ];
 
   return (
-    <Box sx={{ mt: 4 }}>
-      <Paper sx={{ p: 3, borderRadius: 2 }}>
-        {/* Header */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-            💰 Salary Calculation
-          </Typography>
+    <Box sx={{ fontFamily: '"DM Sans", sans-serif' }}>
+      {/* Google Font Import via style tag approach */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap');
+        * { font-family: 'DM Sans', sans-serif; }
+      `}</style>
 
-          {/* Month/Year Selection */}
-          <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
-            <TextField
-              label="Month"
-              type="number"
-              size="small"
-              value={month}
-              onChange={(e) => setMonth(Math.max(1, Math.min(12, parseInt(e.target.value) || 1)))}
-              inputProps={{ min: 1, max: 12 }}
-              sx={{ width: 100 }}
-            />
-            <TextField
-              label="Year"
-              type="number"
-              size="small"
-              value={year}
-              onChange={(e) => setYear(Math.max(2000, parseInt(e.target.value) || 2000))}
-              inputProps={{ min: 2000 }}
-              sx={{ width: 120 }}
-            />
-            <Button
-              variant="contained"
-              onClick={handleCalculateAllSalaries}
-              disabled={calculating || employees.length === 0}
-            >
-              {calculating ? <CircularProgress size={20} /> : 'Calculate All'}
-            </Button>
+      {/* Page Header */}
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(99,102,241,0.35)',
+            }}
+          >
+            <Banknote size={18} color="white" />
           </Box>
+          <Typography
+            sx={{
+              fontFamily: '"Syne", sans-serif',
+              fontWeight: 800,
+              fontSize: '1.5rem',
+              color: '#0f172a',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Payroll
+          </Typography>
+          <Chip
+            label={`${dayjs().format('MMM YYYY')}`}
+            size="small"
+            sx={{
+              bgcolor: '#f1f5f9',
+              color: '#64748b',
+              fontWeight: 600,
+              fontSize: '0.72rem',
+              height: 22,
+              border: '1px solid #e2e8f0',
+            }}
+          />
+        </Box>
+        <Typography sx={{ color: '#94a3b8', fontSize: '0.875rem', ml: '52px' }}>
+          Calculate and approve employee salaries based on attendance records
+        </Typography>
+      </Box>
 
-          <Alert severity="info" sx={{ mb: 2 }}>
-            Mark attendance first, then calculate salaries based on attendance records. Negative salary indicates deductions exceeded earnings due to absences.
-          </Alert>
+      {/* Summary Cards */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        {summaryCards.map((card) => (
+          <Box
+            key={card.label}
+            sx={{
+              bgcolor: '#fff',
+              border: '1px solid #f1f5f9',
+              borderRadius: '14px',
+              p: 2.5,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+              transition: 'box-shadow 0.2s',
+              '&:hover': { boxShadow: '0 4px 16px rgba(0,0,0,0.08)' },
+            }}
+          >
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: '10px',
+                bgcolor: card.bg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: card.color,
+                flexShrink: 0,
+              }}
+            >
+              {card.icon}
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {card.label}
+              </Typography>
+              <Typography sx={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>
+                {card.value}
+              </Typography>
+            </Box>
+          </Box>
+        ))}
+      </Box>
+
+      {/* Controls */}
+      <Box
+        sx={{
+          bgcolor: '#fff',
+          border: '1px solid #f1f5f9',
+          borderRadius: '14px',
+          p: 2.5,
+          mb: 3,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          flexWrap: 'wrap',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#94a3b8' }}>
+          <CalendarDays size={16} />
+          <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b' }}>Period</Typography>
         </Box>
 
-        {/* Salary Table */}
+        <TextField
+          label="From"
+          type="date"
+          size="small"
+          value={fromDate.format('YYYY-MM-DD')}
+          onChange={(e) => setFromDate(dayjs(e.target.value))}
+          InputLabelProps={{ shrink: true }}
+          sx={{
+            width: 160,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: '10px',
+              fontSize: '0.85rem',
+              bgcolor: '#f8fafc',
+              '& fieldset': { borderColor: '#e2e8f0' },
+              '&:hover fieldset': { borderColor: '#6366f1' },
+              '&.Mui-focused fieldset': { borderColor: '#6366f1' },
+            },
+            '& .MuiInputLabel-root.Mui-focused': { color: '#6366f1' },
+          }}
+        />
+
+        <Box sx={{ width: 20, height: 1, bgcolor: '#e2e8f0' }} />
+
+        <TextField
+          label="To"
+          type="date"
+          size="small"
+          value={toDate.format('YYYY-MM-DD')}
+          onChange={(e) => setToDate(dayjs(e.target.value))}
+          InputLabelProps={{ shrink: true }}
+          sx={{
+            width: 160,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: '10px',
+              fontSize: '0.85rem',
+              bgcolor: '#f8fafc',
+              '& fieldset': { borderColor: '#e2e8f0' },
+              '&:hover fieldset': { borderColor: '#6366f1' },
+              '&.Mui-focused fieldset': { borderColor: '#6366f1' },
+            },
+            '& .MuiInputLabel-root.Mui-focused': { color: '#6366f1' },
+          }}
+        />
+
+        <Box sx={{ flex: 1 }} />
+
+        <Button
+          variant="contained"
+          startIcon={calculating ? <CircularProgress size={14} sx={{ color: 'white' }} /> : <Zap size={16} />}
+          onClick={handleCalculateAllSalaries}
+          disabled={calculating || employees.length === 0}
+          sx={{
+            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+            borderRadius: '10px',
+            px: 2.5,
+            py: 1,
+            fontWeight: 600,
+            fontSize: '0.85rem',
+            textTransform: 'none',
+            boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+              boxShadow: '0 6px 18px rgba(99,102,241,0.4)',
+            },
+            '&.Mui-disabled': { opacity: 0.6, color: 'white' },
+          }}
+        >
+          {calculating ? 'Calculating…' : 'Calculate All'}
+        </Button>
+      </Box>
+
+      {/* Info Banner */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 1.5,
+          bgcolor: '#eff6ff',
+          border: '1px solid #bfdbfe',
+          borderRadius: '12px',
+          p: 2,
+          mb: 3,
+        }}
+      >
+        <AlertCircle size={16} color="#3b82f6" style={{ marginTop: 2, flexShrink: 0 }} />
+        <Typography sx={{ fontSize: '0.82rem', color: '#1e40af', lineHeight: 1.6 }}>
+          Mark attendance first, then calculate salaries based on attendance records.
+          Negative salary indicates deductions exceeded earnings due to absences.
+        </Typography>
+      </Box>
+
+      {/* Table */}
+      <Box
+        sx={{
+          bgcolor: '#fff',
+          border: '1px solid #f1f5f9',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        }}
+      >
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
-            <CircularProgress />
+          <Box sx={{ py: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <CircularProgress size={32} sx={{ color: '#6366f1' }} />
+            <Typography sx={{ color: '#94a3b8', fontSize: '0.875rem' }}>Loading employees…</Typography>
           </Box>
         ) : (
-          <TableContainer component={Paper} sx={{ mb: 2 }}>
-            <Table>
-              <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: '#f8fafc' }}>
+                {['Employee', 'Type', 'Base Salary', 'Net Salary', 'Attendance', 'Status', ''].map((h) => (
+                  <TableCell
+                    key={h}
+                    align={['Base Salary', 'Net Salary'].includes(h) ? 'right' : h === '' ? 'center' : 'left'}
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: '0.72rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.07em',
+                      color: '#94a3b8',
+                      borderBottom: '1px solid #f1f5f9',
+                      py: 1.75,
+                      px: 2.5,
+                    }}
+                  >
+                    {h}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {employees.length === 0 ? (
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 600 }}>Employee</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Salary Type</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>
-                    Base Salary
-                  </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>
-                    Net Salary
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 600 }}>
-                    Status
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 600 }}>
-                    Actions
+                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                    <Users size={32} color="#e2e8f0" />
+                    <Typography sx={{ color: '#94a3b8', mt: 1, fontSize: '0.875rem' }}>No employees found</Typography>
                   </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {employees.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
-                      <Typography color="textSecondary">No employees found</Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  employees.map((employee) => {
-                    const salary = salaries.get(employee.id);
-                    return (
-                      <TableRow key={employee.id} hover>
-                        <TableCell>
+              ) : (
+                employees.map((employee, idx) => {
+                  const salary = salaries.get(employee.id);
+                  const isCalc = calculatingIds.has(employee.id);
+                  const attendancePct = salary
+                    ? Math.round((salary.present_days / Math.max(salary.total_working_days, 1)) * 100)
+                    : null;
+
+                  return (
+                    <TableRow
+                      key={employee.id}
+                      sx={{
+                        borderBottom: idx === employees.length - 1 ? 'none' : '1px solid #f8fafc',
+                        '&:hover': { bgcolor: '#fafbff' },
+                        transition: 'background 0.15s',
+                      }}
+                    >
+                      {/* Employee */}
+                      <TableCell sx={{ px: 2.5, py: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <Avatar
+                            sx={{
+                              width: 36,
+                              height: 36,
+                              bgcolor: getAvatarColor(employee.id),
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              flexShrink: 0,
+                            }}
+                          >
+                            {getInitials(employee.name)}
+                          </Avatar>
                           <Box>
-                            <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                            <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: '#0f172a' }}>
                               {employee.name}
                             </Typography>
-                            <Typography sx={{ fontSize: '0.8rem', color: 'textSecondary' }}>
-                              ID: {employee.id}
+                            <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                              EMP-{String(employee.id).padStart(4, '0')}
                             </Typography>
                           </Box>
-                        </TableCell>
-                        <TableCell>
+                        </Box>
+                      </TableCell>
+
+                      {/* Type */}
+                      <TableCell sx={{ px: 2.5 }}>
+                        {salary ? (
                           <Chip
-                            label={salary?.salary_type === 'weekly' ? 'Weekly' : 'Monthly'}
+                            label={salary.salary_type === 'weekly' ? 'Weekly' : 'Monthly'}
                             size="small"
-                            variant="outlined"
-                            color={salary?.salary_type === 'weekly' ? 'info' : 'default'}
+                            sx={{
+                              bgcolor: salary.salary_type === 'weekly' ? '#eff6ff' : '#f5f3ff',
+                              color: salary.salary_type === 'weekly' ? '#3b82f6' : '#7c3aed',
+                              fontWeight: 600,
+                              fontSize: '0.72rem',
+                              border: 'none',
+                              height: 22,
+                            }}
                           />
-                        </TableCell>
-                        <TableCell align="right">
-                          {salary ? (
-                            formatCurrency(salary.base_salary)
-                          ) : (
-                            <Typography color="textSecondary">—</Typography>
-                          )}
-                        </TableCell>
-                        <TableCell align="right">
-                          {salary ? (
-                            <Tooltip
-                              title={
-                                salary.net_salary < 0
-                                  ? `Negative salary: ${salary.absent_days} absences caused deductions (${formatCurrency(salary.deduction_amount)}) to exceed earnings (${formatCurrency(salary.earning_amount)}). Check attendance records.`
-                                  : ''
-                              }
-                              arrow
-                              disableHoverListener={salary.net_salary >= 0}
-                            >
+                        ) : (
+                          <Typography sx={{ color: '#e2e8f0', fontSize: '0.85rem' }}>—</Typography>
+                        )}
+                      </TableCell>
+
+                      {/* Base Salary */}
+                      <TableCell align="right" sx={{ px: 2.5 }}>
+                        {salary ? (
+                          <Typography sx={{ fontSize: '0.875rem', color: '#475569', fontWeight: 500 }}>
+                            {formatCurrency(salary.base_salary)}
+                          </Typography>
+                        ) : (
+                          <Typography sx={{ color: '#e2e8f0' }}>—</Typography>
+                        )}
+                      </TableCell>
+
+                      {/* Net Salary */}
+                      <TableCell align="right" sx={{ px: 2.5 }}>
+                        {salary ? (
+                          <Tooltip
+                            title={
+                              salary.net_salary < 0
+                                ? `${salary.absent_days} absences: deductions (${formatCurrency(salary.deduction_amount)}) exceed earnings (${formatCurrency(salary.earning_amount)})`
+                                : ''
+                            }
+                            arrow
+                          >
+                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
                               <Typography
                                 sx={{
-                                  fontWeight: 600,
-                                  color: salary.net_salary > 0 ? '#2e7d32' : '#d32f2f',
-                                  fontSize: '1rem',
-                                  cursor: salary.net_salary < 0 ? 'help' : 'default',
+                                  fontWeight: 700,
+                                  fontSize: '0.9rem',
+                                  color: salary.net_salary >= 0 ? '#059669' : '#dc2626',
+                                  fontVariantNumeric: 'tabular-nums',
                                 }}
                               >
                                 {formatCurrency(salary.net_salary)}
                               </Typography>
-                            </Tooltip>
+                              {salary.net_salary < 0 && (
+                                <AlertCircle size={13} color="#dc2626" />
+                              )}
+                            </Box>
+                          </Tooltip>
+                        ) : (
+                          <Typography sx={{ color: '#e2e8f0' }}>—</Typography>
+                        )}
+                      </TableCell>
+
+                      {/* Attendance */}
+                      <TableCell sx={{ px: 2.5, minWidth: 120 }}>
+                        {attendancePct !== null ? (
+                          <Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                              <Typography sx={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 500 }}>
+                                {salary!.present_days}/{salary!.total_working_days} days
+                              </Typography>
+                              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: attendancePct >= 75 ? '#059669' : '#f59e0b' }}>
+                                {attendancePct}%
+                              </Typography>
+                            </Box>
+                            <LinearProgress
+                              variant="determinate"
+                              value={attendancePct}
+                              sx={{
+                                height: 4,
+                                borderRadius: 2,
+                                bgcolor: '#f1f5f9',
+                                '& .MuiLinearProgress-bar': {
+                                  borderRadius: 2,
+                                  bgcolor: attendancePct >= 75 ? '#10b981' : '#f59e0b',
+                                },
+                              }}
+                            />
+                          </Box>
+                        ) : (
+                          <Typography sx={{ color: '#e2e8f0', fontSize: '0.85rem' }}>—</Typography>
+                        )}
+                      </TableCell>
+
+                      {/* Status */}
+                      <TableCell sx={{ px: 2.5 }}>
+                        {salary ? (
+                          salary.status === 'approved' ? (
+                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, bgcolor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '20px', px: 1.25, py: 0.4 }}>
+                              <Check size={11} color="#059669" strokeWidth={3} />
+                              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#059669' }}>Approved</Typography>
+                            </Box>
                           ) : (
-                            <Typography color="textSecondary">—</Typography>
-                          )}
-                        </TableCell>
-                        <TableCell align="center">
-                          {salary ? (
-                            getStatusChip(salary.status)
+                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, bgcolor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '20px', px: 1.25, py: 0.4 }}>
+                              <Clock size={11} color="#d97706" strokeWidth={2.5} />
+                              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#d97706' }}>Pending</Typography>
+                            </Box>
+                          )
+                        ) : (
+                          <Typography sx={{ color: '#cbd5e1', fontSize: '0.78rem', fontStyle: 'italic' }}>
+                            Not calculated
+                          </Typography>
+                        )}
+                      </TableCell>
+
+                      {/* Actions */}
+                      <TableCell align="center" sx={{ px: 2, pr: 2.5 }}>
+                        <Stack direction="row" spacing={0.75} justifyContent="flex-end">
+                          {!salary ? (
+                            <Button
+                              size="small"
+                              onClick={() => handleCalculateSalary(employee.id)}
+                              disabled={isCalc}
+                              startIcon={isCalc ? <CircularProgress size={12} /> : undefined}
+                              sx={{
+                                borderRadius: '8px',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                px: 1.5,
+                                py: 0.6,
+                                bgcolor: '#f5f3ff',
+                                color: '#6366f1',
+                                border: '1px solid #e0e7ff',
+                                '&:hover': { bgcolor: '#ede9fe', border: '1px solid #c7d2fe' },
+                              }}
+                            >
+                              {isCalc ? 'Calc…' : 'Calculate'}
+                            </Button>
                           ) : (
-                            <Typography color="textSecondary" sx={{ fontSize: '0.85rem' }}>
-                              Not Calculated
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell align="center">
-                          <Stack direction="row" spacing={1} justifyContent="center">
-                            {!salary ? (
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                onClick={() => handleCalculateSalary(employee.id)}
-                              >
-                                Calculate
-                              </Button>
-                            ) : (
-                              <>
-                                <Button
+                            <>
+                              <Tooltip title="View Details">
+                                <IconButton
                                   size="small"
-                                  variant="text"
-                                  startIcon={<Eye size={16} />}
-                                  onClick={() => {
-                                    setSelectedSalary(salary);
-                                    setDetailsOpen(true);
+                                  onClick={() => { setSelectedSalary(salary); setDetailsOpen(true); }}
+                                  sx={{
+                                    width: 32,
+                                    height: 32,
+                                    bgcolor: '#f8fafc',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: '8px',
+                                    color: '#64748b',
+                                    '&:hover': { bgcolor: '#eff6ff', color: '#3b82f6', borderColor: '#bfdbfe' },
                                   }}
                                 >
-                                  View
+                                  <Eye size={14} />
+                                </IconButton>
+                              </Tooltip>
+                              {salary.status === 'pending' && (
+                                <Button
+                                  size="small"
+                                  onClick={() => handleApproveSalary(salary.id)}
+                                  startIcon={<Check size={13} strokeWidth={3} />}
+                                  sx={{
+                                    borderRadius: '8px',
+                                    fontSize: '0.78rem',
+                                    fontWeight: 600,
+                                    textTransform: 'none',
+                                    px: 1.5,
+                                    py: 0.6,
+                                    bgcolor: '#f0fdf4',
+                                    color: '#059669',
+                                    border: '1px solid #bbf7d0',
+                                    '&:hover': { bgcolor: '#dcfce7', borderColor: '#86efac' },
+                                  }}
+                                >
+                                  Approve
                                 </Button>
-                                {salary.status === 'pending' && (
-                                  <Button
-                                    size="small"
-                                    variant="contained"
-                                    color="success"
-                                    startIcon={<Check size={16} />}
-                                    onClick={() => handleApproveSalary(salary.id)}
-                                  >
-                                    Approve
-                                  </Button>
-                                )}
-                              </>
-                            )}
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                              )}
+                            </>
+                          )}
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
         )}
+      </Box>
 
-        {/* Summary Cards */}
-        {salaries.size > 0 && (
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 2 }}>
-            <Card sx={{ bgcolor: '#f5f5f5' }}>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Total Employees Calculated
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                  {salaries.size} / {employees.length}
-                </Typography>
-              </CardContent>
-            </Card>
+      {/* Detail Dialog */}
+      <Dialog
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '20px',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.12)',
+            overflow: 'hidden',
+          },
+        }}
+      >
+        {selectedSalary && (
+          <>
+            {/* Dialog Header */}
+            <Box
+              sx={{
+                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                px: 3,
+                pt: 3,
+                pb: 2.5,
+                position: 'relative',
+              }}
+            >
+              <IconButton
+                onClick={() => setDetailsOpen(false)}
+                size="small"
+                sx={{
+                  position: 'absolute',
+                  right: 16,
+                  top: 16,
+                  color: 'rgba(255,255,255,0.7)',
+                  '&:hover': { color: 'white', bgcolor: 'rgba(255,255,255,0.15)' },
+                }}
+              >
+                <X size={16} />
+              </IconButton>
 
-            <Card sx={{ bgcolor: '#e8f5e9' }}>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Total Net Salary
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 600, color: '#2e7d32' }}>
-                  {formatCurrency(
-                    Array.from(salaries.values()).reduce((sum, s) => sum + s.net_salary, 0)
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    bgcolor: 'rgba(255,255,255,0.25)',
+                    color: 'white',
+                    fontWeight: 700,
+                    fontSize: '1rem',
+                  }}
+                >
+                  {getInitials(selectedSalary.employee_name)}
+                </Avatar>
+                <Box>
+                  <Typography sx={{ color: 'white', fontWeight: 700, fontSize: '1.05rem' }}>
+                    {selectedSalary.employee_name}
+                  </Typography>
+                  <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem' }}>
+                    {selectedSalary.month}/{selectedSalary.year} · {selectedSalary.salary_type === 'weekly' ? 'Weekly' : 'Monthly'} Salary
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Net Salary Hero */}
+              <Box
+                sx={{
+                  mt: 2.5,
+                  bgcolor: 'rgba(255,255,255,0.15)',
+                  borderRadius: '12px',
+                  p: 2,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  backdropFilter: 'blur(8px)',
+                }}
+              >
+                <Box>
+                  <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.25 }}>
+                    Net Salary
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: selectedSalary.net_salary >= 0 ? '#a7f3d0' : '#fca5a5',
+                      fontWeight: 800,
+                      fontSize: '1.6rem',
+                      fontFamily: '"Syne", sans-serif',
+                      letterSpacing: '-0.02em',
+                    }}
+                  >
+                    {formatCurrency(Math.abs(selectedSalary.net_salary))}
+                  </Typography>
+                  {selectedSalary.net_salary < 0 && (
+                    <Typography sx={{ color: '#fca5a5', fontSize: '0.72rem', mt: 0.25 }}>
+                      Employee owes the company
+                    </Typography>
                   )}
-                </Typography>
-              </CardContent>
-            </Card>
+                </Box>
+                {selectedSalary.status === 'approved' ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, bgcolor: 'rgba(167,243,208,0.2)', border: '1px solid rgba(167,243,208,0.4)', borderRadius: '20px', px: 1.5, py: 0.6 }}>
+                    <Check size={12} color="#a7f3d0" strokeWidth={3} />
+                    <Typography sx={{ color: '#a7f3d0', fontSize: '0.75rem', fontWeight: 700 }}>Approved</Typography>
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, bgcolor: 'rgba(253,230,138,0.2)', border: '1px solid rgba(253,230,138,0.4)', borderRadius: '20px', px: 1.5, py: 0.6 }}>
+                    <Clock size={12} color="#fde68a" strokeWidth={2.5} />
+                    <Typography sx={{ color: '#fde68a', fontSize: '0.75rem', fontWeight: 700 }}>Pending</Typography>
+                  </Box>
+                )}
+              </Box>
+            </Box>
 
-            <Card sx={{ bgcolor: '#fff3e0' }}>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Pending Approval
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 600, color: '#f57c00' }}>
-                  {
-                    Array.from(salaries.values()).filter((s) => s.status === 'pending')
-                      .length
-                  }
-                </Typography>
-              </CardContent>
-            </Card>
-
-            <Card sx={{ bgcolor: '#e3f2fd' }}>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Approved
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 600, color: '#1976d2' }}>
-                  {Array.from(salaries.values()).filter((s) => s.status === 'approved').length}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Box>
-        )}
-      </Paper>
-
-      {/* Salary Details Dialog */}
-      <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>Salary Details</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          {selectedSalary && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {/* Employee Info */}
-              <Box sx={{ pb: 2, borderBottom: '1px solid #eee' }}>
-                <Typography sx={{ fontWeight: 600, mb: 1 }}>
-                  {selectedSalary.employee_name}
-                </Typography>
-                <Typography variant="caption" color="textSecondary">
-                  {selectedSalary.month}/{selectedSalary.year}
-                </Typography>
+            <DialogContent sx={{ p: 3 }}>
+              {/* Earning vs Deduction */}
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mb: 3 }}>
+                <Box sx={{ bgcolor: '#f0fdf4', borderRadius: '12px', p: 2 }}>
+                  <Typography sx={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>
+                    Earnings
+                  </Typography>
+                  <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#059669' }}>
+                    {formatCurrency(selectedSalary.earning_amount)}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.72rem', color: '#6b7280', mt: 0.25 }}>
+                    {selectedSalary.present_days} present days
+                  </Typography>
+                </Box>
+                <Box sx={{ bgcolor: '#fef2f2', borderRadius: '12px', p: 2 }}>
+                  <Typography sx={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>
+                    Deductions
+                  </Typography>
+                  <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#dc2626' }}>
+                    {formatCurrency(selectedSalary.deduction_amount)}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.72rem', color: '#6b7280', mt: 0.25 }}>
+                    {selectedSalary.absent_days} absent days
+                  </Typography>
+                </Box>
               </Box>
 
-              {/* Salary Breakdown */}
-              <Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                  Salary Breakdown
-                </Typography>
-                <Stack spacing={1}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography>Base Salary ({selectedSalary.salary_type}):</Typography>
-                    <Typography sx={{ fontWeight: 600 }}>
-                      {formatCurrency(selectedSalary.base_salary)}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography>Salary Type:</Typography>
-                    <Typography sx={{ fontWeight: 600 }}>
-                      {selectedSalary.salary_type === 'weekly' ? 'Weekly' : 'Monthly'}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Box>
+              {selectedSalary.deduction_amount > selectedSalary.earning_amount && (
+                <Alert
+                  severity="error"
+                  sx={{ mb: 2.5, borderRadius: '10px', fontSize: '0.82rem' }}
+                >
+                  Deductions exceed earnings by {formatCurrency(selectedSalary.deduction_amount - selectedSalary.earning_amount)}.
+                </Alert>
+              )}
 
-              {/* Attendance Summary */}
-              <Box sx={{ pb: 2, borderTop: '1px solid #eee', pt: 2 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                  Attendance Summary
-                </Typography>
-                <Stack spacing={1}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography>Total Working Days:</Typography>
-                    <Typography sx={{ fontWeight: 600 }}>
-                      {selectedSalary.total_working_days}
+              {/* Attendance Grid */}
+              <Typography sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.07em', color: '#94a3b8', mb: 1.5 }}>
+                Attendance Breakdown
+              </Typography>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mb: 3 }}>
+                {[
+                  { label: 'Total Days', value: selectedSalary.total_working_days, color: '#64748b', bg: '#f8fafc' },
+                  { label: 'Present', value: selectedSalary.present_days, color: '#059669', bg: '#f0fdf4' },
+                  { label: 'Absent', value: selectedSalary.absent_days, color: '#dc2626', bg: '#fef2f2' },
+                  { label: 'Half Day', value: selectedSalary.half_days, color: '#0284c7', bg: '#f0f9ff' },
+                  { label: 'Holiday', value: selectedSalary.holiday_days, color: '#d97706', bg: '#fffbeb' },
+                  { label: 'Leave', value: selectedSalary.leave_days, color: '#7c3aed', bg: '#f5f3ff' },
+                ].map((item) => (
+                  <Box
+                    key={item.label}
+                    sx={{
+                      bgcolor: item.bg,
+                      borderRadius: '10px',
+                      p: 1.5,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: item.color, lineHeight: 1 }}>
+                      {item.value}
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 500, mt: 0.3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      {item.label}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography color="success.main">Present Days:</Typography>
-                    <Typography sx={{ fontWeight: 600, color: 'success.main' }}>
-                      {selectedSalary.present_days}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography color="error.main">Absent Days:</Typography>
-                    <Typography sx={{ fontWeight: 600, color: 'error.main' }}>
-                      {selectedSalary.absent_days}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography color="info.main">Half Days:</Typography>
-                    <Typography sx={{ fontWeight: 600, color: 'info.main' }}>
-                      {selectedSalary.half_days}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography color="warning.main">Holiday Days:</Typography>
-                    <Typography sx={{ fontWeight: 600, color: 'warning.main' }}>
-                      {selectedSalary.holiday_days}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography color="secondary.main">Leave Days:</Typography>
-                    <Typography sx={{ fontWeight: 600, color: 'secondary.main' }}>
-                      {selectedSalary.leave_days}
-                    </Typography>
-                  </Box>
-                </Stack>
+                ))}
               </Box>
 
               {/* Calculation Details */}
-              <Box sx={{ pb: 2, borderTop: '1px solid #eee', pt: 2 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                  Calculation Details
-                </Typography>
-                <Stack spacing={1}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography>Daily Rate:</Typography>
-                    <Typography sx={{ fontWeight: 600 }}>
-                      {formatCurrency(selectedSalary.daily_rate)}
-                    </Typography>
+              <Typography sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.07em', color: '#94a3b8', mb: 1.5 }}>
+                Calculation Details
+              </Typography>
+              <Box sx={{ bgcolor: '#f8fafc', borderRadius: '12px', p: 2 }}>
+                {[
+                  { label: 'Base Salary', value: formatCurrency(selectedSalary.base_salary) },
+                  { label: 'Daily Rate', value: formatCurrency(selectedSalary.daily_rate) },
+                ].map((row, i) => (
+                  <Box
+                    key={row.label}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      py: 1,
+                      borderBottom: i < 1 ? '1px solid #f1f5f9' : 'none',
+                    }}
+                  >
+                    <Typography sx={{ fontSize: '0.85rem', color: '#64748b' }}>{row.label}</Typography>
+                    <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#0f172a' }}>{row.value}</Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', color: 'success.main' }}>
-                    <Typography>Earning Amount:</Typography>
-                    <Typography sx={{ fontWeight: 600 }}>
-                      {formatCurrency(selectedSalary.earning_amount)}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', color: 'error.main' }}>
-                    <Typography>Deduction Amount:</Typography>
-                    <Typography sx={{ fontWeight: 600 }}>
-                      {formatCurrency(selectedSalary.deduction_amount)}
-                    </Typography>
-                  </Box>
-                  {selectedSalary.deduction_amount > selectedSalary.earning_amount && (
-                    <Alert severity="warning" sx={{ mt: 1 }}>
-                      Deductions exceed earnings by {formatCurrency(
-                        selectedSalary.deduction_amount - selectedSalary.earning_amount
-                      )} due to {selectedSalary.absent_days} absent days.
-                    </Alert>
-                  )}
-                </Stack>
+                ))}
               </Box>
 
-              {/* Final Salary */}
-              {selectedSalary.net_salary < 0 ? (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  <Typography sx={{ fontWeight: 600, mb: 1 }}>
-                    Salary Amount Due: {formatCurrency(Math.abs(selectedSalary.net_salary))}
-                  </Typography>
-                  <Typography variant="caption">
-                    Employee owes the company due to excessive absences ({selectedSalary.absent_days} days). 
-                    Deductions ({formatCurrency(selectedSalary.deduction_amount)}) exceed earnings ({formatCurrency(selectedSalary.earning_amount)}).
-                  </Typography>
-                </Alert>
-              ) : (
-                <Box
+              {selectedSalary.notes && (
+                <Box sx={{ mt: 2, bgcolor: '#fafbff', border: '1px solid #e0e7ff', borderRadius: '10px', p: 1.5 }}>
+                  <Typography sx={{ fontSize: '0.78rem', color: '#6366f1' }}>{selectedSalary.notes}</Typography>
+                </Box>
+              )}
+            </DialogContent>
+
+            <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+              <Button
+                onClick={() => setDetailsOpen(false)}
+                sx={{
+                  borderRadius: '10px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  px: 2.5,
+                  color: '#64748b',
+                  bgcolor: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  '&:hover': { bgcolor: '#f1f5f9' },
+                }}
+              >
+                Close
+              </Button>
+              {selectedSalary.status === 'pending' && (
+                <Button
+                  variant="contained"
+                  startIcon={<Check size={15} strokeWidth={3} />}
+                  onClick={() => { handleApproveSalary(selectedSalary.id); setDetailsOpen(false); }}
                   sx={{
-                    p: 2,
-                    bgcolor: '#e8f5e9',
-                    borderRadius: 1,
-                    borderLeft: '4px solid #2e7d32',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    borderRadius: '10px',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    px: 2.5,
+                    background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                    boxShadow: '0 4px 12px rgba(5,150,105,0.3)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #047857 0%, #059669 100%)',
+                    },
                   }}
                 >
-                  <Typography sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
-                    Net Salary
-                  </Typography>
-                  <Typography sx={{ fontWeight: 700, fontSize: '1.3rem', color: '#2e7d32' }}>
-                    {formatCurrency(selectedSalary.net_salary)}
-                  </Typography>
-                </Box>
+                  Approve Salary
+                </Button>
               )}
-
-              {/* Status */}
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  Status:
-                </Typography>
-                {getStatusChip(selectedSalary.status)}
-              </Box>
-
-              {/* Notes */}
-              {selectedSalary.notes && (
-                <Box sx={{ pt: 2, borderTop: '1px solid #eee' }}>
-                  <Typography variant="caption" color="textSecondary">
-                    {selectedSalary.notes}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          {selectedSalary && selectedSalary.status === 'pending' && (
-            <Button
-              variant="contained"
-              color="success"
-              onClick={() => {
-                handleApproveSalary(selectedSalary.id);
-                setDetailsOpen(false);
-              }}
-            >
-              Approve Salary
-            </Button>
-          )}
-          <Button onClick={() => setDetailsOpen(false)}>Close</Button>
-        </DialogActions>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
     </Box>
   );

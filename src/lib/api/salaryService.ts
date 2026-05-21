@@ -11,10 +11,10 @@ import {
  * Handles all salary-related API calls for employee salary calculations
  *
  * API Endpoints:
- * - POST /admin/salary/calculate - Calculate salary for an employee
- * - GET /admin/salary/:id - Get salary calculation details
- * - GET /admin/salary/employee/:employee_id - Get all salary calculations for an employee
- * - POST /admin/salary/:id/approve - Approve a pending salary calculation
+ * - POST /auth/manage/salary/calculate - Calculate salary for an employee
+ * - GET /auth/manage/salary/:id - Get salary calculation details
+ * - GET /auth/manage/salary/employee/:employee_id - Get all salary calculations for an employee
+ * - POST /auth/manage/salary/:id/approve - Approve a pending salary calculation
  *
  * Salary Calculation Features:
  * ✅ Automatic calculation based on attendance
@@ -26,32 +26,54 @@ import {
  * ✅ Detailed breakdown of earning and deductions
  */
 class SalaryService {
-  private baseUrl = "/admin/salary";
+  private baseUrl = "/auth/manage/salary";
 
   /**
    * Calculate salary for an employee
    *
    * Calculates the salary based on:
    * - Employee's base salary (monthly or weekly)
-   * - Attendance records for the specified month
-   * - Working days (excluding Sundays, holidays, and leaves)
-   * - Present days, absent days, and half days
+   * - Attendance records for the specified date range
+   * - Working days (excluding Sundays)
+   * - Present days (on_time, late, holiday, leave), absent days, and half days
    *
-   * Formula:
-   * - Daily Rate = Base Salary / Total Working Days
-   * - Earning = (Present Days × Daily Rate) + (Half Days × Daily Rate / 2)
-   * - Deduction = Absent Days × Daily Rate
-   * - Net Salary = Earning - Deduction
+   * Attendance Status Mapping:
+   * - Present Days (Full Day Earning): on_time, late, holiday, leave
+   * - Half Days (Half Day Earning): half_day
+   * - Absent Days (Deduction): absent, no record
+   * - Note: Holiday and Present are treated the same for salary calculation
    *
-   * @param data - CalculateSalaryRequest with employee_id, month, year
+   * Calculation Formula:
+   * For Monthly Salary:
+   * - Daily Rate = Base Salary / Days in Month
+   * - Earning Amount = (Present Days × Daily Rate) + (Half Days × Daily Rate / 2)
+   * - Deduction Amount = Absent Days × Daily Rate
+   * - Net Salary = Earning Amount - Deduction Amount
+   *
+   * For Weekly Salary:
+   * - Daily Rate = Weekly Salary / 7
+   * - Earning Amount = (Present Days × Daily Rate) + (Half Days × Daily Rate / 2)
+   * - Deduction Amount = Absent Days × Daily Rate
+   * - Net Salary = Earning Amount - Deduction Amount
+   *
+   * @param data - CalculateSalaryRequest with employee_id, from_date, and to_date
    * @returns Promise<SalaryCalculationResponse> - Calculated salary details
    *
-   * Request:
+   * Request (Monthly - Full Month):
    * ```json
    * {
    *   "employee_id": 1,
-   *   "month": 5,
-   *   "year": 2026
+   *   "from_date": "2026-05-01",
+   *   "to_date": "2026-05-31"
+   * }
+   * ```
+   *
+   * Request (Weekly - Custom Date Range):
+   * ```json
+   * {
+   *   "employee_id": 2,
+   *   "from_date": "2026-05-03",
+   *   "to_date": "2026-05-09"
    * }
    * ```
    *
@@ -60,8 +82,8 @@ class SalaryService {
    *
    * Example error cases:
    * - "employee not found"
-   * - "Invalid month (must be 1-12)"
-   * - "Invalid year (must be >= 2000)"
+   * - "Invalid date format (must be YYYY-MM-DD)"
+   * - "from_date must be before to_date"
    * - "No attendance records found for this period"
    */
   async calculateSalary(
@@ -85,14 +107,45 @@ class SalaryService {
    *
    * Request:
    * ```
-   * GET /admin/salary/1
+   * GET /auth/manage/salary/1
    * ```
    *
    * Success response: Status 200 OK
-   * Error response: Status 404 Not Found
+   * ```json
+   * {
+   *   "success": true,
+   *   "data": {
+   *     "id": 1,
+   *     "employee_id": 1,
+   *     "employee_name": "Ravi Kumar",
+   *     "company_id": 1,
+   *     "month": 5,
+   *     "year": 2026,
+   *     "base_salary": 20000.00,
+   *     "salary_type": "monthly",
+   *     "total_working_days": 22,
+   *     "present_days": 20,
+   *     "absent_days": 1,
+   *     "half_days": 1,
+   *     "daily_rate": 909.09,
+   *     "earning_amount": 18636.36,
+   *     "deduction_amount": 909.09,
+   *     "net_salary": 17727.27,
+   *     "status": "pending",
+   *     "notes": "Calculated based on monthly salary on 2026-05-21",
+   *     "created_at": "2026-05-21T10:30:00Z",
+   *     "updated_at": "2026-05-21T10:30:00Z"
+   *   }
+   * }
+   * ```
    *
-   * Example error cases:
-   * - "salary calculation not found"
+   * Error response: Status 404 Not Found
+   * ```json
+   * {
+   *   "error": true,
+   *   "message": "salary calculation not found"
+   * }
+   * ```
    */
   async getSalaryById(id: number | string): Promise<SalaryCalculationResponse> {
     return apiService.get(`${this.baseUrl}/${id}`);
@@ -110,7 +163,7 @@ class SalaryService {
    *
    * Request:
    * ```
-   * GET /admin/salary/employee/1
+   * GET /auth/manage/salary/employee/1
    * ```
    *
    * Success response: Status 200 OK
@@ -119,12 +172,33 @@ class SalaryService {
    * Response includes:
    * - id: Salary calculation ID
    * - employee_id: Associated employee
+   * - employee_name: Employee's full name
    * - month: Month of calculation (1-12)
    * - year: Year of calculation
    * - base_salary: Employee's base salary for that period
    * - net_salary: Final salary after deductions
    * - status: "pending" or "approved"
    * - created_at: Calculation timestamp
+   *
+   * Example:
+   * ```json
+   * {
+   *   "success": true,
+   *   "data": [
+   *     {
+   *       "id": 1,
+   *       "employee_id": 1,
+   *       "employee_name": "Ravi Kumar",
+   *       "month": 5,
+   *       "year": 2026,
+   *       "base_salary": 20000.00,
+   *       "net_salary": 17727.27,
+   *       "status": "pending",
+   *       "created_at": "2026-05-21T10:30:00Z"
+   *     }
+   *   ]
+   * }
+   * ```
    */
   async getSalariesByEmployeeId(
     employeeId: number | string
@@ -142,8 +216,8 @@ class SalaryService {
    * @returns Promise<SalaryApprovalResponse> - Approval confirmation
    *
    * Request:
-   * ```json
-   * POST /admin/salary/1/approve
+   * ```
+   * POST /auth/manage/salary/1/approve
    * {}
    * ```
    *
