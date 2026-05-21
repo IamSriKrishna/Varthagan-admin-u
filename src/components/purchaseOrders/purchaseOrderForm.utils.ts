@@ -66,22 +66,13 @@ export const transformPOToPayload = (
       }
 
       const lineItem: PurchaseOrderLineItemInput = {
+        product_id: item.product_id,
+        product_name: item.product_name || '',
+        sku: item.sku || item.variant_sku || '',
         account: item.account,
         quantity: item.quantity,
         rate: item.rate,
       };
-
-      // Add product/item identifying fields
-      if (item.product_id) {
-        lineItem.product_id = item.product_id;
-      }
-      if (item.product_name) {
-        lineItem.product_name = item.product_name;
-      }
-      // Map variant_sku to sku for backend
-      if (item.variant_sku) {
-        lineItem.sku = item.variant_sku;
-      }
 
       // Add raw material fields if applicable
       if ((item as any).is_raw_material) {
