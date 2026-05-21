@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Box, Card, Stack, Typography, Button,
   TextField, Select, MenuItem, Chip, LinearProgress,
-  Tooltip, IconButton, Switch, InputAdornment,
+  Tooltip, IconButton, Switch, InputAdornment, RadioGroup, FormControlLabel, Radio,
 } from "@mui/material";
 import { BBButton } from "@/lib";
 import { Form, Formik } from "formik";
@@ -43,9 +43,14 @@ interface VariantForm {
 interface ProductFormData {
   name: string;
   is_resource: boolean;
+  is_raw: boolean;
   resource_name?: string;
   resource_unit?: string;
   resource_cost_per_unit?: number;
+  raw_name?: string;
+  raw_specification?: string;
+  required_gram_per_unit?: number;
+  raw_cost_per_unit?: number;
   unit: string;
   base_sku: string;
   description: string;
@@ -134,6 +139,7 @@ function generateVariants(
 const validationSchema = Yup.object().shape({
   name: Yup.string().required("Product name is required"),
   is_resource: Yup.boolean(),
+  is_raw: Yup.boolean(),
   resource_name: Yup.string().when("is_resource", {
     is: true,
     then: (schema) => schema.required("Resource Name is required"),
@@ -153,29 +159,77 @@ const validationSchema = Yup.object().shape({
         .min(0, "Cost must be at least 0"),
     otherwise: (schema) => schema.notRequired(),
   }),
+  raw_name: Yup.string().when("is_raw", {
+    is: true,
+    then: (schema) => schema.required("Raw Name is required"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  raw_specification: Yup.string().when("is_raw", {
+    is: true,
+    then: (schema) => schema.required("Raw Specification is required"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  required_gram_per_unit: Yup.number().when("is_raw", {
+    is: true,
+    then: (schema) =>
+      schema
+        .typeError("Required gram per unit must be a number")
+        .required("Required gram per unit is required")
+        .min(0, "Must be at least 0"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  raw_cost_per_unit: Yup.number().when("is_raw", {
+    is: true,
+    then: (schema) =>
+      schema
+        .typeError("Cost must be a number")
+        .required("Raw Cost Per Unit is required")
+        .min(0, "Cost must be at least 0"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
   unit: Yup.string().when("is_resource", {
     is: false,
-    then: (schema) => schema.required("Unit is required"),
+    then: (schema) => Yup.string().when("is_raw", {
+      is: false,
+      then: (s) => s.required("Unit is required"),
+      otherwise: (s) => s.notRequired(),
+    }),
     otherwise: (schema) => schema.notRequired(),
   }),
   base_sku: Yup.string().when("is_resource", {
     is: false,
-    then: (schema) => schema.required("Base SKU is required"),
+    then: (schema) => Yup.string().when("is_raw", {
+      is: false,
+      then: (s) => s.required("Base SKU is required"),
+      otherwise: (s) => s.notRequired(),
+    }),
     otherwise: (schema) => schema.notRequired(),
   }),
   description: Yup.string().when("is_resource", {
     is: false,
-    then: (schema) => schema.required("Description is required"),
+    then: (schema) => Yup.string().when("is_raw", {
+      is: false,
+      then: (s) => s.required("Description is required"),
+      otherwise: (s) => s.notRequired(),
+    }),
     otherwise: (schema) => schema.notRequired(),
   }),
   selling_price: Yup.number().when("is_resource", {
     is: false,
-    then: (schema) => schema.required("Selling price is required").min(0),
+    then: (schema) => Yup.number().when("is_raw", {
+      is: false,
+      then: (s) => s.required("Selling price is required").min(0),
+      otherwise: (s) => s.notRequired(),
+    }),
     otherwise: (schema) => schema.notRequired(),
   }),
   cost_price: Yup.number().when("is_resource", {
     is: false,
-    then: (schema) => schema.required("Cost price is required").min(0),
+    then: (schema) => Yup.number().when("is_raw", {
+      is: false,
+      then: (s) => s.required("Cost price is required").min(0),
+      otherwise: (s) => s.notRequired(),
+    }),
     otherwise: (schema) => schema.notRequired(),
   }),
 });
@@ -183,9 +237,14 @@ const validationSchema = Yup.object().shape({
 const initialValues: ProductFormData = {
   name: "",
   is_resource: false,
+  is_raw: false,
   resource_name: "",
   resource_unit: "",
   resource_cost_per_unit: 0,
+  raw_name: "",
+  raw_specification: "",
+  required_gram_per_unit: 0,
+  raw_cost_per_unit: 0,
   unit: "pieces",
   base_sku: "",
   description: "",
@@ -273,6 +332,8 @@ export default function CreateProductPage() {
   const [variantForm, setVariantForm] = useState<Partial<VariantForm>>({
     attribute_map: {}, stock_quantity: 0, is_active: true,
   });
+  const [resourceNameEdited, setResourceNameEdited] = useState(false);
+  const [rawNameEdited, setRawNameEdited] = useState(false);
 
   // ── Submit ────────────────────────────────────────────────────────────────
 
@@ -299,6 +360,24 @@ export default function CreateProductPage() {
           router.push("/products");
         } else {
           showToastMessage("Failed to create resource", "error");
+        }
+      } else if (values.is_raw) {
+        // Raw product payload
+        const payload: any = {
+          name: values.name,
+          is_raw: true,
+          raw_name: values.raw_name || "",
+          raw_specification: values.raw_specification || "",
+          required_gram_per_unit: values.required_gram_per_unit || 0,
+          raw_cost_per_unit: values.raw_cost_per_unit || 0,
+        };
+
+        const response = await productService.createProduct(payload);
+        if (response?.id) {
+          showToastMessage("Raw product created successfully!", "success");
+          router.push("/products");
+        } else {
+          showToastMessage("Failed to create raw product", "error");
         }
       } else {
         // Regular product payload
@@ -472,21 +551,44 @@ export default function CreateProductPage() {
                     </Box>
                     <Box sx={{ p: 3 }}>
                       <Stack spacing={3}>
-                        {/* Product Name + Resource Toggle */}
+                        {/* Product Name + Type Selection */}
                         <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
                           <Box sx={{ flex: 2 }}>
                             <Label required>Product Name</Label>
-                            <TextField fullWidth name="name" value={values.name} onChange={handleChange}
+                            <TextField fullWidth name="name" value={values.name}
+                              onChange={(e) => {
+                                handleChange(e);
+                                // Auto-fill resource_name if not manually edited
+                                if (!resourceNameEdited) {
+                                  setFieldValue("resource_name", e.target.value);
+                                }
+                                // Auto-fill raw_name if not manually edited
+                                if (!rawNameEdited) {
+                                  setFieldValue("raw_name", e.target.value);
+                                }
+                              }}
                               placeholder="e.g., Water Bottle" error={touched.name && !!errors.name} helperText={touched.name && errors.name}
                               size="small" sx={inputSx} />
                           </Box>
-                          <Box sx={{ flex: 1, display: "flex", alignItems: "flex-end", pb: 0.5 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <Typography variant="body2" sx={{ fontWeight: 500, color: C.text }}>Resource</Typography>
-                              <Switch checked={values.is_resource} onChange={(e) => setFieldValue("is_resource", e.target.checked)} />
-                            </Box>
-                          </Box>
                         </Stack>
+
+                        {/* Product Type Radio Group */}
+                        <Box sx={{ p: 2, borderRadius: "8px", backgroundColor: C.bg, border: `1px solid ${C.border}` }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: C.text, mb: 1.5 }}>Product Type</Typography>
+                          <RadioGroup
+                            row
+                            value={values.is_resource ? "resource" : values.is_raw ? "raw" : "regular"}
+                            onChange={(e) => {
+                              const type = e.target.value;
+                              setFieldValue("is_resource", type === "resource");
+                              setFieldValue("is_raw", type === "raw");
+                            }}
+                          >
+                            <FormControlLabel value="regular" control={<Radio size="small" />} label="Regular Product" />
+                            <FormControlLabel value="resource" control={<Radio size="small" />} label="Resource" />
+                            <FormControlLabel value="raw" control={<Radio size="small" />} label="Raw" />
+                          </RadioGroup>
+                        </Box>
 
                         {/* Resource Product Fields */}
                         {values.is_resource && (
@@ -499,7 +601,11 @@ export default function CreateProductPage() {
                             <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
                               <Box sx={{ flex: 1 }}>
                                 <Label required>Resource Name</Label>
-                                <TextField fullWidth name="resource_name" value={values.resource_name} onChange={handleChange}
+                                <TextField fullWidth name="resource_name" value={values.resource_name}
+                                  onChange={(e) => {
+                                    handleChange(e);
+                                    setResourceNameEdited(!!e.target.value);
+                                  }}
                                   placeholder="e.g., Water" error={touched.resource_name && !!errors.resource_name} helperText={touched.resource_name && errors.resource_name}
                                   size="small" sx={inputSx} />
                               </Box>
@@ -511,7 +617,10 @@ export default function CreateProductPage() {
                               </Box>
                               <Box sx={{ flex: 1 }}>
                                 <Label required>Cost Per Unit (₹)</Label>
-                                <TextField fullWidth name="resource_cost_per_unit" type="number" value={values.resource_cost_per_unit} onChange={handleChange}
+                                <TextField fullWidth name="resource_cost_per_unit" type="number" value={values.resource_cost_per_unit} onChange={(e) => {
+                                  const value = e.target.value ? parseFloat(e.target.value) : 0;
+                                  setFieldValue("resource_cost_per_unit", value);
+                                }}
                                   placeholder="e.g., 25.50" error={touched.resource_cost_per_unit && !!errors.resource_cost_per_unit} helperText={touched.resource_cost_per_unit && errors.resource_cost_per_unit}
                                   inputProps={{ step: "0.01", min: "0" }} size="small" sx={inputSx} />
                               </Box>
@@ -519,8 +628,57 @@ export default function CreateProductPage() {
                           </>
                         )}
 
+                        {/* Raw Product Fields */}
+                        {values.is_raw && (
+                          <>
+                            <Box sx={{ p: 2, borderRadius: "8px", backgroundColor: "#FEF3C7", border: "1px solid #FCD34D" }}>
+                              <Typography variant="body2" sx={{ fontSize: "0.85rem", color: C.text }}>
+                                Raw products are pre-forms or raw materials like water bottle preforms. They don't have variants or pricing.
+                              </Typography>
+                            </Box>
+                            <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
+                              <Box sx={{ flex: 1 }}>
+                                <Label required>Raw Name</Label>
+                                <TextField fullWidth name="raw_name" value={values.raw_name}
+                                  onChange={(e) => {
+                                    handleChange(e);
+                                    setRawNameEdited(!!e.target.value);
+                                  }}
+                                  placeholder="e.g., Water Bottle Preform" error={touched.raw_name && !!errors.raw_name} helperText={touched.raw_name && errors.raw_name}
+                                  size="small" sx={inputSx} />
+                              </Box>
+                              <Box sx={{ flex: 1 }}>
+                                <Label required>Specification</Label>
+                                <TextField fullWidth name="raw_specification" value={values.raw_specification} onChange={handleChange}
+                                  placeholder="e.g., 500 ml" error={touched.raw_specification && !!errors.raw_specification} helperText={touched.raw_specification && errors.raw_specification}
+                                  size="small" sx={inputSx} />
+                              </Box>
+                            </Stack>
+                            <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
+                              <Box sx={{ flex: 1 }}>
+                                <Label required>Required Gram Per Unit</Label>
+                                <TextField fullWidth type="number" inputProps={{ step: "0.1" }} name="required_gram_per_unit" value={values.required_gram_per_unit} onChange={(e) => {
+                                  const value = e.target.value ? parseFloat(e.target.value) : 0;
+                                  setFieldValue("required_gram_per_unit", value);
+                                }}
+                                  placeholder="e.g., 25.5" error={touched.required_gram_per_unit && !!errors.required_gram_per_unit} helperText={touched.required_gram_per_unit && errors.required_gram_per_unit}
+                                  size="small" sx={inputSx} />
+                              </Box>
+                              <Box sx={{ flex: 1 }}>
+                                <Label required>Cost Per Unit (₹)</Label>
+                                <TextField fullWidth name="raw_cost_per_unit" type="number" value={values.raw_cost_per_unit} onChange={(e) => {
+                                  const value = e.target.value ? parseFloat(e.target.value) : 0;
+                                  setFieldValue("raw_cost_per_unit", value);
+                                }}
+                                  placeholder="e.g., 15.75" error={touched.raw_cost_per_unit && !!errors.raw_cost_per_unit} helperText={touched.raw_cost_per_unit && errors.raw_cost_per_unit}
+                                  inputProps={{ step: "0.01", min: "0" }} size="small" sx={inputSx} />
+                              </Box>
+                            </Stack>
+                          </>
+                        )}
+
                         {/* Regular Product Fields */}
-                        {!values.is_resource && (
+                        {!values.is_resource && !values.is_raw && (
                           <>
                             <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
                               <Box sx={{ flex: 1 }}>
@@ -553,7 +711,7 @@ export default function CreateProductPage() {
                 )}
 
                 {/* ══ STEP 1: Pricing ═══════════════════════════════════════════════ */}
-                {step === 1 && !values.is_resource && (
+                {step === 1 && !values.is_resource && !values.is_raw && (
                   <Stack spacing={3}>
                     <Card sx={{ borderRadius: "16px", border: `1px solid ${C.border}`, boxShadow: "none", overflow: "hidden" }}>
                       <Box sx={{ p: 3, borderBottom: `1px solid ${C.border}` }}>
@@ -622,7 +780,7 @@ export default function CreateProductPage() {
                 )}
 
                 {/* ══ STEP 2: Variants ══════════════════════════════════════════════ */}
-                {step === 2 && !values.is_resource && (
+                {step === 2 && !values.is_resource && !values.is_raw && (
                   <Stack spacing={3}>
 
                     {/* Attribute definitions */}
@@ -1193,7 +1351,7 @@ export default function CreateProductPage() {
                     {step === 0 ? "Cancel" : "Back"}
                   </Button>
 
-                  {step < STEPS.length - 1 && !values.is_resource ? (
+                  {step < STEPS.length - 1 && !values.is_resource && !values.is_raw ? (
                     <Button variant="contained" endIcon={<ChevronRight size={16} />}
                       onClick={async () => {
                         const errs = await validateForm();
@@ -1216,7 +1374,7 @@ export default function CreateProductPage() {
                   ) : (
                     <BBButton type="submit" disabled={loading} loading={loading}
                       sx={{ backgroundColor: C.brand, borderRadius: "8px", textTransform: "none", fontWeight: 700, px: 4, "&:hover": { backgroundColor: "#1D4ED8" } }}>
-                      {loading ? "Creating…" : values.is_resource ? "Create Resource" : "Create Product"}
+                      {loading ? "Creating…" : values.is_resource ? "Create Resource" : values.is_raw ? "Create Raw Product" : "Create Product"}
                     </BBButton>
                   )}
                 </Stack>

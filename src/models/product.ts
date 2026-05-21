@@ -124,6 +124,17 @@ export interface Product {
   user_name: string;
   company_id: number;
   company_name: string;
+  // Raw Material Fields
+  is_raw?: boolean;
+  raw_name?: string;
+  raw_specification?: string;
+  raw_cost_per_unit?: number;
+  required_gram_per_unit?: number;
+  // Resource Fields
+  is_resource?: boolean;
+  resource_name?: string;
+  resource_unit?: string;
+  resource_cost_per_unit?: number;
 }
 
 // ============================================================================

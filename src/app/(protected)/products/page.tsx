@@ -7,14 +7,38 @@ import { BBButton, BBDialog, BBDropdownBase, BBInputBase, BBLoader, BBTable, BBT
 import { ITableColumn } from "@/lib/BBTable/BBTable";
 import { showToastMessage } from "@/utils/toastUtil";
 import {
-  Box, Button, Chip, Collapse, Divider, Grid, IconButton,
-  Paper, Stack, Typography, Avatar, Tooltip, Badge,
+  Box,
+  Button,
+  Chip,
+  Collapse,
+  Divider,
+  Grid,
+  IconButton,
+  Paper,
+  Stack,
+  Typography,
+  Avatar,
+  Tooltip,
+  Badge,
 } from "@mui/material";
 import {
-  Filter, PencilLine, Plus, Trash2, Package2,
-  TrendingUp, TrendingDown, Layers, Search,
-  SlidersHorizontal, X, ChevronDown, Sparkles,
-  BarChart3, BoxSelect, ShoppingBag, Zap,
+  Filter,
+  PencilLine,
+  Plus,
+  Trash2,
+  Package2,
+  TrendingUp,
+  TrendingDown,
+  Layers,
+  Search,
+  SlidersHorizontal,
+  X,
+  ChevronDown,
+  Sparkles,
+  BarChart3,
+  BoxSelect,
+  ShoppingBag,
+  Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useEffect, useRef } from "react";
@@ -25,53 +49,53 @@ import { productService } from "@/lib/api/productService";
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const T = {
   // Core backgrounds
-  pageBg:      "#F7F8FC",
-  cardBg:      "#FFFFFF",
-  subtleBg:    "#F4F5F9",
-  glassOverlay:"rgba(255,255,255,0.85)",
+  pageBg: "#F7F8FC",
+  cardBg: "#FFFFFF",
+  subtleBg: "#F4F5F9",
+  glassOverlay: "rgba(255,255,255,0.85)",
 
   // Brand — deep violet-indigo
-  brand:       "#4F46E5",
-  brandMid:    "#818CF8",
-  brandSoft:   "#EEF2FF",
-  brandXSoft:  "#F5F3FF",
-  brandDark:   "#3730A3",
-  brandGlow:   "rgba(79,70,229,0.18)",
+  brand: "#4F46E5",
+  brandMid: "#818CF8",
+  brandSoft: "#EEF2FF",
+  brandXSoft: "#F5F3FF",
+  brandDark: "#3730A3",
+  brandGlow: "rgba(79,70,229,0.18)",
 
   // Accent — electric amber
-  accent:      "#F59E0B",
-  accentSoft:  "#FFFBEB",
+  accent: "#F59E0B",
+  accentSoft: "#FFFBEB",
 
   // Semantic
-  success:     "#059669",
+  success: "#059669",
   successSoft: "#ECFDF5",
-  successMid:  "#6EE7B7",
-  danger:      "#DC2626",
-  dangerSoft:  "#FEF2F2",
-  dangerMid:   "#FECACA",
-  warning:     "#D97706",
+  successMid: "#6EE7B7",
+  danger: "#DC2626",
+  dangerSoft: "#FEF2F2",
+  dangerMid: "#FECACA",
+  warning: "#D97706",
   warningSoft: "#FFFBEB",
-  neutral:     "#9CA3AF",
+  neutral: "#9CA3AF",
 
   // Text hierarchy
-  text:        "#0F172A",
-  textMid:     "#334155",
-  textLight:   "#64748B",
-  textXLight:  "#CBD5E1",
-  textGhost:   "#E2E8F0",
+  text: "#0F172A",
+  textMid: "#334155",
+  textLight: "#64748B",
+  textXLight: "#CBD5E1",
+  textGhost: "#E2E8F0",
 
   // Borders
-  border:      "#E8EBF2",
-  borderMid:   "#D1D5DB",
+  border: "#E8EBF2",
+  borderMid: "#D1D5DB",
   borderFocus: "#818CF8",
 
   // Elevation shadows
-  shadow:      "0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)",
-  shadowSm:    "0 2px 8px rgba(15,23,42,0.07)",
-  shadowMd:    "0 4px 16px rgba(15,23,42,0.10), 0 2px 6px rgba(15,23,42,0.05)",
-  shadowLg:    "0 12px 40px rgba(15,23,42,0.12), 0 4px 12px rgba(15,23,42,0.07)",
+  shadow: "0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)",
+  shadowSm: "0 2px 8px rgba(15,23,42,0.07)",
+  shadowMd: "0 4px 16px rgba(15,23,42,0.10), 0 2px 6px rgba(15,23,42,0.05)",
+  shadowLg: "0 12px 40px rgba(15,23,42,0.12), 0 4px 12px rgba(15,23,42,0.07)",
   shadowBrand: "0 4px 18px rgba(79,70,229,0.30)",
-  shadowBrandHover:"0 8px 28px rgba(79,70,229,0.40)",
+  shadowBrandHover: "0 8px 28px rgba(79,70,229,0.40)",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -93,14 +117,23 @@ function colorFromString(str: string) {
 
 // ─── Product Avatar ───────────────────────────────────────────────────────────
 function ProductAvatar({ name }: { name: string }) {
-  const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const initials = name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
   const { bg, fg, border } = colorFromString(name);
   return (
     <Avatar
       sx={{
-        width: 40, height: 40, borderRadius: "12px",
+        width: 40,
+        height: 40,
+        borderRadius: "12px",
         background: `linear-gradient(135deg, ${bg}, ${bg}CC)`,
-        color: fg, fontSize: "0.75rem", fontWeight: 800,
+        color: fg,
+        fontSize: "0.75rem",
+        fontWeight: 800,
         fontFamily: "'DM Mono', 'Fira Code', monospace",
         flexShrink: 0,
         border: `1.5px solid ${border}`,
@@ -118,14 +151,74 @@ function ProductAvatar({ name }: { name: string }) {
 }
 
 // ─── Price Cell ───────────────────────────────────────────────────────────────
-function PriceCell({ 
-  cost, selling, isResource, resourceCostPerUnit 
-}: { 
-  cost: number; 
-  selling: number; 
+function PriceCell({
+  cost,
+  selling,
+  isResource,
+  resourceCostPerUnit,
+  isRaw,
+  rawCostPerUnit,
+}: {
+  cost: number;
+  selling: number;
   isResource?: boolean;
   resourceCostPerUnit?: number;
+  isRaw?: boolean;
+  rawCostPerUnit?: number; // ← add this
 }) {
+  // For raw products, show "Raw" badge
+  if (isRaw && rawCostPerUnit) {
+    return (
+      <Stack spacing={0.4}>
+        <Stack direction="row" alignItems="center" spacing={0.75}>
+          <Tooltip title="Raw Cost Per Unit">
+            <Typography
+              sx={{
+                fontFamily: "'DM Mono', monospace",
+                fontWeight: 800,
+                color: T.text,
+                fontSize: "0.88rem",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              ₹{typeof rawCostPerUnit?.toFixed === "function" ? rawCostPerUnit.toFixed(2) : rawCostPerUnit}
+            </Typography>
+          </Tooltip>
+          <Chip
+            label="Raw"
+            size="small"
+            sx={{
+              height: 20,
+              fontSize: "0.65rem",
+              background: "#FEF3C7",
+              border: "1px solid #FCD34D",
+              color: "#92400E",
+              fontWeight: 700,
+            }}
+          />
+        </Stack>
+      </Stack>
+    );
+  }
+
+  // fallback for isRaw with no cost yet
+  if (isRaw) {
+    return (
+      <Chip
+        label="Raw"
+        size="small"
+        sx={{
+          height: 20,
+          fontSize: "0.65rem",
+          background: "#FEF3C7",
+          border: "1px solid #FCD34D",
+          color: "#92400E",
+          fontWeight: 700,
+        }}
+      />
+    );
+  }
+
   // For resource products with no sales/purchase info, show resource cost
   if (isResource && !selling && resourceCostPerUnit) {
     return (
@@ -134,24 +227,30 @@ function PriceCell({
           <Tooltip title="Resource Cost Per Unit">
             <Typography
               sx={{
-                fontFamily: "'DM Mono', monospace", fontWeight: 800,
-                color: T.text, fontSize: "0.88rem", letterSpacing: "-0.02em",
+                fontFamily: "'DM Mono', monospace",
+                fontWeight: 800,
+                color: T.text,
+                fontSize: "0.88rem",
+                letterSpacing: "-0.02em",
               }}
             >
-              ₹{typeof resourceCostPerUnit?.toFixed === "function" ? resourceCostPerUnit.toFixed(2) : resourceCostPerUnit}
+              ₹
+              {typeof resourceCostPerUnit?.toFixed === "function"
+                ? resourceCostPerUnit.toFixed(2)
+                : resourceCostPerUnit}
             </Typography>
           </Tooltip>
-          <Chip 
+          <Chip
             icon={<Zap size={12} />}
-            label="Resource" 
-            size="small" 
-            sx={{ 
-              height: 20, 
-              fontSize: "0.65rem", 
+            label="Resource"
+            size="small"
+            sx={{
+              height: 20,
+              fontSize: "0.65rem",
               background: T.brandSoft,
               border: `1px solid ${T.brandMid}`,
               color: T.brand,
-            }} 
+            }}
           />
         </Stack>
       </Stack>
@@ -167,8 +266,11 @@ function PriceCell({
       <Stack direction="row" alignItems="center" spacing={0.75}>
         <Typography
           sx={{
-            fontFamily: "'DM Mono', monospace", fontWeight: 800,
-            color: T.text, fontSize: "0.88rem", letterSpacing: "-0.02em",
+            fontFamily: "'DM Mono', monospace",
+            fontWeight: 800,
+            color: T.text,
+            fontSize: "0.88rem",
+            letterSpacing: "-0.02em",
           }}
         >
           ₹{typeof selling?.toFixed === "function" ? selling.toFixed(2) : selling}
@@ -176,18 +278,27 @@ function PriceCell({
         {markup && (
           <Box
             sx={{
-              display: "inline-flex", alignItems: "center", gap: 0.4,
-              px: 0.75, py: 0.15, borderRadius: "5px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.4,
+              px: 0.75,
+              py: 0.15,
+              borderRadius: "5px",
               background: isUp
                 ? `linear-gradient(135deg, ${T.successSoft}, #D1FAE5)`
                 : `linear-gradient(135deg, ${T.dangerSoft}, #FEE2E2)`,
               border: `1px solid ${isUp ? T.successMid : T.dangerMid}`,
             }}
           >
-            {isUp
-              ? <TrendingUp size={9} color={T.success} />
-              : <TrendingDown size={9} color={T.danger} />}
-            <Typography sx={{ fontSize: "0.65rem", fontWeight: 800, color: isUp ? T.success : T.danger, fontFamily: "'DM Mono', monospace" }}>
+            {isUp ? <TrendingUp size={9} color={T.success} /> : <TrendingDown size={9} color={T.danger} />}
+            <Typography
+              sx={{
+                fontSize: "0.65rem",
+                fontWeight: 800,
+                color: isUp ? T.success : T.danger,
+                fontFamily: "'DM Mono', monospace",
+              }}
+            >
               {markup}%
             </Typography>
           </Box>
@@ -206,21 +317,32 @@ function VariantBadge({ count }: { count: number }) {
   return (
     <Box
       sx={{
-        display: "inline-flex", alignItems: "center", gap: 0.5,
-        px: 1.25, py: 0.35, borderRadius: "8px",
-        background: active
-          ? `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`
-          : T.subtleBg,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 0.5,
+        px: 1.25,
+        py: 0.35,
+        borderRadius: "8px",
+        background: active ? `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)` : T.subtleBg,
         border: `1.5px solid ${active ? T.brandMid : T.border}`,
         transition: "all 0.2s",
-        "&:hover": active ? {
-          background: `linear-gradient(135deg, #E0E7FF, ${T.brandSoft})`,
-          transform: "scale(1.05)",
-        } : {},
+        "&:hover": active
+          ? {
+              background: `linear-gradient(135deg, #E0E7FF, ${T.brandSoft})`,
+              transform: "scale(1.05)",
+            }
+          : {},
       }}
     >
       <Layers size={11} color={active ? T.brand : T.textLight} />
-      <Typography sx={{ fontWeight: 800, fontSize: "0.72rem", color: active ? T.brand : T.textLight, fontFamily: "'DM Mono', monospace" }}>
+      <Typography
+        sx={{
+          fontWeight: 800,
+          fontSize: "0.72rem",
+          color: active ? T.brand : T.textLight,
+          fontFamily: "'DM Mono', monospace",
+        }}
+      >
         {count}
       </Typography>
     </Box>
@@ -229,35 +351,56 @@ function VariantBadge({ count }: { count: number }) {
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({
-  label, value, sub, icon: Icon, gradient, accent,
+  label,
+  value,
+  sub,
+  icon: Icon,
+  gradient,
+  accent,
 }: {
-  label: string; value: string | number; sub?: string;
-  icon?: any; gradient?: string; accent?: string;
+  label: string;
+  value: string | number;
+  sub?: string;
+  icon?: any;
+  gradient?: string;
+  accent?: string;
 }) {
   return (
     <Box
       sx={{
-        flex: 1, minWidth: 140, position: "relative", overflow: "hidden",
-        px: 2.5, py: 2.25,
+        flex: 1,
+        minWidth: 140,
+        position: "relative",
+        overflow: "hidden",
+        px: 2.5,
+        py: 2.25,
         background: gradient ?? T.cardBg,
         border: `1.5px solid ${T.border}`,
         borderRadius: "16px",
         boxShadow: T.shadowSm,
         transition: "transform 0.2s, box-shadow 0.2s",
         "&:hover": { transform: "translateY(-2px)", boxShadow: T.shadowMd },
-        "&::before": gradient ? {
-          content: '""',
-          position: "absolute", top: 0, right: 0,
-          width: 80, height: 80, borderRadius: "50%",
-          background: `radial-gradient(circle, ${accent ?? T.brand}18 0%, transparent 70%)`,
-          transform: "translate(20px, -20px)",
-        } : {},
+        "&::before": gradient
+          ? {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              right: 0,
+              width: 80,
+              height: 80,
+              borderRadius: "50%",
+              background: `radial-gradient(circle, ${accent ?? T.brand}18 0%, transparent 70%)`,
+              transform: "translate(20px, -20px)",
+            }
+          : {},
       }}
     >
       {Icon && (
         <Box
           sx={{
-            display: "inline-flex", p: 0.75, borderRadius: "8px",
+            display: "inline-flex",
+            p: 0.75,
+            borderRadius: "8px",
             background: `${accent ?? T.brand}15`,
             mb: 1,
           }}
@@ -265,15 +408,31 @@ function StatCard({
           <Icon size={14} color={accent ?? T.brand} strokeWidth={2.5} />
         </Box>
       )}
-      <Typography sx={{ color: T.textLight, fontWeight: 600, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", mb: 0.25 }}>
+      <Typography
+        sx={{
+          color: T.textLight,
+          fontWeight: 600,
+          fontSize: "0.68rem",
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+          mb: 0.25,
+        }}
+      >
         {label}
       </Typography>
-      <Typography sx={{ fontWeight: 900, color: T.text, fontSize: "1.45rem", fontFamily: "'DM Mono', monospace", letterSpacing: "-0.04em", lineHeight: 1 }}>
+      <Typography
+        sx={{
+          fontWeight: 900,
+          color: T.text,
+          fontSize: "1.45rem",
+          fontFamily: "'DM Mono', monospace",
+          letterSpacing: "-0.04em",
+          lineHeight: 1,
+        }}
+      >
         {value}
       </Typography>
-      {sub && (
-        <Typography sx={{ color: T.textLight, fontSize: "0.68rem", mt: 0.4, fontWeight: 500 }}>{sub}</Typography>
-      )}
+      {sub && <Typography sx={{ color: T.textLight, fontSize: "0.68rem", mt: 0.4, fontWeight: 500 }}>{sub}</Typography>}
     </Box>
   );
 }
@@ -283,8 +442,12 @@ function FilterPill({ label, onRemove }: { label: string; onRemove: () => void }
   return (
     <Box
       sx={{
-        display: "inline-flex", alignItems: "center", gap: 0.5,
-        px: 1.25, py: 0.4, borderRadius: "8px",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 0.5,
+        px: 1.25,
+        py: 0.4,
+        borderRadius: "8px",
         background: `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`,
         border: `1.5px solid ${T.brandMid}`,
         animation: "pillPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)",
@@ -294,14 +457,15 @@ function FilterPill({ label, onRemove }: { label: string; onRemove: () => void }
         },
       }}
     >
-      <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, color: T.brand }}>
-        {label}
-      </Typography>
+      <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, color: T.brand }}>{label}</Typography>
       <IconButton
         size="small"
         onClick={onRemove}
         sx={{
-          p: 0.15, color: T.brand, width: 16, height: 16,
+          p: 0.15,
+          color: T.brand,
+          width: 16,
+          height: 16,
           "&:hover": { backgroundColor: T.brandMid + "60" },
           borderRadius: "4px",
         }}
@@ -313,19 +477,29 @@ function FilterPill({ label, onRemove }: { label: string; onRemove: () => void }
 }
 
 // ─── Row Action Buttons ───────────────────────────────────────────────────────
-function ActionButtons({
-  onEdit, onDelete,
-}: { onEdit: () => void; onDelete: () => void }) {
+function ActionButtons({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   return (
-    <Stack direction="row" spacing={0.5} sx={{ opacity: 0, transition: "opacity 0.15s", ".MuiTableRow-root:hover &": { opacity: 1 } }}>
+    <Stack
+      direction="row"
+      spacing={0.5}
+      sx={{ opacity: 0, transition: "opacity 0.15s", ".MuiTableRow-root:hover &": { opacity: 1 } }}
+    >
       <Tooltip title="Edit" placement="top" arrow>
         <IconButton
-          size="small" onClick={onEdit}
+          size="small"
+          onClick={onEdit}
           sx={{
-            color: T.brand, background: `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`,
-            borderRadius: "9px", width: 32, height: 32,
+            color: T.brand,
+            background: `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`,
+            borderRadius: "9px",
+            width: 32,
+            height: 32,
             border: `1.5px solid ${T.brandMid}`,
-            "&:hover": { background: `linear-gradient(135deg, #E0E7FF, ${T.brandMid}60)`, transform: "scale(1.08)", boxShadow: T.shadowBrand },
+            "&:hover": {
+              background: `linear-gradient(135deg, #E0E7FF, ${T.brandMid}60)`,
+              transform: "scale(1.08)",
+              boxShadow: T.shadowBrand,
+            },
             transition: "all 0.15s",
           }}
         >
@@ -334,12 +508,20 @@ function ActionButtons({
       </Tooltip>
       <Tooltip title="Delete" placement="top" arrow>
         <IconButton
-          size="small" onClick={onDelete}
+          size="small"
+          onClick={onDelete}
           sx={{
-            color: T.danger, background: `linear-gradient(135deg, ${T.dangerSoft}, #FEE2E2)`,
-            borderRadius: "9px", width: 32, height: 32,
+            color: T.danger,
+            background: `linear-gradient(135deg, ${T.dangerSoft}, #FEE2E2)`,
+            borderRadius: "9px",
+            width: 32,
+            height: 32,
             border: `1.5px solid ${T.dangerMid}`,
-            "&:hover": { background: `linear-gradient(135deg, #FEE2E2, ${T.dangerMid}80)`, transform: "scale(1.08)", boxShadow: `0 4px 12px ${T.danger}30` },
+            "&:hover": {
+              background: `linear-gradient(135deg, #FEE2E2, ${T.dangerMid}80)`,
+              transform: "scale(1.08)",
+              boxShadow: `0 4px 12px ${T.danger}30`,
+            },
             transition: "all 0.15s",
           }}
         >
@@ -359,13 +541,17 @@ export default function Products() {
   const [open, setOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filters, setFilters] = useState({
-    search: "", type: "", active: "", category_ids: "",
+    search: "",
+    type: "",
+    active: "",
+    category_ids: "",
   });
 
   const { data: categoryData } = useFetch<{ data: ICategorys }>({ url: `${category.getCategory}` });
   const categoryOptions =
     categoryData?.data?.categories?.map((cat) => ({
-      label: cat.category_name, value: cat.id,
+      label: cat.category_name,
+      value: cat.id,
     })) || [];
 
   const debouncedSearch = useDebounce(filters.search, 500);
@@ -381,7 +567,11 @@ export default function Products() {
     return params.toString();
   }, [filters, debouncedSearch, page, rowsPerPage]);
 
-  const { data: results, refetch, loading } = useFetch<{ products: any[]; total: number }>({
+  const {
+    data: results,
+    refetch,
+    loading,
+  } = useFetch<{ products: any[]; total: number }>({
     url: `${products.postProduct}?${queryParams}`,
   });
 
@@ -397,8 +587,7 @@ export default function Products() {
         showToastMessage(response?.message ?? "Delete failed", "error");
       }
     } catch (e: unknown) {
-      const msg =
-        typeof e === "object" && e !== null && "message" in e ? (e as any).message : "Something went wrong.";
+      const msg = typeof e === "object" && e !== null && "message" in e ? (e as any).message : "Something went wrong.";
       showToastMessage(msg, "error");
     }
   };
@@ -430,12 +619,18 @@ export default function Products() {
             {row.product_details?.base_sku && (
               <Box
                 sx={{
-                  display: "inline-flex", alignItems: "center",
-                  px: 0.75, py: 0.15, borderRadius: "5px",
-                  background: T.subtleBg, border: `1px solid ${T.border}`,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  px: 0.75,
+                  py: 0.15,
+                  borderRadius: "5px",
+                  background: T.subtleBg,
+                  border: `1px solid ${T.border}`,
                 }}
               >
-                <Typography sx={{ fontFamily: "'DM Mono', monospace", fontSize: "0.68rem", color: T.textLight, fontWeight: 600 }}>
+                <Typography
+                  sx={{ fontFamily: "'DM Mono', monospace", fontSize: "0.68rem", color: T.textLight, fontWeight: 600 }}
+                >
                   {row.product_details.base_sku}
                 </Typography>
               </Box>
@@ -451,15 +646,21 @@ export default function Products() {
       render: (row) => (
         <Box
           sx={{
-            display: "inline-flex", alignItems: "center",
-            px: 1.25, py: 0.35, borderRadius: "8px",
-            background: T.subtleBg, border: `1.5px solid ${T.border}`,
+            display: "inline-flex",
+            alignItems: "center",
+            px: 1.25,
+            py: 0.35,
+            borderRadius: "8px",
+            background: T.subtleBg,
+            border: `1.5px solid ${T.border}`,
           }}
         >
           <Typography sx={{ fontWeight: 700, color: T.textMid, fontSize: "0.72rem" }}>
-            {row.is_resource 
-              ? row.resource_unit ?? "—"
-              : row.product_details?.unit ?? "—"}
+            {row.is_raw
+              ? (row.raw_specification ?? "—")
+              : row.is_resource
+                ? (row.resource_unit ?? "—")
+                : (row.product_details?.unit ?? "—")}
           </Typography>
         </Box>
       ),
@@ -472,8 +673,13 @@ export default function Products() {
         <Tooltip title={row.product_details?.description ?? ""} placement="top" arrow>
           <Typography
             sx={{
-              maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis",
-              whiteSpace: "nowrap", color: T.textMid, fontSize: "0.82rem", cursor: "default",
+              maxWidth: 260,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              color: T.textMid,
+              fontSize: "0.82rem",
+              cursor: "default",
             }}
           >
             {row.product_details?.description || (
@@ -493,6 +699,8 @@ export default function Products() {
           selling={row.sales_info?.selling_price ?? 0}
           isResource={row.is_resource}
           resourceCostPerUnit={row.resource_cost_per_unit}
+          isRaw={row.is_raw}
+          rawCostPerUnit={row.raw_cost_per_unit} // ← add this
         />
       ),
       cellStyle: { minWidth: 150 },
@@ -509,7 +717,10 @@ export default function Products() {
       render: (row) => (
         <ActionButtons
           onEdit={() => router.push(`/products/product/${row.id}`)}
-          onDelete={() => { setSelectedId(row.id); setOpen(true); }}
+          onDelete={() => {
+            setSelectedId(row.id);
+            setOpen(true);
+          }}
         />
       ),
       cellStyle: { minWidth: 90, textAlign: "right" },
@@ -539,7 +750,9 @@ export default function Products() {
           borderBottom: `1.5px solid ${T.border}`,
           px: { xs: 2, md: 4 },
           py: 2,
-          position: "sticky", top: 0, zIndex: 20,
+          position: "sticky",
+          top: 0,
+          zIndex: 20,
           boxShadow: "0 1px 0 #E8EBF2, 0 4px 20px rgba(15,23,42,0.05)",
         }}
       >
@@ -548,15 +761,25 @@ export default function Products() {
             {/* Animated logo icon */}
             <Box
               sx={{
-                width: 42, height: 42, borderRadius: "13px",
+                width: 42,
+                height: 42,
+                borderRadius: "13px",
                 background: `linear-gradient(135deg, ${T.brand} 0%, ${T.brandDark} 100%)`,
-                display: "flex", alignItems: "center", justifyContent: "center",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 boxShadow: T.shadowBrand,
-                position: "relative", overflow: "hidden",
+                position: "relative",
+                overflow: "hidden",
                 "&::after": {
-                  content: '""', position: "absolute",
-                  top: -10, right: -10, width: 30, height: 30,
-                  borderRadius: "50%", background: "rgba(255,255,255,0.12)",
+                  content: '""',
+                  position: "absolute",
+                  top: -10,
+                  right: -10,
+                  width: 30,
+                  height: 30,
+                  borderRadius: "50%",
+                  background: "rgba(255,255,255,0.12)",
                 },
                 transition: "transform 0.2s, box-shadow 0.2s",
                 "&:hover": { transform: "rotate(-5deg) scale(1.05)", boxShadow: T.shadowBrandHover },
@@ -566,26 +789,32 @@ export default function Products() {
             </Box>
             <Box>
               <Stack direction="row" alignItems="center" spacing={1}>
-                <Typography sx={{ fontWeight: 900, color: T.text, fontSize: "1rem", letterSpacing: "-0.03em", lineHeight: 1 }}>
+                <Typography
+                  sx={{ fontWeight: 900, color: T.text, fontSize: "1rem", letterSpacing: "-0.03em", lineHeight: 1 }}
+                >
                   Products
                 </Typography>
                 <Box
                   sx={{
-                    display: "inline-flex", alignItems: "center", gap: 0.4,
-                    px: 0.9, py: 0.25, borderRadius: "6px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 0.4,
+                    px: 0.9,
+                    py: 0.25,
+                    borderRadius: "6px",
                     background: `linear-gradient(135deg, ${T.brandXSoft}, ${T.brandSoft})`,
                     border: `1px solid ${T.brandMid}`,
                   }}
                 >
                   <Zap size={9} color={T.brand} />
-                  <Typography sx={{ fontSize: "0.62rem", fontWeight: 800, color: T.brand, fontFamily: "'DM Mono', monospace" }}>
+                  <Typography
+                    sx={{ fontSize: "0.62rem", fontWeight: 800, color: T.brand, fontFamily: "'DM Mono', monospace" }}
+                  >
                     {totalProducts}
                   </Typography>
                 </Box>
               </Stack>
-              <Typography sx={{ color: T.textLight, fontSize: "0.7rem", mt: 0.15 }}>
-                Catalogue & inventory
-              </Typography>
+              <Typography sx={{ color: T.textLight, fontSize: "0.7rem", mt: 0.15 }}>Catalogue & inventory</Typography>
             </Box>
           </Stack>
 
@@ -598,29 +827,39 @@ export default function Products() {
                 activeFilterCount > 0 ? (
                   <Box
                     sx={{
-                      width: 18, height: 18, borderRadius: "50%",
+                      width: 18,
+                      height: 18,
+                      borderRadius: "50%",
                       background: `linear-gradient(135deg, ${T.brand}, ${T.brandDark})`,
-                      color: "#fff", fontSize: "0.62rem", fontWeight: 900,
-                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "#fff",
+                      fontSize: "0.62rem",
+                      fontWeight: 900,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                       boxShadow: T.shadowBrand,
                     }}
                   >
                     {activeFilterCount}
                   </Box>
                 ) : (
-                  <ChevronDown size={13} style={{ transform: filterOpen ? "rotate(180deg)" : "none", transition: "transform 0.25s" }} />
+                  <ChevronDown
+                    size={13}
+                    style={{ transform: filterOpen ? "rotate(180deg)" : "none", transition: "transform 0.25s" }}
+                  />
                 )
               }
               onClick={() => setFilterOpen(!filterOpen)}
               sx={{
                 borderColor: filterOpen ? T.brand : T.border,
                 color: filterOpen ? T.brand : T.textMid,
-                background: filterOpen
-                  ? `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`
-                  : T.cardBg,
-                borderRadius: "11px", textTransform: "none",
-                fontWeight: 700, fontSize: "0.82rem",
-                height: 38, px: 2,
+                background: filterOpen ? `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)` : T.cardBg,
+                borderRadius: "11px",
+                textTransform: "none",
+                fontWeight: 700,
+                fontSize: "0.82rem",
+                height: 38,
+                px: 2,
                 borderWidth: "1.5px",
                 "&:hover": {
                   borderColor: T.brand,
@@ -640,9 +879,12 @@ export default function Products() {
               onClick={() => router.push("/products/create")}
               sx={{
                 background: `linear-gradient(135deg, ${T.brand} 0%, ${T.brandDark} 100%)`,
-                borderRadius: "11px", textTransform: "none",
-                fontWeight: 800, fontSize: "0.85rem",
-                height: 38, px: 2.5,
+                borderRadius: "11px",
+                textTransform: "none",
+                fontWeight: 800,
+                fontSize: "0.85rem",
+                height: 38,
+                px: 2.5,
                 boxShadow: T.shadowBrand,
                 border: "none",
                 "&:hover": {
@@ -661,11 +903,13 @@ export default function Products() {
 
       {/* ── Body ─────────────────────────────────────────────────────────────── */}
       <Box sx={{ px: { xs: 2, md: 4 }, pt: 3.5 }}>
-
         {/* ── Stat cards ──────────────────────────────────────────────────── */}
         <Stack
-          direction="row" spacing={2} mb={3}
-          flexWrap="wrap" useFlexGap
+          direction="row"
+          spacing={2}
+          mb={3}
+          flexWrap="wrap"
+          useFlexGap
           sx={{
             "& > *": {
               animation: "fadeSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both",
@@ -680,13 +924,7 @@ export default function Products() {
             },
           }}
         >
-          <StatCard
-            label="Total Products"
-            value={totalProducts}
-            sub="in catalogue"
-            icon={BarChart3}
-            accent={T.brand}
-          />
+          <StatCard label="Total Products" value={totalProducts} sub="in catalogue" icon={BarChart3} accent={T.brand} />
           <StatCard
             label="This Page"
             value={productList.length}
@@ -694,20 +932,8 @@ export default function Products() {
             icon={BoxSelect}
             accent="#7C3AED"
           />
-          <StatCard
-            label="Total Variants"
-            value={totalVariants}
-            sub="across page"
-            icon={Layers}
-            accent={T.warning}
-          />
-          <StatCard
-            label="Active"
-            value={activeProducts}
-            sub="on this page"
-            icon={Sparkles}
-            accent={T.success}
-          />
+          <StatCard label="Total Variants" value={totalVariants} sub="across page" icon={Layers} accent={T.warning} />
+          <StatCard label="Active" value={activeProducts} sub="on this page" icon={Sparkles} accent={T.success} />
         </Stack>
 
         {/* ── Main card ────────────────────────────────────────────────────── */}
@@ -729,7 +955,9 @@ export default function Products() {
           <Collapse in={filterOpen} timeout={300}>
             <Box
               sx={{
-                px: 3, pt: 3, pb: 2.5,
+                px: 3,
+                pt: 3,
+                pb: 2.5,
                 background: `linear-gradient(180deg, #F8F9FF 0%, ${T.cardBg} 100%)`,
                 borderBottom: `1.5px solid ${T.border}`,
               }}
@@ -737,23 +965,37 @@ export default function Products() {
               <Stack direction="row" alignItems="center" spacing={1} mb={2.25}>
                 <Box
                   sx={{
-                    p: 0.6, borderRadius: "7px",
+                    p: 0.6,
+                    borderRadius: "7px",
                     background: `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`,
                     border: `1px solid ${T.brandMid}`,
                   }}
                 >
                   <Filter size={12} color={T.brand} />
                 </Box>
-                <Typography sx={{ fontWeight: 800, color: T.textMid, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                <Typography
+                  sx={{
+                    fontWeight: 800,
+                    color: T.textMid,
+                    fontSize: "0.75rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                  }}
+                >
                   Filters
                 </Typography>
                 {activeFilterCount > 0 && (
                   <Button
                     size="small"
-                    onClick={() => setFilters(f => ({ ...f, type: "", active: "", category_ids: "" }))}
+                    onClick={() => setFilters((f) => ({ ...f, type: "", active: "", category_ids: "" }))}
                     sx={{
-                      ml: "auto", textTransform: "none", color: T.danger,
-                      fontWeight: 700, fontSize: "0.72rem", p: 0, minWidth: 0,
+                      ml: "auto",
+                      textTransform: "none",
+                      color: T.danger,
+                      fontWeight: 700,
+                      fontSize: "0.72rem",
+                      p: 0,
+                      minWidth: 0,
                       "&:hover": { backgroundColor: "transparent", textDecoration: "underline" },
                     }}
                   >
@@ -765,21 +1007,27 @@ export default function Products() {
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <BBDropdownBase
-                    name="type" label="Product Type" value={filters.type}
+                    name="type"
+                    label="Product Type"
+                    value={filters.type}
                     options={[{ value: "", label: "All types" }, ...productTypes]}
                     onDropdownChange={(_e, _n, val) => handleFilterChange("type", val as string)}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <BBDropdownBase
-                    name="category_ids" label="Category" value={filters.category_ids}
+                    name="category_ids"
+                    label="Category"
+                    value={filters.category_ids}
                     options={[{ value: "", label: "All categories" }, ...categoryOptions]}
                     onDropdownChange={(_e, _n, val) => handleFilterChange("category_ids", val as string)}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <BBDropdownBase
-                    name="active" label="Status" value={filters.active}
+                    name="active"
+                    label="Status"
+                    value={filters.active}
                     options={[{ value: "", label: "All statuses" }, ...activeTypescategories]}
                     onDropdownChange={(_e, _n, val) => handleFilterChange("active", val as string)}
                   />
@@ -788,7 +1036,15 @@ export default function Products() {
 
               {activeFilterCount > 0 && (
                 <Stack direction="row" spacing={1} mt={2.25} flexWrap="wrap" useFlexGap alignItems="center">
-                  <Typography sx={{ color: T.textLight, fontWeight: 700, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  <Typography
+                    sx={{
+                      color: T.textLight,
+                      fontWeight: 700,
+                      fontSize: "0.68rem",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                    }}
+                  >
                     Active:
                   </Typography>
                   {filters.type && (
@@ -796,7 +1052,7 @@ export default function Products() {
                   )}
                   {filters.category_ids && (
                     <FilterPill
-                      label={`Category: ${categoryOptions.find(c => String(c.value) === filters.category_ids)?.label ?? filters.category_ids}`}
+                      label={`Category: ${categoryOptions.find((c) => String(c.value) === filters.category_ids)?.label ?? filters.category_ids}`}
                       onRemove={() => handleFilterChange("category_ids", "")}
                     />
                   )}
@@ -811,21 +1067,33 @@ export default function Products() {
           {/* ── Search & count bar ───────────────────────────────────────── */}
           <Box
             sx={{
-              px: 3, py: 2,
+              px: 3,
+              py: 2,
               borderBottom: `1.5px solid ${T.border}`,
-              display: "flex", alignItems: "center",
+              display: "flex",
+              alignItems: "center",
               justifyContent: "space-between",
-              gap: 2, flexWrap: "wrap",
+              gap: 2,
+              flexWrap: "wrap",
               background: T.cardBg,
             }}
           >
             <Box sx={{ position: "relative", flex: "0 0 320px" }}>
               <Search
-                size={14} color={T.textLight}
-                style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", zIndex: 1 }}
+                size={14}
+                color={T.textLight}
+                style={{
+                  position: "absolute",
+                  left: 13,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  pointerEvents: "none",
+                  zIndex: 1,
+                }}
               />
               <BBInputBase
-                label="" name="search"
+                label=""
+                name="search"
                 value={filters.search}
                 onChange={(e) => handleFilterChange("search", e.target.value)}
                 placeholder="Search products, SKUs…"
@@ -849,8 +1117,13 @@ export default function Products() {
                   size="small"
                   onClick={() => handleFilterChange("search", "")}
                   sx={{
-                    position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
-                    color: T.textLight, p: 0.25, borderRadius: "6px",
+                    position: "absolute",
+                    right: 8,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: T.textLight,
+                    p: 0.25,
+                    borderRadius: "6px",
                     "&:hover": { backgroundColor: T.subtleBg, color: T.text },
                   }}
                 >
@@ -861,8 +1134,12 @@ export default function Products() {
 
             <Box
               sx={{
-                display: "flex", alignItems: "center", gap: 0.75,
-                px: 1.5, py: 0.5, borderRadius: "9px",
+                display: "flex",
+                alignItems: "center",
+                gap: 0.75,
+                px: 1.5,
+                py: 0.5,
+                borderRadius: "9px",
                 background: totalProducts > 0 ? T.brandXSoft : T.subtleBg,
                 border: `1.5px solid ${totalProducts > 0 ? T.brandMid : T.border}`,
               }}
@@ -872,10 +1149,12 @@ export default function Products() {
                   <>
                     <span style={{ fontWeight: 900, color: T.brand, fontFamily: "'DM Mono', monospace" }}>
                       {totalProducts}
-                    </span>
-                    {" "}products found
+                    </span>{" "}
+                    products found
                   </>
-                ) : "No products"}
+                ) : (
+                  "No products"
+                )}
               </Typography>
             </Box>
           </Box>
@@ -883,7 +1162,9 @@ export default function Products() {
           {/* ── Table ────────────────────────────────────────────────────── */}
           <Box
             sx={{
-              width: "100%", overflowX: "auto", WebkitOverflowScrolling: "touch",
+              width: "100%",
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
               "& .MuiTableRow-root:not(.MuiTableRow-head)": {
                 transition: "background 0.12s",
                 "&:hover": {
@@ -892,12 +1173,16 @@ export default function Products() {
               },
               "& .MuiTableCell-root": {
                 borderBottom: `1px solid ${T.border}`,
-                py: 1.75, px: 2.5,
+                py: 1.75,
+                px: 2.5,
               },
               "& .MuiTableCell-head": {
                 background: `linear-gradient(180deg, #F8F9FF, ${T.subtleBg})`,
-                color: T.textLight, fontSize: "0.68rem", fontWeight: 800,
-                textTransform: "uppercase", letterSpacing: "0.08em",
+                color: T.textLight,
+                fontSize: "0.68rem",
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
                 borderBottom: `2px solid ${T.border}`,
                 py: 1.5,
               },
@@ -910,7 +1195,10 @@ export default function Products() {
               rowsPerPage={rowsPerPage}
               totalCount={totalProducts}
               onPageChange={(newPage) => setPage(newPage)}
-              onRowsPerPageChange={(newRows) => { setRowsPerPage(newRows); setPage(0); }}
+              onRowsPerPageChange={(newRows) => {
+                setRowsPerPage(newRows);
+                setPage(0);
+              }}
             />
           </Box>
 
@@ -918,37 +1206,58 @@ export default function Products() {
           {!loading && productList.length === 0 && (
             <Box
               sx={{
-                py: 12, textAlign: "center",
-                display: "flex", flexDirection: "column", alignItems: "center",
+                py: 12,
+                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
                 animation: "fadeSlideUp 0.4s ease both",
               }}
             >
               {/* Decorative rings */}
               <Box sx={{ position: "relative", width: 88, height: 88, mb: 3, mx: "auto" }}>
-                <Box sx={{
-                  position: "absolute", inset: 0, borderRadius: "50%",
-                  border: `2px dashed ${T.brandMid}`,
-                  animation: "spin 12s linear infinite",
-                  "@keyframes spin": { to: { transform: "rotate(360deg)" } },
-                }} />
-                <Box sx={{
-                  position: "absolute", inset: 12, borderRadius: "50%",
-                  border: `1.5px solid ${T.brandSoft}`,
-                  animation: "spin 8s linear infinite reverse",
-                }} />
-                <Box sx={{
-                  position: "absolute", inset: 22, borderRadius: "50%",
-                  background: `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
+                <Box
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: "50%",
+                    border: `2px dashed ${T.brandMid}`,
+                    animation: "spin 12s linear infinite",
+                    "@keyframes spin": { to: { transform: "rotate(360deg)" } },
+                  }}
+                />
+                <Box
+                  sx={{
+                    position: "absolute",
+                    inset: 12,
+                    borderRadius: "50%",
+                    border: `1.5px solid ${T.brandSoft}`,
+                    animation: "spin 8s linear infinite reverse",
+                  }}
+                />
+                <Box
+                  sx={{
+                    position: "absolute",
+                    inset: 22,
+                    borderRadius: "50%",
+                    background: `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
                   <ShoppingBag size={24} color={T.brand} />
                 </Box>
               </Box>
 
-              <Typography sx={{ fontWeight: 900, color: T.text, mb: 0.75, fontSize: "1.05rem", letterSpacing: "-0.03em" }}>
+              <Typography
+                sx={{ fontWeight: 900, color: T.text, mb: 0.75, fontSize: "1.05rem", letterSpacing: "-0.03em" }}
+              >
                 No products yet
               </Typography>
-              <Typography sx={{ color: T.textLight, mb: 3.5, fontSize: "0.85rem", maxWidth: 280, mx: "auto", lineHeight: 1.6 }}>
+              <Typography
+                sx={{ color: T.textLight, mb: 3.5, fontSize: "0.85rem", maxWidth: 280, mx: "auto", lineHeight: 1.6 }}
+              >
                 {filters.search || activeFilterCount > 0
                   ? "Try adjusting your search or filters"
                   : "Add your first product to get started with your catalogue"}
@@ -960,9 +1269,12 @@ export default function Products() {
                   onClick={() => router.push("/products/create")}
                   sx={{
                     background: `linear-gradient(135deg, ${T.brand}, ${T.brandDark})`,
-                    borderRadius: "12px", textTransform: "none",
-                    fontWeight: 800, fontSize: "0.85rem",
-                    height: 42, px: 3,
+                    borderRadius: "12px",
+                    textTransform: "none",
+                    fontWeight: 800,
+                    fontSize: "0.85rem",
+                    height: 42,
+                    px: 3,
                     boxShadow: T.shadowBrand,
                     "&:hover": { boxShadow: T.shadowBrandHover, transform: "translateY(-2px)" },
                     transition: "all 0.18s",
@@ -986,8 +1298,12 @@ export default function Products() {
           <Box>
             <Box
               sx={{
-                display: "flex", alignItems: "center", gap: 1.5,
-                p: 2.25, mb: 2, borderRadius: "12px",
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                p: 2.25,
+                mb: 2,
+                borderRadius: "12px",
                 background: `linear-gradient(135deg, ${T.dangerSoft}, #FEE2E2)`,
                 border: `1.5px solid ${T.dangerMid}`,
               }}
@@ -1000,7 +1316,8 @@ export default function Products() {
               </Typography>
             </Box>
             <Typography sx={{ color: T.textMid, lineHeight: 1.75, fontSize: "0.875rem" }}>
-              The product will be permanently removed from your catalogue. All associated variants and pricing data will be lost.
+              The product will be permanently removed from your catalogue. All associated variants and pricing data will
+              be lost.
             </Typography>
           </Box>
         }

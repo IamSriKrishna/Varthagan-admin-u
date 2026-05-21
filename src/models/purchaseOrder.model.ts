@@ -4,15 +4,17 @@
 
 export interface PurchaseOrderLineItemInput {
   product_id?: string;
-  product_name?: string;
-  sku?: string;
-  variant_sku?: string; // NEW: Variant-specific SKU
-  variant_name?: string; // NEW: Variant display name
-  item_id?: string; // NEW: Item identifier
+  product_name: string;
+  sku: string;
   account: string;
-  quantity: number;
+  quantity?: number; // Optional for raw materials (auto-calculated from packs)
   rate: number;
-  variant_details?: Record<string, string>; // NEW: Variant attributes (color, size, etc.)
+
+  // Raw Material Specific Fields - Used when purchasing raw materials
+  is_raw_material?: boolean; // true if purchasing raw material
+  raw_material_unit?: string; // e.g., kg, liter, pieces
+  number_of_packs?: number; // e.g., 10 packs
+  quantity_per_pack?: number; // e.g., 20 kg per pack
 }
 
 export interface CreatePurchaseOrderRequest {

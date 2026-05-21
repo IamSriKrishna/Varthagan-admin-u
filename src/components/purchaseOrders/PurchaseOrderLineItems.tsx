@@ -94,11 +94,13 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
     product_id: '',
     product_name: '',
     sku: '',
-    variant_sku: '',
-    variant_name: '',
     account: 'Cost of Goods Sold',
     quantity: 1,
     rate: 0,
+    is_raw_material: false,
+    raw_material_unit: '',
+    number_of_packs: 0,
+    quantity_per_pack: 0,
   });
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -132,11 +134,13 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
         product_id: '',
         product_name: '',
         sku: '',
-        variant_sku: '',
-        variant_name: '',
         account: 'Cost of Goods Sold',
         quantity: 1,
         rate: 0,
+        is_raw_material: false,
+        raw_material_unit: '',
+        number_of_packs: 0,
+        quantity_per_pack: 0,
       });
       setEditingIndex(null);
       setSelectedProduct(null);
@@ -153,7 +157,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
   };
 
   const handleSave = () => {
-    if (!formData.product_id || formData.quantity <= 0 || formData.rate < 0) {
+    if (!formData.product_id || formData.rate < 0) {
       alert('Please fill all required fields correctly');
       return;
     }
@@ -161,11 +165,44 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
       alert('Please select an account');
       return;
     }
+
+    // Validate raw material fields
+    if ((formData as any).is_raw_material) {
+      if (!((formData as any).raw_material_unit && (formData as any).number_of_packs > 0 && (formData as any).quantity_per_pack > 0)) {
+        alert('Please fill all raw material fields');
+        return;
+      }
+    } else {
+      if (!formData.quantity || formData.quantity <= 0) {
+        alert('Please fill all required fields correctly');
+        return;
+      }
+    }
+
     const items_ = [...formik.values.line_items];
-    const amount = calculateLineItemAmount(formData.quantity, formData.rate);
+    
+    // Calculate quantity for raw materials
+    let calculatedQty = formData.quantity || 0;
+    if ((formData as any).is_raw_material) {
+      // Calculate total weight from packs and per_pack
+      const totalWeightKg = ((formData as any).number_of_packs || 0) * ((formData as any).quantity_per_pack || 0);
+      
+      // Check if product has weight-per-unit conversion
+      if ((selectedProduct as any)?.required_gram_per_unit && (selectedProduct as any)?.required_gram_per_unit > 0) {
+        // Convert kg to grams and divide by weight per unit to get number of units
+        const totalWeightGrams = totalWeightKg * 1000;
+        calculatedQty = totalWeightGrams / (selectedProduct as any).required_gram_per_unit;
+      } else {
+        // No conversion: use total weight as quantity
+        calculatedQty = totalWeightKg;
+      }
+    }
+
+    const amount = calculatedQty * formData.rate;
     
     const lineItem: any = {
       ...formData,
+      quantity: calculatedQty,
       amount,
     };
 
@@ -291,39 +328,11 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                             <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: T.text }}>
                               {(item as any).product_name || (item as any).product_id || '—'}
                             </Typography>
-                            {/* Show variant name if available */}
-                            {(item as any).variant_name && (
-                              <Typography sx={{ fontSize: '0.68rem', color: T.brand, mt: '1px', fontWeight: 500 }}>
-                                {(item as any).variant_name}
-                              </Typography>
-                            )}
-                            {/* Show variant SKU if available, otherwise show SKU */}
-                            {(item as any).variant_sku && (
-                              <Typography sx={{ fontSize: '0.68rem', color: T.textMuted, mt: '1px' }}>
-                                SKU: {(item as any).variant_sku}
-                              </Typography>
-                            )}
-                            {!(item as any).variant_sku && (item as any).sku && (
+                            {/* Show SKU if available */}
+                            {(item as any).sku && (
                               <Typography sx={{ fontSize: '0.68rem', color: T.textMuted, mt: '1px' }}>
                                 SKU: {(item as any).sku}
                               </Typography>
-                            )}
-                            {/* Show attributes if available */}
-                            {(item as any).variant_details && Object.keys((item as any).variant_details).length > 0 && (
-                              <Box sx={{ display: 'flex', gap: 0.5, mt: '4px' }}>
-                                {Object.entries((item as any).variant_details).map(([k, v]) => (
-                                  <Box
-                                    key={k}
-                                    sx={{
-                                      px: 0.75, py: '2px',
-                                      background: T.brandLight, color: T.brand,
-                                      borderRadius: '3px', fontSize: '0.6rem', fontWeight: 500,
-                                    }}
-                                  >
-                                    {k}: {String(v)}
-                                  </Box>
-                                ))}
-                              </Box>
                             )}
                           </Box>
                         </Box>
@@ -345,15 +354,41 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
 
                       {/* Qty */}
                       <TableCell align="right">
-                        <Box
-                          sx={{
-                            display: 'inline-flex', px: 1.25, py: '2px',
-                            borderRadius: '99px', background: T.bgMuted,
-                            border: `0.5px solid ${T.border}`, color: T.textMd,
-                            fontSize: '0.78rem', fontWeight: 700, minWidth: 36, justifyContent: 'center',
-                          }}
-                        >
-                          {item.quantity}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                          {(item as any).is_raw_material ? (
+                            <>
+                              {(() => {
+                                return (
+                                  <>
+                                    <Box
+                                      sx={{
+                                        display: 'inline-flex', px: 1.25, py: '2px',
+                                        borderRadius: '99px', background: '#FEF3C7',
+                                        border: '0.5px solid #FCD34D', color: '#92400E',
+                                        fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap',
+                                      }}
+                                    >
+                                      {((item as any).number_of_packs || 0)} × {((item as any).quantity_per_pack || 0)}
+                                    </Box>
+                                    <Typography sx={{ fontSize: '0.65rem', color: T.textMuted }}>
+                                      {item.quantity} {(item as any).raw_material_unit || ''}
+                                    </Typography>
+                                  </>
+                                );
+                              })()}
+                            </>
+                          ) : (
+                            <Box
+                              sx={{
+                                display: 'inline-flex', px: 1.25, py: '2px',
+                                borderRadius: '99px', background: T.bgMuted,
+                                border: `0.5px solid ${T.border}`, color: T.textMd,
+                                fontSize: '0.78rem', fontWeight: 700, minWidth: 36, justifyContent: 'center',
+                              }}
+                            >
+                              {item.quantity}
+                            </Box>
+                          )}
                         </Box>
                       </TableCell>
 
@@ -529,24 +564,43 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                   getOptionLabel={(o) => `${o.name || ''}`}
                   value={selectedProductOption || null}
                   onChange={async (_, val) => {
-                    setFormData({ ...formData, product_id: val?.id || '', product_name: val?.name || '' });
+                    const isRaw = (val as any)?.is_raw || false;
+                    const isResource = (val as any)?.is_resource || false;
+                    const isRawMaterial = isRaw || isResource;
+                    
+                    setFormData({ 
+                      ...formData, 
+                      product_id: val?.id || '', 
+                      product_name: val?.name || '',
+                      is_raw_material: isRawMaterial,
+                      raw_material_unit: isRawMaterial ? (isResource ? (val as any)?.resource_unit : 'kg') : '',
+                    });
                     if (val) {
                       setSelectedProduct(val);
                       setSelectedVariant(null);
-                      // Auto-select cost_price from purchase_info if available
-                      if (val.product_details?.variants?.length === 1) {
+                      
+                      // Set rate based on product type
+                      let rateValue = 0;
+                      if (isRaw) {
+                        rateValue = (val as any)?.raw_cost_per_unit || 0;
+                      } else if (isResource) {
+                        rateValue = (val as any)?.resource_cost_per_unit || 0;
+                      } else if (val.product_details?.variants?.length === 1) {
                         const v = val.product_details.variants[0];
                         setSelectedVariant(v);
+                        rateValue = v.cost_price || 0;
                         setFormData(prev => ({
                           ...prev,
-                          rate: v.cost_price || 0,
+                          rate: rateValue,
                           sku: v.sku,
-                          variant_sku: v.sku,
-                          variant_name: `${val.name} - ${Object.values(v.attribute_map || {}).join(' - ')}`,
-                          variant_details: v.attribute_map || {},
+                          is_raw_material: isRawMaterial,
                         }));
                       } else if (val.purchase_info?.cost_price) {
-                        setFormData(prev => ({ ...prev, rate: val.purchase_info.cost_price }));
+                        rateValue = val.purchase_info.cost_price;
+                      }
+                      
+                      if (isRaw || isResource) {
+                        setFormData(prev => ({ ...prev, rate: rateValue, is_raw_material: isRawMaterial }));
                       }
                     } else {
                       setSelectedProduct(null);
@@ -564,25 +618,21 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                 />
               </Field>
 
-              {selectedProduct?.product_details?.variants && selectedProduct.product_details.variants.length > 0 && (
+              {/* Variant Selection - Only show for non-raw-material products */}
+              {!((formData as any).is_raw_material) && selectedProduct?.product_details?.variants && selectedProduct.product_details.variants.length > 0 && (
                 <Field label={selectedProduct.product_details.variants.length > 1 ? "Variant" : "Product Variant"} required={selectedProduct.product_details.variants.length > 1}>
                   <Select
                     size="small" fullWidth
-                    value={(formData as any).variant_sku || (formData as any).sku || ''}
+                    value={(formData as any).sku || ''}
                     displayEmpty
                     onChange={(e) => {
                       const v = selectedProduct.product_details?.variants?.find((x: any) => x.sku === e.target.value);
                       if (v) {
                         setSelectedVariant(v);
-                        const attrs = v.attribute_map || {};
-                        const variantName = `${selectedProduct.name} - ${Object.values(attrs).join(' - ')}`;
                         setFormData(prev => ({
                           ...prev,
                           rate: v.cost_price || 0,
                           sku: v.sku,
-                          variant_sku: v.sku,
-                          variant_name: variantName,
-                          variant_details: attrs,
                         }));
                       }
                     }}
@@ -609,58 +659,93 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                 </Field>
               )}
 
-              {(formData as any).variant_sku && (
+              {/* Raw Material / Resource Info Display */}
+              {(selectedProduct as any)?.is_raw || (selectedProduct as any)?.is_resource ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  {/* Variant Name */}
-                  {(formData as any).variant_name && (
-                    <Field label="Variant name">
-                      <Box
-                        sx={{
-                          px: 2, py: 1.25,
-                          background: T.bgMuted, borderRadius: T.radiusSm,
-                          border: `0.5px solid ${T.border}`,
-                          display: 'flex', flexDirection: 'column', gap: 0.75,
-                        }}
-                      >
-                        <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: T.text }}>
-                          {(formData as any).variant_name}
-                        </Typography>
-                        {selectedVariant?.attribute_map && Object.keys(selectedVariant.attribute_map).length > 0 && (
-                          <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
-                            {Object.entries(selectedVariant.attribute_map).map(([k, v]) => (
-                              <Box
-                                key={k}
-                                sx={{
-                                  px: 1, py: 0.25,
-                                  background: T.brandLight, color: T.brand,
-                                  borderRadius: T.radiusSm, fontSize: '0.7rem', fontWeight: 600,
-                                }}
-                              >
-                                {k}: {String(v)}
-                              </Box>
-                            ))}
-                          </Box>
-                        )}
-                      </Box>
-                    </Field>
-                  )}
-
-                  {/* SKU Display */}
-                  <Field label="SKU">
-                    <Box
-                      sx={{
-                        px: 2, py: 1.25,
-                        background: T.bgMuted, borderRadius: T.radiusSm,
-                        border: `0.5px solid ${T.border}`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      }}
-                    >
-                      <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: T.text, fontFamily: 'monospace' }}>
-                        {(formData as any).variant_sku}
+                  {/* Specification Info */}
+                  <Box
+                    sx={{
+                      display: 'flex', flexDirection: 'column', gap: 1,
+                      px: 2, py: 1.5,
+                      background: '#FEF3C7', borderRadius: T.radiusSm,
+                      border: '0.5px solid #FCD34D',
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#92400E' }}>
+                        {(selectedProduct as any)?.is_raw ? 'Raw Material Details' : 'Resource Details'}
                       </Typography>
                     </Box>
-                  </Field>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                      {(selectedProduct as any)?.is_raw && (
+                        <>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography sx={{ fontSize: '0.75rem', color: '#92400E', fontWeight: 500 }}>
+                              Specification:
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#92400E' }}>
+                              {(selectedProduct as any)?.raw_specification || '—'}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography sx={{ fontSize: '0.75rem', color: '#92400E', fontWeight: 500 }}>
+                              Cost per unit:
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#92400E' }}>
+                              ₹{((selectedProduct as any)?.raw_cost_per_unit || 0).toFixed(2)}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography sx={{ fontSize: '0.75rem', color: '#92400E', fontWeight: 500 }}>
+                              Weight per unit:
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#92400E' }}>
+                              {((selectedProduct as any)?.required_gram_per_unit || 0).toFixed(2)}g
+                            </Typography>
+                          </Box>
+                        </>
+                      )}
+                      {(selectedProduct as any)?.is_resource && (
+                        <>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography sx={{ fontSize: '0.75rem', color: '#92400E', fontWeight: 500 }}>
+                              Resource Unit:
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#92400E' }}>
+                              {(selectedProduct as any)?.resource_unit || '—'}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography sx={{ fontSize: '0.75rem', color: '#92400E', fontWeight: 500 }}>
+                              Cost per unit:
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#92400E' }}>
+                              ₹{((selectedProduct as any)?.resource_cost_per_unit || 0).toFixed(2)}
+                            </Typography>
+                          </Box>
+                        </>
+                      )}
+                    </Box>
+                  </Box>
                 </Box>
+              ) : null}
+
+              {/* SKU Display - Only for non-raw materials or after variant selection */}
+              {!((formData as any).is_raw_material) && (formData as any).sku && (
+                <Field label="SKU">
+                  <Box
+                    sx={{
+                      px: 2, py: 1.25,
+                      background: T.bgMuted, borderRadius: T.radiusSm,
+                      border: `0.5px solid ${T.border}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    }}
+                  >
+                    <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: T.text, fontFamily: 'monospace' }}>
+                      {(formData as any).sku}
+                    </Typography>
+                  </Box>
+                </Field>
               )}
 
               <Field label="Account" required>
@@ -672,30 +757,194 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                 />
               </Field>
 
-              <Grid container spacing={1.5}>
-                <Grid size={{ xs: 6 }} component="div">
-                  <Field label="Quantity" required>
-                    <TextField
-                      fullWidth size="small" type="number"
-                      value={formData.quantity}
-                      onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })}
-                      sx={inputSx}
-                      inputProps={{ step: '0.01', min: '0' }}
-                    />
-                  </Field>
+              {/* Raw Material Fields - Auto-show if product is raw */}
+              {(formData as any).is_raw_material ? (
+                <Grid container spacing={1.5}>
+                  {/* Check if this is actually a raw product with weight-based calculation */}
+                  {(selectedProduct as any)?.is_raw && ((selectedProduct as any)?.required_gram_per_unit || 0) > 0 ? (
+                    <>
+                      <Grid size={{ xs: 6 }} component="div">
+                        <Field label="Number of Packs" required>
+                          <TextField
+                            fullWidth size="small" type="number"
+                            value={(formData as any).number_of_packs || 0}
+                            onChange={(e) => setFormData({ ...formData, number_of_packs: parseFloat(e.target.value) || 0 })}
+                            sx={inputSx}
+                            inputProps={{ step: '0.01', min: '0' }}
+                            placeholder="e.g., 10"
+                          />
+                        </Field>
+                      </Grid>
+                      <Grid size={{ xs: 6 }} component="div">
+                        <Field label="Quantity Per Pack" required>
+                          <TextField
+                            fullWidth size="small" type="number"
+                            value={(formData as any).quantity_per_pack || 0}
+                            onChange={(e) => setFormData({ ...formData, quantity_per_pack: parseFloat(e.target.value) || 0 })}
+                            sx={inputSx}
+                            inputProps={{ step: '0.01', min: '0' }}
+                            placeholder="e.g., 20"
+                          />
+                        </Field>
+                      </Grid>
+                      <Grid size={{ xs: 12 }} component="div">
+                        <Field label="Unit" required>
+                          <TextField
+                            fullWidth size="small"
+                            value={(formData as any).raw_material_unit || 'kg'}
+                            onChange={(e) => setFormData({ ...formData, raw_material_unit: e.target.value })}
+                            sx={inputSx}
+                            placeholder="e.g., kg"
+                          />
+                        </Field>
+                      </Grid>
+                      {/* Calculate and display total */}
+                      {((formData as any).number_of_packs || 0) > 0 && ((formData as any).quantity_per_pack || 0) > 0 && (
+                        <Grid size={{ xs: 12 }} component="div">
+                          <Box
+                            sx={{
+                              px: 2, py: 1.25,
+                              background: '#D1FAE5', borderRadius: T.radiusSm,
+                              border: '0.5px solid #6EE7B7',
+                              display: 'flex', flexDirection: 'column', gap: 0.75,
+                            }}
+                          >
+                            <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>
+                              Total Calculation
+                            </Typography>
+                            {(() => {
+                              const totalWeightKg = ((formData as any).number_of_packs || 0) * ((formData as any).quantity_per_pack || 0);
+                              const totalUnits = (() => {
+                                if ((selectedProduct as any)?.required_gram_per_unit && (selectedProduct as any)?.required_gram_per_unit > 0) {
+                                  const totalWeightGrams = totalWeightKg * 1000;
+                                  return (totalWeightGrams / (selectedProduct as any).required_gram_per_unit).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+                                }
+                                return totalWeightKg.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+                              })();
+
+                              return (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography sx={{ fontSize: '0.75rem', color: '#047857' }}>
+                                      Weight: {(formData as any).number_of_packs || 0} × {(formData as any).quantity_per_pack || 0} {(formData as any).raw_material_unit || 'kg'}
+                                    </Typography>
+                                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#047857' }}>
+                                      {totalWeightKg.toLocaleString('en-IN', { maximumFractionDigits: 2 })} {(formData as any).raw_material_unit || 'kg'}
+                                    </Typography>
+                                  </Box>
+                                  {(selectedProduct as any)?.required_gram_per_unit && (selectedProduct as any)?.required_gram_per_unit > 0 && (
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <Typography sx={{ fontSize: '0.75rem', color: '#047857' }}>
+                                        Units ({(selectedProduct as any)?.required_gram_per_unit}g each):
+                                      </Typography>
+                                      <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#047857' }}>
+                                        {totalUnits}
+                                      </Typography>
+                                    </Box>
+                                  )}
+                                </Box>
+                              );
+                            })()}
+                          </Box>
+                        </Grid>
+                      )}
+                      <Grid size={{ xs: 12 }} component="div">
+                        <Field label="Rate (₹) - Per Unit" required>
+                          <Box
+                            sx={{
+                              px: 2, py: 1.25,
+                              background: T.bgMuted, borderRadius: T.radiusSm,
+                              border: `0.5px solid ${T.border}`,
+                              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            }}
+                          >
+                            <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: T.text, fontFamily: 'monospace' }}>
+                              ₹{formData.rate.toFixed(2)}
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.7rem', color: T.textMuted, fontStyle: 'italic' }}>
+                              ({(selectedProduct as any)?.raw_specification || '—'})
+                            </Typography>
+                          </Box>
+                        </Field>
+                      </Grid>
+                    </>
+                  ) : (
+                    <>
+                      <Grid size={{ xs: 6 }} component="div">
+                        <Field label="Number of Packs" required>
+                          <TextField
+                            fullWidth size="small" type="number"
+                            value={(formData as any).number_of_packs || 0}
+                            onChange={(e) => setFormData({ ...formData, number_of_packs: parseFloat(e.target.value) || 0 })}
+                            sx={inputSx}
+                            inputProps={{ step: '0.01', min: '0' }}
+                            placeholder="e.g., 10"
+                          />
+                        </Field>
+                      </Grid>
+                      <Grid size={{ xs: 6 }} component="div">
+                        <Field label="Quantity Per Pack" required>
+                          <TextField
+                            fullWidth size="small" type="number"
+                            value={(formData as any).quantity_per_pack || 0}
+                            onChange={(e) => setFormData({ ...formData, quantity_per_pack: parseFloat(e.target.value) || 0 })}
+                            sx={inputSx}
+                            inputProps={{ step: '0.01', min: '0' }}
+                            placeholder="e.g., 20"
+                          />
+                        </Field>
+                      </Grid>
+                      <Grid size={{ xs: 12 }} component="div">
+                        <Field label="Material Unit" required>
+                          <TextField
+                            fullWidth size="small"
+                            value={(formData as any).raw_material_unit || ''}
+                            onChange={(e) => setFormData({ ...formData, raw_material_unit: e.target.value })}
+                            sx={inputSx}
+                            placeholder="e.g., kg, liter, pieces"
+                          />
+                        </Field>
+                      </Grid>
+                      <Grid size={{ xs: 12 }} component="div">
+                        <Field label="Rate (₹)" required>
+                          <TextField
+                            fullWidth size="small" type="number"
+                            inputProps={{ step: '0.01', min: '0' }}
+                            value={formData.rate}
+                            onChange={(e) => setFormData({ ...formData, rate: parseFloat(e.target.value) || 0 })}
+                            sx={inputSx}
+                          />
+                        </Field>
+                      </Grid>
+                    </>
+                  )}
                 </Grid>
-                <Grid size={{ xs: 6 }} component="div">
-                  <Field label="Rate (₹)" required>
-                    <TextField
-                      fullWidth size="small" type="number"
-                      inputProps={{ step: '0.01', min: '0' }}
-                      value={formData.rate}
-                      onChange={(e) => setFormData({ ...formData, rate: parseFloat(e.target.value) || 0 })}
-                      sx={inputSx}
-                    />
-                  </Field>
+              ) : (
+                <Grid container spacing={1.5}>
+                  <Grid size={{ xs: 6 }} component="div">
+                    <Field label="Quantity" required>
+                      <TextField
+                        fullWidth size="small" type="number"
+                        value={formData.quantity || 0}
+                        onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })}
+                        sx={inputSx}
+                        inputProps={{ step: '0.01', min: '0' }}
+                      />
+                    </Field>
+                  </Grid>
+                  <Grid size={{ xs: 6 }} component="div">
+                    <Field label="Rate (₹)" required>
+                      <TextField
+                        fullWidth size="small" type="number"
+                        inputProps={{ step: '0.01', min: '0' }}
+                        value={formData.rate}
+                        onChange={(e) => setFormData({ ...formData, rate: parseFloat(e.target.value) || 0 })}
+                        sx={inputSx}
+                      />
+                    </Field>
+                  </Grid>
                 </Grid>
-              </Grid>
+              )}
 
               {/* Auto calculated amount */}
               <Box
@@ -710,7 +959,24 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                   Calculated amount
                 </Typography>
                 <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: T.success, fontVariantNumeric: 'tabular-nums' }}>
-                  ₹ {calculateLineItemAmount(formData.quantity, formData.rate).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  ₹ {(() => {
+                    let qty = formData.quantity || 0;
+                    if ((formData as any).is_raw_material) {
+                      // Calculate total weight from packs and per_pack
+                      const totalWeightKg = ((formData as any).number_of_packs || 0) * ((formData as any).quantity_per_pack || 0);
+                      
+                      // Check if product has weight-per-unit conversion
+                      if ((selectedProduct as any)?.required_gram_per_unit && (selectedProduct as any)?.required_gram_per_unit > 0) {
+                        // Convert kg to grams and divide by weight per unit to get number of units
+                        const totalWeightGrams = totalWeightKg * 1000;
+                        qty = totalWeightGrams / (selectedProduct as any).required_gram_per_unit;
+                      } else {
+                        // No conversion: use total weight as quantity
+                        qty = totalWeightKg;
+                      }
+                    }
+                    return (qty * formData.rate).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                  })()}
                 </Typography>
               </Box>
             </>

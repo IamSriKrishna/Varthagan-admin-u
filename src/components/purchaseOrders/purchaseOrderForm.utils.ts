@@ -52,8 +52,18 @@ export const transformPOToPayload = (
     line_items: po.line_items.map((item: any, index: number) => {
       // Validate required fields for line items
       if (!item.account) throw new Error(`Line item ${index + 1}: account is required`);
-      if (item.quantity === undefined || item.quantity === null) throw new Error(`Line item ${index + 1}: quantity is required`);
       if (item.rate === undefined || item.rate === null) throw new Error(`Line item ${index + 1}: rate is required`);
+
+      // Validate based on product type
+      if ((item as any).is_raw_material) {
+        if (!((item as any).number_of_packs > 0 && (item as any).quantity_per_pack > 0)) {
+          throw new Error(`Line item ${index + 1}: number_of_packs and quantity_per_pack are required for raw materials`);
+        }
+      } else {
+        if (item.quantity === undefined || item.quantity === null) {
+          throw new Error(`Line item ${index + 1}: quantity is required`);
+        }
+      }
 
       const lineItem: PurchaseOrderLineItemInput = {
         account: item.account,
@@ -71,6 +81,14 @@ export const transformPOToPayload = (
       // Map variant_sku to sku for backend
       if (item.variant_sku) {
         lineItem.sku = item.variant_sku;
+      }
+
+      // Add raw material fields if applicable
+      if ((item as any).is_raw_material) {
+        lineItem.is_raw_material = true;
+        lineItem.raw_material_unit = (item as any).raw_material_unit;
+        lineItem.number_of_packs = (item as any).number_of_packs;
+        lineItem.quantity_per_pack = (item as any).quantity_per_pack;
       }
 
       return lineItem;
