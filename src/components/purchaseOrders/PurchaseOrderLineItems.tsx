@@ -810,37 +810,56 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                             }}
                           >
                             <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>
-                              Total Calculation
+                              📦 Total Calculation
                             </Typography>
                             {(() => {
                               const totalWeightKg = ((formData as any).number_of_packs || 0) * ((formData as any).quantity_per_pack || 0);
                               const totalUnits = (() => {
                                 if ((selectedProduct as any)?.required_gram_per_unit && (selectedProduct as any)?.required_gram_per_unit > 0) {
                                   const totalWeightGrams = totalWeightKg * 1000;
-                                  return (totalWeightGrams / (selectedProduct as any).required_gram_per_unit).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+                                  return totalWeightGrams / (selectedProduct as any).required_gram_per_unit;
                                 }
-                                return totalWeightKg.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+                                return totalWeightKg;
                               })();
 
                               return (
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <Typography sx={{ fontSize: '0.75rem', color: '#047857' }}>
-                                      Weight: {(formData as any).number_of_packs || 0} × {(formData as any).quantity_per_pack || 0} {(formData as any).raw_material_unit || 'kg'}
+                                      Total Material: {(formData as any).number_of_packs || 0} × {(formData as any).quantity_per_pack || 0} {(formData as any).raw_material_unit || 'kg'}
                                     </Typography>
-                                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#047857' }}>
-                                      {totalWeightKg.toLocaleString('en-IN', { maximumFractionDigits: 2 })} {(formData as any).raw_material_unit || 'kg'}
+                                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#047857', fontFamily: 'monospace' }}>
+                                      = {totalWeightKg.toLocaleString('en-IN', { maximumFractionDigits: 2 })} {(formData as any).raw_material_unit || 'kg'}
                                     </Typography>
                                   </Box>
                                   {(selectedProduct as any)?.required_gram_per_unit && (selectedProduct as any)?.required_gram_per_unit > 0 && (
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                      <Typography sx={{ fontSize: '0.75rem', color: '#047857' }}>
-                                        Units ({(selectedProduct as any)?.required_gram_per_unit}g each):
+                                    <>
+                                      <Box sx={{ 
+                                        height: '1px', 
+                                        background: 'rgba(4, 120, 87, 0.2)', 
+                                        my: 0.25 
+                                      }} />
+                                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Typography sx={{ fontSize: '0.75rem', color: '#047857', fontWeight: 500 }}>
+                                          📊 Products you can make:
+                                        </Typography>
+                                        <Typography sx={{ 
+                                          fontSize: '0.95rem', 
+                                          fontWeight: 700, 
+                                          color: '#047857',
+                                          fontFamily: 'monospace',
+                                          background: 'rgba(4, 120, 87, 0.1)',
+                                          px: 1.25,
+                                          py: 0.5,
+                                          borderRadius: '4px',
+                                        }}>
+                                          {totalUnits.toLocaleString('en-IN', { maximumFractionDigits: 0 })} units
+                                        </Typography>
+                                      </Box>
+                                      <Typography sx={{ fontSize: '0.7rem', color: '#047857', fontStyle: 'italic', opacity: 0.8 }}>
+                                        ({totalWeightKg * 1000} g ÷ {(selectedProduct as any)?.required_gram_per_unit}g per unit)
                                       </Typography>
-                                      <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#047857' }}>
-                                        {totalUnits}
-                                      </Typography>
-                                    </Box>
+                                    </>
                                   )}
                                 </Box>
                               );
