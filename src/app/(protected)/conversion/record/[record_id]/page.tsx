@@ -5,7 +5,6 @@ import {
   Container,
   Card,
   CardContent,
-  Grid,
   Stack,
   Typography,
   Chip,
@@ -102,8 +101,8 @@ export default function ViewConversionRecordPage() {
       </Box>
 
       {/* Record ID and Status */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 3 }}>
+        <Box>
           <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px' }}>
             <CardContent>
               <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 1 }}>
@@ -114,9 +113,9 @@ export default function ViewConversionRecordPage() {
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} sm={6}>
+        <Box>
           <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px' }}>
             <CardContent>
               <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 1 }}>
@@ -131,12 +130,12 @@ export default function ViewConversionRecordPage() {
               />
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {/* Conversion Details */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 3 }}>
+        <Box>
           <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px' }}>
             <CardContent>
               <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 2 }}>
@@ -163,9 +162,9 @@ export default function ViewConversionRecordPage() {
               </Box>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} md={6}>
+        <Box>
           <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px' }}>
             <CardContent>
               <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 2 }}>
@@ -192,13 +191,13 @@ export default function ViewConversionRecordPage() {
               </Box>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {/* Loss and Timestamps */}
-      <Grid container spacing={2}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
         {record.loss_quantity > 0 && (
-          <Grid item xs={12} sm={6}>
+          <Box>
             <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px', bgcolor: '#fef3c7' }}>
               <CardContent>
                 <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#92400e', mb: 1 }}>
@@ -209,10 +208,10 @@ export default function ViewConversionRecordPage() {
                 </Typography>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
         )}
 
-        <Grid item xs={12} sm={6}>
+        <Box>
           <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px' }}>
             <CardContent>
               <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 1 }}>
@@ -223,9 +222,9 @@ export default function ViewConversionRecordPage() {
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} sm={6}>
+        <Box>
           <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px' }}>
             <CardContent>
               <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 1 }}>
@@ -236,9 +235,9 @@ export default function ViewConversionRecordPage() {
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} sm={6}>
+        <Box>
           <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px' }}>
             <CardContent>
               <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 1 }}>
@@ -249,8 +248,8 @@ export default function ViewConversionRecordPage() {
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Container>
   );
 }

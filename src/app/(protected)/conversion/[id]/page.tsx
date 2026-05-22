@@ -5,7 +5,6 @@ import {
   Container,
   Card,
   CardContent,
-  Grid,
   Stack,
   Typography,
   Chip,
@@ -118,9 +117,9 @@ export default function ViewConversionPage() {
       </Box>
 
       {/* Conversion Info */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 0.4fr 1fr' }, gap: 2, mb: 3 }}>
         {/* Raw Material */}
-        <Grid item xs={12} md={5}>
+        <Box>
           <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px', height: '100%' }}>
             <CardContent>
               <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 1 }}>
@@ -144,10 +143,10 @@ export default function ViewConversionPage() {
               </Box>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Conversion Arrow */}
-        <Grid item xs={12} md={2} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Box sx={{ textAlign: 'center' }}>
             <Typography sx={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, mb: 1 }}>
               Conversion
@@ -177,10 +176,10 @@ export default function ViewConversionPage() {
               </Box>
             )}
           </Box>
-        </Grid>
+        </Box>
 
         {/* Finished Product */}
-        <Grid item xs={12} md={5}>
+        <Box>
           <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px', height: '100%' }}>
             <CardContent>
               <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 1 }}>
@@ -204,12 +203,12 @@ export default function ViewConversionPage() {
               </Box>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {/* Details */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 3 }}>
+        <Box>
           <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px' }}>
             <CardContent>
               <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 2 }}>
@@ -222,9 +221,9 @@ export default function ViewConversionPage() {
               />
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} sm={6}>
+        <Box>
           <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px' }}>
             <CardContent>
               <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 2 }}>
@@ -235,9 +234,9 @@ export default function ViewConversionPage() {
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} sm={6}>
+        <Box>
           <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px' }}>
             <CardContent>
               <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 2 }}>
@@ -248,9 +247,9 @@ export default function ViewConversionPage() {
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} sm={6}>
+        <Box>
           <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px' }}>
             <CardContent>
               <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 2 }}>
@@ -261,8 +260,8 @@ export default function ViewConversionPage() {
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {conversionRule.notes && (
         <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px', mb: 3 }}>
@@ -285,7 +284,7 @@ export default function ViewConversionPage() {
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         title="Delete Conversion Rule"
-        description="Are you sure you want to delete this conversion rule? This action cannot be undone."
+        content="Are you sure you want to delete this conversion rule? This action cannot be undone."
         actions={[
           <BBButton key="cancel" variant="outlined" onClick={() => setDeleteDialogOpen(false)}>
             Cancel
