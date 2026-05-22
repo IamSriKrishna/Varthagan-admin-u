@@ -98,6 +98,8 @@ export interface Product {
   user_name: string;
   company_id: number;
   company_name: string;
+  is_raw?: boolean;
+  is_resource?: boolean;
 }
 
 export interface ProductListResponse {

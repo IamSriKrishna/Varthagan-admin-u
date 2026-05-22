@@ -46,6 +46,7 @@ import {
   Plus,
   Truck,
   CreditCard,
+  Shuffle,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -128,6 +129,7 @@ const baseMenuItems: Array<{
     children: [
       { key: "vendors", icon: User, label: "Vendors", path: "/vendors" },
       { key: "purchaseOrders", icon: ShoppingCart, label: "Purchase Orders", path: "/purchase-orders" },
+      { key: "conversion", icon: Shuffle, label: "Conversion", path: "/conversion" },
       { key: "vendorPayments", icon: CreditCard, label: "Vendor Payments", path: "/vendor-payments" },
       { key: "customerPayments", icon: CreditCard, label: "Customer Payments", path: "/customer-payments" },
       { key: "salesOrders", icon: ShoppingCart, label: "Sales Orders", path: "/sales-orders" },
@@ -255,6 +257,7 @@ export default function Sidebar({
           "manufacturing",
           "customerPricing",
           "shipments",
+          "conversion",
         ];
 
         // Add employee items and items menu children if user is admin
