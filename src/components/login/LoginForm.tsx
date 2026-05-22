@@ -77,7 +77,7 @@ export default function LoginForm() {
             Welcome Varthagan Admin 👋
           </Typography>
           <Typography sx={classes.textParagraph}>
-            Please sign in with your admin credentials to manage the platform.
+            Please sign in with your admin credentials to manage the platform. The email is pre-filled for convenience.
           </Typography>
 
           <Formik
