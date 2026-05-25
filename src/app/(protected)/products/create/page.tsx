@@ -205,15 +205,7 @@ const validationSchema = Yup.object().shape({
     }),
     otherwise: (schema) => schema.notRequired(),
   }),
-  description: Yup.string().when("is_resource", {
-    is: false,
-    then: (schema) => Yup.string().when("is_raw", {
-      is: false,
-      then: (s) => s.required("Description is required"),
-      otherwise: (s) => s.notRequired(),
-    }),
-    otherwise: (schema) => schema.notRequired(),
-  }),
+ 
   selling_price: Yup.number().when("is_resource", {
     is: false,
     then: (schema) => Yup.number().when("is_raw", {
@@ -697,7 +689,7 @@ export default function CreateProductPage() {
                             </Stack>
 
                             <Box>
-                              <Label required>Description</Label>
+                              <Label>Description</Label>
                               <TextField fullWidth name="description" value={values.description} onChange={handleChange}
                                 placeholder="Describe the product — materials, use cases, key features…" multiline rows={4}
                                 error={touched.description && !!errors.description} helperText={touched.description && errors.description}

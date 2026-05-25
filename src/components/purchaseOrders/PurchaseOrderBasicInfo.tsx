@@ -164,12 +164,6 @@ export const PurchaseOrderBasicInfo: React.FC<PurchaseOrderBasicInfoProps> = ({ 
       .finally(() => setLoadingCustomers(false));
   }, []);
 
-  useEffect(() => {
-    if (formik.values.delivery_address_type === 'organization' && companyName) {
-      formik.setFieldValue('customer_id', undefined);
-      formik.setFieldValue('organization_name', companyName);
-    }
-  }, [formik.values.delivery_address_type, companyName]);
 
   const isOrg = formik.values.delivery_address_type === 'organization';
 
@@ -207,122 +201,7 @@ export const PurchaseOrderBasicInfo: React.FC<PurchaseOrderBasicInfoProps> = ({ 
         </Field>
       </Section>
 
-      {/* ── Delivery address ────────────────────────────────────────────── */}
-      <Section
-        label="Delivery address"
-        icon={<PersonIcon sx={{ fontSize: 15 }} />}
-        iconBg="#F0FDF4"
-        iconColor="#16A34A"
-      >
-        {/* Address type toggle */}
-        <Box
-          sx={{
-            display: 'flex',
-            p: '3px',
-            borderRadius: '8px',
-            background: T.bgHover,
-            border: `0.5px solid ${T.border}`,
-            width: 'fit-content',
-            mb: 2.5,
-            gap: '3px',
-          }}
-        >
-          {(['organization', 'customer'] as const).map((type) => (
-            <Box
-              key={type}
-              onClick={() => formik.setFieldValue('delivery_address_type', type)}
-              sx={{
-                px: 2, py: 0.75, borderRadius: '6px', cursor: 'pointer',
-                fontSize: '0.78rem', fontWeight: 600, transition: 'all 0.2s',
-                background: formik.values.delivery_address_type === type ? T.bg : 'transparent',
-                color: formik.values.delivery_address_type === type ? T.text : T.textMuted,
-                border: formik.values.delivery_address_type === type ? `0.5px solid ${T.border}` : '0.5px solid transparent',
-                boxShadow: formik.values.delivery_address_type === type ? T.shadow : 'none',
-                textTransform: 'capitalize',
-              }}
-            >
-              {type}
-            </Box>
-          ))}
-        </Box>
-
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {isOrg ? (
-            <>
-              <Field label="Organization name" required
-                error={formik.touched.organization_name && formik.errors.organization_name ? String(formik.errors.organization_name) : undefined}>
-                <TextField
-                  fullWidth size="small" name="organization_name"
-                  value={formik.values.organization_name}
-                  onChange={formik.handleChange} onBlur={formik.handleBlur}
-                  error={formik.touched.organization_name && Boolean(formik.errors.organization_name)}
-                  placeholder="e.g. Acme Corp" sx={inputSx}
-                />
-              </Field>
-              <Field label="Delivery address" required
-                error={formik.touched.organization_address && formik.errors.organization_address ? String(formik.errors.organization_address) : undefined}>
-                <TextField
-                  fullWidth size="small" name="organization_address" multiline rows={3}
-                  value={formik.values.organization_address}
-                  onChange={formik.handleChange} onBlur={formik.handleBlur}
-                  error={formik.touched.organization_address && Boolean(formik.errors.organization_address)}
-                  placeholder="Street, City, State, ZIP" sx={inputSx}
-                />
-              </Field>
-            </>
-          ) : (
-            <>
-              <Field label="Select customer" required
-                error={formik.touched.customer_id && formik.errors.customer_id ? String(formik.errors.customer_id) : undefined}>
-                <FormControl fullWidth size="small">
-                  <Select
-                    name="customer_id"
-                    value={formik.values.customer_id ? String(formik.values.customer_id) : ''}
-                    onChange={async (e) => {
-                      const id = e.target.value ? parseInt(e.target.value, 10) : undefined;
-                      formik.setFieldValue('customer_id', id);
-                      if (id) {
-                        try {
-                          const r = await customerService.getCustomer(id);
-                          if (r.success && r.data) {
-                            const c = r.data;
-                            formik.setFieldValue('organization_name', c.display_name || c.first_name || '');
-                            const addr = c.billing_address || c.shipping_address;
-                            const lines = [addr?.address_line1, addr?.address_line2].filter(Boolean).join('\n');
-                            formik.setFieldValue('organization_address', lines || 'No address available');
-                          }
-                        } catch { formik.setFieldValue('organization_name', ''); formik.setFieldValue('organization_address', ''); }
-                      } else {
-                        formik.setFieldValue('organization_name', '');
-                        formik.setFieldValue('organization_address', '');
-                      }
-                    }}
-                    onBlur={formik.handleBlur}
-                    displayEmpty
-                    error={formik.touched.customer_id && Boolean(formik.errors.customer_id)}
-                    sx={selectSx}
-                  >
-                    <MenuItem value=""><em style={{ color: T.textHint, fontStyle: 'normal' }}>Choose a customer…</em></MenuItem>
-                    {customers.map((c: any) => (
-                      <MenuItem key={c.id} value={c.id} sx={{ fontSize: '0.875rem' }}>{c.display_name || c.first_name}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Field>
-              <Field label="Delivery address" required
-                error={formik.touched.organization_address && formik.errors.organization_address ? String(formik.errors.organization_address) : undefined}>
-                <TextField
-                  fullWidth size="small" name="organization_address" multiline rows={3}
-                  value={formik.values.organization_address}
-                  onChange={formik.handleChange} onBlur={formik.handleBlur}
-                  error={formik.touched.organization_address && Boolean(formik.errors.organization_address)}
-                  placeholder="Auto-populated from customer" sx={inputSx}
-                />
-              </Field>
-            </>
-          )}
-        </Box>
-      </Section>
+    
 
       {/* ── Order details ────────────────────────────────────────────────── */}
       <Section

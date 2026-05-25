@@ -115,20 +115,6 @@ export const transformPOToPayload = (
     payload.terms_and_conditions = po.terms_and_conditions;
   }
 
-  // Handle delivery address based on type
-  if (po.delivery_address_type === 'organization') {
-    if (!po.organization_name) throw new Error('Organization name is required');
-    if (!po.organization_address) throw new Error('Organization address is required');
-
-    payload.organization_name = po.organization_name;
-    payload.organization_address = po.organization_address;
-  } else if (po.delivery_address_type === 'customer') {
-    if (!po.customer_id) throw new Error('Customer is required');
-
-    // Ensure customer_id is a number
-    payload.customer_id =
-      typeof po.customer_id === 'string' ? parseInt(po.customer_id, 10) : po.customer_id;
-  }
 
   console.log('Final payload being sent:', payload);
   return payload as CreatePurchaseOrderRequest;

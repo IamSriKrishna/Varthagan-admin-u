@@ -349,7 +349,7 @@ export default function Sidebar({
     dispatch(clearVendors());
     dispatch(setSelectedVendor(null));
     await persistor.purge();
-    router.replace("/login");
+    router.replace("/");
   };
 
   const handlePopoverOpen = (

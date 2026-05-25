@@ -5,25 +5,6 @@ export const purchaseOrderValidationSchema = Yup.object({
     .typeError('Vendor is required')
     .required('Vendor is required')
     .min(1, 'Please select a valid vendor'),
-  delivery_address_type: Yup.string()
-    .required('Delivery address type is required')
-    .oneOf(['organization', 'customer']),
-  organization_name: Yup.string().when('delivery_address_type', {
-    is: 'organization',
-    then: (schema) => schema.required('Organization name is required').min(1, 'Organization name is required'),
-    otherwise: (schema) => schema.optional(),
-  }),
-  organization_address: Yup.string().when('delivery_address_type', {
-    is: 'organization',
-    then: (schema) => schema.required('Organization address is required').min(1, 'Organization address is required'),
-    otherwise: (schema) => schema.optional(),
-  }),
-  customer_id: Yup.number().when('delivery_address_type', {
-    is: 'customer',
-    then: (schema) =>
-      schema.typeError('Customer is required').required('Customer is required').min(1, 'Please select a valid customer'),
-    otherwise: (schema) => schema.optional(),
-  }),
   reference_no: Yup.string().optional(),
   date: Yup.string().required('Date is required'),
   delivery_date: Yup.string()
