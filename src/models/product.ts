@@ -20,18 +20,25 @@ export interface ProductVariantInput {
 export interface ProductDetailsInput {
   unit: string;
   base_sku: string;
+  upc?: string;
+  ean?: string;
+  description?: string;
+  manufacturer_id?: number | null;
+  attribute_definitions?: AttributeDefinition[];
   variants?: ProductVariantInput[];
 }
 
 export interface SalesInfoInput {
   account: string;
   selling_price: number;
+  markup_percent?: number;
   currency?: string;
 }
 
 export interface PurchaseInfoInput {
   account: string;
   cost_price: number;
+  preferred_vendor_id?: number | null;
   currency?: string;
 }
 
