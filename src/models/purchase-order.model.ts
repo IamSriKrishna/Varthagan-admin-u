@@ -46,6 +46,7 @@ export interface PurchaseOrderLineItemOutput {
   sku: string;
   account: string;
   quantity: number;
+  purchase_unit?: string;
   received_quantity: number;
   rate: number;
   amount: number;

@@ -14,15 +14,13 @@ export interface Variant {
   selling_price: number;
   cost_price: number;
   stock_quantity: number;
-  reorder_level: number;
+  reorder_level?: number;
   is_active: boolean;
 }
 
 export interface ProductDetails {
   unit?: string;
   base_sku?: string;
-  description?: string;
-  attribute_definitions?: AttributeDefinition[];
   variants?: Variant[];
 }
 
@@ -40,6 +38,13 @@ export interface PurchaseInfo {
   description?: string;
 }
 
+export interface Inventory {
+  track_inventory?: boolean;
+  inventory_account?: string;
+  inventory_valuation_method?: string;
+  reorder_point?: number;
+}
+
 // ─── Resource Product ────────────────────────────────────────────────────────
 
 export interface ResourceProduct {
@@ -53,9 +58,16 @@ export interface ResourceProduct {
 export interface CreateProductRequest {
   name: string;
   is_resource?: boolean;
+  is_raw?: boolean;
+  consumption_per_unit?: number;
+  // Optional unit conversion fields for kg-based products
+  base_unit?: string;
+  purchase_unit?: string;
+  conversion_factor?: number;
   product_details?: ProductDetails;
   sales_info?: SalesInfo;
   purchase_info?: PurchaseInfo;
+  inventory?: Inventory;
   return_policy?: ReturnPolicy;
   resource_name?: string;
   resource_unit?: string;
@@ -76,8 +88,11 @@ export interface ProductDetailsResponse extends ProductDetails {
   manufacturer?: Manufacturer;
 }
 
-export interface Inventory {
+export interface InventoryResponse {
   track_inventory: boolean;
+  inventory_account?: string;
+  inventory_valuation_method?: string;
+  reorder_point?: number;
 }
 
 export interface ReturnPolicy {
@@ -87,10 +102,17 @@ export interface ReturnPolicy {
 export interface Product {
   id: string;
   name: string;
+  is_resource?: boolean;
+  is_raw?: boolean;
+  consumption_per_unit?: number;
+  // Optional unit conversion fields for kg-based products
+  base_unit?: string;
+  purchase_unit?: string;
+  conversion_factor?: number;
   product_details: ProductDetailsResponse;
   sales_info: SalesInfo;
   purchase_info: PurchaseInfo;
-  inventory: Inventory;
+  inventory: InventoryResponse;
   return_policy: ReturnPolicy;
   created_at: string;
   updated_at: string;
@@ -98,8 +120,6 @@ export interface Product {
   user_name: string;
   company_id: number;
   company_name: string;
-  is_raw?: boolean;
-  is_resource?: boolean;
 }
 
 export interface ProductListResponse {

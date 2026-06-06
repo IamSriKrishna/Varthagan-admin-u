@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Card,
@@ -11,6 +11,9 @@ import {
   Box,
   Alert,
   Divider,
+  Autocomplete,
+  CircularProgress,
+  Chip,
 } from '@mui/material';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, PlayCircle } from 'lucide-react';
@@ -18,10 +21,13 @@ import { useForm, Controller } from 'react-hook-form';
 import { BBButton, BBLoader } from '@/lib';
 import { showToastMessage } from '@/utils/toastUtil';
 import { conversionService } from '@/services/conversionService';
+import { rawMaterialService } from '@/lib/api/rawMaterialService';
 import {
   IConversionExecutionRequest,
   IConversionExecutionResponse,
+  IConversionRule,
 } from '@/models/conversion.model';
+import { RawMaterialBag } from '@/models/rawMaterial.model';
 import dayjs from 'dayjs';
 
 export default function ExecuteConversionPage() {
@@ -30,28 +36,88 @@ export default function ExecuteConversionPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<IConversionExecutionResponse | null>(null);
   const [executeLoading, setExecuteLoading] = useState(false);
+  const [conversionRule, setConversionRule] = useState<IConversionRule | null>(null);
+  const [bags, setBags] = useState<RawMaterialBag[]>([]);
+  const [selectedBags, setSelectedBags] = useState<RawMaterialBag[]>([]);
+  const [bagsLoading, setBagsLoading] = useState(false);
+  const [finishedQuantities, setFinishedQuantities] = useState<Record<string, number>>({});
 
   const id = params?.id as string;
 
   const { control, handleSubmit, watch, formState: { errors } } = useForm<IConversionExecutionRequest>({
     defaultValues: {
       conversion_id: id,
-      raw_quantity_used: 0,
       conversion_date: dayjs().format('YYYY-MM-DDTHH:mm:ss'),
       execute_conversion: true,
     },
   });
 
-  const rawQuantity = watch('raw_quantity_used');
+  // Fetch conversion rule and bags on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const rule = await conversionService.getConversion(id);
+        setConversionRule(rule);
+        
+        // Fetch bags for this product
+        if (rule.raw_product_id) {
+          await fetchBags(rule.raw_product_id);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        showToastMessage('Failed to load conversion details', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (id) {
+      fetchData();
+    }
+  }, [id]);
+
+  const fetchBags = async (productId: string) => {
+    try {
+      setBagsLoading(true);
+      const response = await rawMaterialService.getBagsByProduct(productId);
+      if (response.success && response.data) {
+        const availableBags = response.data.filter((bag) => bag.remaining_kg > 0);
+        setBags(availableBags);
+      }
+    } catch (error) {
+      console.error('Error fetching bags:', error);
+      showToastMessage('Failed to load raw material bags', 'error');
+    } finally {
+      setBagsLoading(false);
+    }
+  };
 
   const onSubmit = async (data: IConversionExecutionRequest) => {
     try {
+      if (selectedBags.length === 0) {
+        showToastMessage('Please select at least one raw material bag', 'error');
+        return;
+      }
+
+      // Validate that all bags have finished quantities
+      for (const bag of selectedBags) {
+        if ((finishedQuantities[bag.id] || 0) <= 0) {
+          showToastMessage(`Please enter finished quantity for Bag ${bag.bag_number}`, 'error');
+          return;
+        }
+      }
+
       setExecuteLoading(true);
       // Ensure all required fields have correct types
-      const submitData = {
-        ...data,
-        raw_quantity_used: Number(data.raw_quantity_used),
-        conversion_date: data.conversion_date ? `${data.conversion_date}Z` : undefined,
+      const submitData: any = {
+        conversion_id: data.conversion_id,
+        execute_conversion: true,
+        finished_variant_sku: conversionRule?.finished_variant_sku,
+        raw_material_bags: selectedBags.map((bag) => ({
+          bag_id: bag.id,
+          finished_quantity: finishedQuantities[bag.id] || 0,
+        })),
       };
       const response = await conversionService.executeConversion(submitData);
       setResult(response);
@@ -183,105 +249,110 @@ export default function ExecuteConversionPage() {
         </Typography>
       </Box>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Box>
-            <Alert severity="info">
-              Enter the quantity of raw material you want to convert. The system will automatically calculate the expected output based on the conversion ratio and loss percentage.
-            </Alert>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+          <BBLoader />
+        </Box>
+      ) : (
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box>
+              <Alert severity="info">
+                Select raw material bags and enter the quantity to convert. The system will automatically calculate the expected output.
+              </Alert>
+            </Box>
           </Box>
 
           <Box>
-            <Controller
-              name="raw_quantity_used"
-              control={control}
-              rules={{
-                required: 'Quantity is required',
-                min: { value: 1, message: 'Quantity must be at least 1' },
+            <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', mb: 1 }}>
+              Select Raw Material Bags
+            </Typography>
+            <Autocomplete
+              multiple
+              options={bags}
+              getOptionLabel={(option) => `Bag ${option.bag_number} - ${option.remaining_kg.toFixed(2)} KG remaining`}
+              value={selectedBags}
+              onChange={(_, newValue) => {
+                setSelectedBags(newValue);
+                // Initialize finished quantities for new bags
+                const newQuantities = { ...finishedQuantities };
+                newValue.forEach((bag) => {
+                  if (!(bag.id in newQuantities)) {
+                    newQuantities[bag.id] = 0;
+                  }
+                });
+                // Remove quantities for deselected bags
+                Object.keys(newQuantities).forEach((bagId) => {
+                  if (!newValue.find((bag) => bag.id === bagId)) {
+                    delete newQuantities[bagId];
+                  }
+                });
+                setFinishedQuantities(newQuantities);
               }}
-              render={({ field: { onChange, value, ...field } }) => (
+              loading={bagsLoading}
+              renderInput={(params) => (
                 <TextField
-                  {...field}
-                  value={value || ''}
-                  onChange={(e) => onChange(Number(e.target.value))}
-                  fullWidth
-                  label="Raw Material Quantity"
-                  placeholder="Enter quantity to convert"
-                  type="number"
-                  inputProps={{ step: '1', min: '1' }}
-                  error={!!errors.raw_quantity_used}
-                  helperText={errors.raw_quantity_used?.message}
+                  {...params}
+                  label="Select bags to use for conversion"
+                  placeholder="Choose one or more bags"
                   variant="outlined"
-                />
-              )}
-            />
-          </Box>
-
-          <Box>
-            <Controller
-              name="conversion_date"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  label="Conversion Date"
-                  type="datetime-local"
-                  variant="outlined"
-                  InputLabelProps={{
-                    shrink: true,
+                  helperText={`${selectedBags.length} bag(s) selected`}
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {bagsLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
                   }}
                 />
               )}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    label={`Bag ${option.bag_number} (${option.remaining_kg.toFixed(2)} KG)`}
+                    {...getTagProps({ index })}
+                    size="small"
+                    sx={{ bgcolor: '#EEF2FF', color: '#4F46E5' }}
+                  />
+                ))
+              }
+              noOptionsText="No available bags for this product"
             />
           </Box>
 
-          <Box>
-            <Controller
-              name="notes"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  label="Notes"
-                  placeholder="Add notes about this conversion..."
-                  multiline
-                  rows={3}
-                  variant="outlined"
-                />
-              )}
-            />
-          </Box>
-
-          {rawQuantity > 0 && (
+          {selectedBags.length > 0 && (
             <Box>
-              <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px', bgcolor: '#f0fdf4' }}>
-                <CardContent>
-                  <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#047857', mb: 2 }}>
-                    Expected Result
-                  </Typography>
-                  <Stack spacing={1}>
-                    <Box>
-                      <Typography sx={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                        Input
-                      </Typography>
-                      <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#065f46' }}>
-                        {rawQuantity.toLocaleString()} units
+              <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', mb: 2 }}>
+                Finished Quantity per Bag
+              </Typography>
+              <Stack spacing={2}>
+                {selectedBags.map((bag) => (
+                  <Box key={bag.id} sx={{ display: 'flex', gap: 2, alignItems: 'flex-end', bgcolor: '#f9fafb', p: 2, borderRadius: '6px' }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography sx={{ fontSize: '0.875rem', color: '#6b7280', mb: 1 }}>
+                        Bag {bag.bag_number} (Available: {bag.remaining_kg.toFixed(2)} KG)
                       </Typography>
                     </Box>
-                    <Divider />
-                    <Box>
-                      <Typography sx={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                        Expected Output
-                      </Typography>
-                      <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#065f46' }}>
-                        (Will be calculated based on conversion rule)
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </Card>
+                    <TextField
+                      type="number"
+                      label="Finished Quantity"
+                      value={finishedQuantities[bag.id] || 0}
+                      onChange={(e) => {
+                        setFinishedQuantities({
+                          ...finishedQuantities,
+                          [bag.id]: Number(e.target.value),
+                        });
+                      }}
+                      inputProps={{ step: '1', min: '0' }}
+                      variant="outlined"
+                      size="small"
+                      sx={{ width: '150px' }}
+                    />
+                  </Box>
+                ))}
+              </Stack>
             </Box>
           )}
 
@@ -303,8 +374,8 @@ export default function ExecuteConversionPage() {
               </BBButton>
             </Box>
           </Box>
-        </Box>
-      </form>
+        </form>
+      )}
     </Container>
   );
 }

@@ -147,7 +147,7 @@ export default function SalesOrderLineItems({ formik, customerId }: SalesOrderLi
     const fetchManufacturers = async () => {
       try {
         const token = getToken();
-        const response = await fetch('http://127.0.0.1:8088/manufacturers', {
+        const response = await fetch('https://api.guruaqua.com/manufacturers', {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
@@ -174,7 +174,7 @@ export default function SalesOrderLineItems({ formik, customerId }: SalesOrderLi
       setLoadingCustomerPricing(true);
       const token = getToken();
       const response = await fetch(
-        `http://127.0.0.1:8088/customer-pricing/customer?customer_id=${customerId}&offset=0&limit=100`,
+        `https://api.guruaqua.com/customer-pricing/customer?customer_id=${customerId}&offset=0&limit=100`,
         {
           headers: {
             'Content-Type': 'application/json',

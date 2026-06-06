@@ -30,6 +30,7 @@ export interface PurchaseOrderLineItemInput {
   variant_sku?: string;
   account: string;
   quantity: number;
+  purchase_unit?: string;
   rate: number;
   variant_details?: Record<string, string>;
 }
@@ -108,6 +109,7 @@ export interface PurchaseOrderLineItemOutput {
   variant?: VariantInfo;
   account: string;
   quantity: number;
+  purchase_unit?: string;
   received_quantity?: number;
   rate: number;
   amount: number;

@@ -129,15 +129,23 @@ const baseMenuItems: Array<{
     children: [
       { key: "vendors", icon: User, label: "Vendors", path: "/vendors" },
       { key: "purchaseOrders", icon: ShoppingCart, label: "Purchase Orders", path: "/purchase-orders" },
-      { key: "conversion", icon: Shuffle, label: "Conversion", path: "/conversion" },
       { key: "vendorPayments", icon: CreditCard, label: "Vendor Payments", path: "/vendor-payments" },
       { key: "customerPayments", icon: CreditCard, label: "Customer Payments", path: "/customer-payments" },
+      { key: "bills", icon: Receipt, label: "Bills", path: "/bills" },
+      { key: "invoices", icon: Receipt, label: "Invoices", path: "/invoices" },
+    ],
+  },
+  {
+    key: "supplyChain",
+    icon: Factory,
+    label: "Supply Chain",
+    children: [
+      { key: "rawMaterials", icon: Boxes, label: "Raw Materials", path: "/raw-materials" },
+      { key: "conversion", icon: Shuffle, label: "Conversion", path: "/conversion" },
       { key: "salesOrders", icon: ShoppingCart, label: "Sales Orders", path: "/sales-orders" },
       { key: "packages", icon: Package, label: "Packages", path: "/packages" },
       { key: "manufacturing", icon: Factory, label: "Manufacturing", path: "/manufacturing" },
       { key: "customerPricing", icon: IndianRupee, label: "Customer Pricing", path: "/admin/manufacturing-pricing" },
-      { key: "bills", icon: Receipt, label: "Bills", path: "/bills" },
-      { key: "invoices", icon: Receipt, label: "Invoices", path: "/invoices" },
     ],
   },
   {
@@ -258,6 +266,7 @@ export default function Sidebar({
           "customerPricing",
           "shipments",
           "conversion",
+          "rawMaterials",
         ];
 
         // Add employee items and items menu children if user is admin
@@ -378,7 +387,7 @@ export default function Sidebar({
 
       <Divider />
 
-      <Box sx={{ flex: 1, overflowY: "auto", overflowX: "hidden", pr: drawerOpen ? 2 : 1, py: 2 }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflowY: "hidden", overflowX: "hidden", pr: drawerOpen ? 2 : 1, py: 2 }}>
         <List>
           {menuItems.map((item) => {
             if (item.type == "section") {

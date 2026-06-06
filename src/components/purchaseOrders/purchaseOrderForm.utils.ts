@@ -71,6 +71,7 @@ export const transformPOToPayload = (
         sku: item.sku || item.variant_sku || '',
         account: item.account,
         quantity: item.quantity,
+        purchase_unit: item.purchase_unit,
         rate: item.rate,
       };
 

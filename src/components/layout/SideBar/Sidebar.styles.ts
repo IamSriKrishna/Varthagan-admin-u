@@ -55,6 +55,11 @@ export const drawerBox = (drawerOpen: boolean, drawerWidth: number): SxProps<The
   width: { md: drawerOpen ? drawerWidth : 70 },
   flexShrink: { md: 0 },
   transition: "width 0.3s",
+  position: "fixed",
+  height: "100vh",
+  top: 0,
+  left: 0,
+  zIndex: 1200,
 });
 
 export const smallScreenDrawer = (drawerWidth: number): SxProps<Theme> => ({
@@ -74,9 +79,11 @@ export const largeScreenDrawer = (drawerOpen: boolean, drawerWidth: number): SxP
     width: drawerOpen ? drawerWidth : 70,
     transition: "width 0.3s",
     overflowX: "hidden",
+    overflowY: "hidden",
     boxSizing: "border-box",
     backgroundColor: "white",
-    // height: "100vh",
+    height: "100vh",
+    top: 0,
     position: "fixed",
     borderRight: "none",
   },

@@ -8,6 +8,7 @@ export interface PurchaseOrderLineItemInput {
   sku: string;
   account: string;
   quantity?: number; // Optional for raw materials (auto-calculated from packs)
+  purchase_unit?: string; // e.g., kg, pcs, liter
   rate: number;
 
   // Raw Material Specific Fields - Used when purchasing raw materials
@@ -116,6 +117,7 @@ export interface PurchaseOrderLineItemOutput {
   sku?: string;
   account: string;
   quantity: number;
+  purchase_unit?: string;
   rate: number;
   amount: number;
 }

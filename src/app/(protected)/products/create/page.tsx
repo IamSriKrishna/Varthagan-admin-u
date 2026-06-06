@@ -13,7 +13,7 @@ import * as Yup from "yup";
 import {
   ArrowLeft, Plus, Trash2, Package, Tag,
   DollarSign, Layers, ChevronRight, Check,
-  TrendingUp, Wand2, RefreshCw, Copy,
+  TrendingUp, Wand2, RefreshCw, Copy, Settings,
 } from "lucide-react";
 import { showToastMessage } from "@/utils/toastUtil";
 import { productService, CreateProductRequest } from "@/lib/api/productService";
@@ -52,12 +52,23 @@ interface ProductFormData {
   required_gram_per_unit?: number;
   raw_cost_per_unit?: number;
   unit: string;
+  base_unit: string;
+  purchase_unit: string;
+  conversion_factor: number;
   base_sku: string;
+  consumption_per_unit: number;
+  upc?: string;
+  ean?: string;
+  mpn?: string;
   description: string;
   selling_account: string;
   selling_price: number;
   purchase_account: string;
   cost_price: number;
+  track_inventory: boolean;
+  inventory_account: string;
+  inventory_valuation_method: string;
+  reorder_point: number;
   attribute_definitions: AttributeDefinitionForm[];
   variants: VariantForm[];
 }
@@ -205,6 +216,21 @@ const validationSchema = Yup.object().shape({
     }),
     otherwise: (schema) => schema.notRequired(),
   }),
+  consumption_per_unit: Yup.number().when("is_resource", {
+    is: false,
+    then: (schema) => Yup.number().when("is_raw", {
+      is: false,
+      then: (s) => s.min(0, "Consumption per unit must be at least 0"),
+      otherwise: (s) => s.notRequired(),
+    }),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  upc: Yup.string().optional(),
+  ean: Yup.string().optional(),
+  mpn: Yup.string().optional(),
+  base_unit: Yup.string().optional(),
+  purchase_unit: Yup.string().optional(),
+  conversion_factor: Yup.number().optional(),
  
   selling_price: Yup.number().when("is_resource", {
     is: false,
@@ -238,12 +264,23 @@ const initialValues: ProductFormData = {
   required_gram_per_unit: 0,
   raw_cost_per_unit: 0,
   unit: "pieces",
+  base_unit: "gram",
+  purchase_unit: "kg",
+  conversion_factor: 1000,
   base_sku: "",
+  consumption_per_unit: 1,
+  upc: "",
+  ean: "",
+  mpn: "",
   description: "",
   selling_account: "SALES_REVENUE",
   selling_price: 0,
   purchase_account: "PURCHASE_EXPENSE",
   cost_price: 0,
+  track_inventory: true,
+  inventory_account: "Raw Materials",
+  inventory_valuation_method: "FIFO",
+  reorder_point: 0,
   attribute_definitions: [],
   variants: [],
 };
@@ -251,6 +288,7 @@ const initialValues: ProductFormData = {
 const STEPS = [
   { label: "Product Info", icon: Package,    description: "Basic details & identifiers" },
   { label: "Pricing",      icon: DollarSign, description: "Accounts & price points"     },
+  { label: "Inventory",    icon: Settings,   description: "Stock tracking & reorder"    },
   { label: "Variants",     icon: Layers,     description: "Attributes & SKU variants"   },
 ];
 
@@ -376,30 +414,48 @@ export default function CreateProductPage() {
         const markup = values.cost_price > 0
           ? ((values.selling_price - values.cost_price) / values.cost_price) * 100 : 0;
 
+        // Auto-set consumption_per_unit based on unit
+        const consumption = values.unit === "pieces" ? 1 : values.consumption_per_unit;
+
         const payload: CreateProductRequest = {
           name: values.name,
           is_resource: false,
+          is_raw: false,
+          consumption_per_unit: consumption,
+          // Include unit conversion fields only for kg
+          ...(values.unit === "kg" && {
+            base_unit: values.base_unit || "gram",
+            purchase_unit: values.purchase_unit || "kg",
+            conversion_factor: values.conversion_factor || 1000,
+          }),
           product_details: {
             unit: values.unit,
             base_sku: values.base_sku,
-            description: values.description,
-            attribute_definitions: values.attribute_definitions,
             variants: values.variants.map((v) => ({
-              ...v,
-              reorder_level: v.reorder_level ?? 0,
+              sku: v.sku,
+              variant_name: v.variant_name,
+              attribute_map: v.attribute_map,
+              selling_price: v.selling_price,
+              cost_price: v.cost_price,
+              stock_quantity: v.stock_quantity,
+              is_active: v.is_active,
             })),
           },
           sales_info: {
             account: values.selling_account,
             selling_price: values.selling_price,
             currency: "INR",
-            description: "",
           },
           purchase_info: {
             account: values.purchase_account,
             cost_price: values.cost_price,
             currency: "INR",
-            description: "",
+          },
+          inventory: {
+            track_inventory: values.track_inventory,
+            inventory_account: values.inventory_account,
+            inventory_valuation_method: values.inventory_valuation_method,
+            reorder_point: values.reorder_point,
           },
           return_policy: {
             returnable: false,
@@ -675,8 +731,19 @@ export default function CreateProductPage() {
                             <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
                               <Box sx={{ flex: 1 }}>
                                 <Label required>Unit</Label>
-                                <TextField fullWidth name="unit" value={values.unit} onChange={handleChange}
-                                  placeholder="e.g., pieces" size="small" sx={inputSx} />
+                                <Select fullWidth name="unit" value={values.unit} 
+                                  onChange={(e) => {
+                                    const selectedUnit = e.target.value;
+                                    handleChange(e);
+                                    // Auto-set consumption_per_unit = 1 when unit is "pieces"
+                                    if (selectedUnit === "pieces") {
+                                      setFieldValue("consumption_per_unit", 1);
+                                    }
+                                  }}
+                                  size="small" sx={selectSx}>
+                                  <MenuItem value="pieces">Pieces</MenuItem>
+                                  <MenuItem value="kg">Kilogram (kg)</MenuItem>
+                                </Select>
                               </Box>
                               <Box sx={{ flex: 1 }}>
                                 <Label required>Base SKU</Label>
@@ -685,6 +752,82 @@ export default function CreateProductPage() {
                                     placeholder="e.g., WB-001" error={touched.base_sku && !!errors.base_sku} helperText={touched.base_sku && errors.base_sku}
                                     size="small" sx={inputSx} />
                                 </Tooltip>
+                              </Box>
+                            </Stack>
+
+                            {values.unit === "kg" && (
+                              <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
+                                <Box sx={{ flex: 1 }}>
+                                  <Label required>Base Unit</Label>
+                                  <Tooltip title="The fundamental unit of measurement (e.g., gram)" placement="top">
+                                    <TextField fullWidth name="base_unit" value={values.base_unit} onChange={handleChange}
+                                      placeholder="e.g., gram" size="small" sx={inputSx} />
+                                  </Tooltip>
+                                </Box>
+                                <Box sx={{ flex: 1 }}>
+                                  <Label required>Purchase Unit</Label>
+                                  <Tooltip title="The unit used for purchasing (e.g., kg)" placement="top">
+                                    <TextField fullWidth name="purchase_unit" value={values.purchase_unit} onChange={handleChange}
+                                      placeholder="e.g., kg" size="small" sx={inputSx} />
+                                  </Tooltip>
+                                </Box>
+                                <Box sx={{ flex: 1 }}>
+                                  <Label required>Conversion Factor</Label>
+                                  <Tooltip title="Factor to convert base_unit to purchase_unit (e.g., 1000 for gram to kg)" placement="top">
+                                    <TextField fullWidth name="conversion_factor" type="number" value={values.conversion_factor}
+                                      onChange={(e) => {
+                                        const value = e.target.value ? parseFloat(e.target.value) : 1;
+                                        setFieldValue("conversion_factor", value);
+                                      }}
+                                      placeholder="e.g., 1000" inputProps={{ step: "1", min: "1" }} size="small" sx={inputSx} />
+                                  </Tooltip>
+                                </Box>
+                              </Stack>
+                            )}
+
+                            <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
+                              <Box sx={{ flex: 1 }}>
+                                <Label required>Consumption Per Unit</Label>
+                                <Tooltip 
+                                  title={values.unit === "pieces" ? "Auto-set to 1 for pieces" : "Amount consumed per item (e.g., 0.3 gram per bottle)"}
+                                  placement="top">
+                                  <TextField fullWidth name="consumption_per_unit" type="number" value={values.consumption_per_unit}
+                                    onChange={(e) => {
+                                      const value = e.target.value ? parseFloat(e.target.value) : 0;
+                                      setFieldValue("consumption_per_unit", value);
+                                    }}
+                                    placeholder={values.unit === "pieces" ? "1" : "e.g., 0.3"}
+                                    disabled={values.unit === "pieces"}
+                                    error={touched.consumption_per_unit && !!errors.consumption_per_unit}
+                                    helperText={touched.consumption_per_unit && errors.consumption_per_unit}
+                                    inputProps={{ step: "0.01", min: "0" }} size="small" 
+                                    sx={{
+                                      ...inputSx,
+                                      "& .MuiOutlinedInput-root.Mui-disabled": {
+                                        backgroundColor: C.bg,
+                                        "& fieldset": { borderColor: C.border },
+                                      },
+                                    }}
+                                  />
+                                </Tooltip>
+                              </Box>
+                              <Box sx={{ flex: 1 }}>
+                                <Label>UPC Code</Label>
+                                <TextField fullWidth name="upc" value={values.upc} onChange={handleChange}
+                                  placeholder="e.g., 8904220300001" size="small" sx={inputSx} />
+                              </Box>
+                            </Stack>
+
+                            <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
+                              <Box sx={{ flex: 1 }}>
+                                <Label>EAN Code</Label>
+                                <TextField fullWidth name="ean" value={values.ean} onChange={handleChange}
+                                  placeholder="e.g., 8904220300001" size="small" sx={inputSx} />
+                              </Box>
+                              <Box sx={{ flex: 1 }}>
+                                <Label>MPN (Manufacturer Part Number)</Label>
+                                <TextField fullWidth name="mpn" value={values.mpn} onChange={handleChange}
+                                  placeholder="e.g., WRAP-300-001" size="small" sx={inputSx} />
                               </Box>
                             </Stack>
 
@@ -771,8 +914,91 @@ export default function CreateProductPage() {
                   </Stack>
                 )}
 
-                {/* ══ STEP 2: Variants ══════════════════════════════════════════════ */}
+                {/* ══ STEP 2: Inventory ═════════════════════════════════════════════ */}
                 {step === 2 && !values.is_resource && !values.is_raw && (
+                  <Stack spacing={3}>
+                    <Card sx={{ borderRadius: "16px", border: `1px solid ${C.border}`, boxShadow: "none", overflow: "hidden" }}>
+                      <Box sx={{ p: 3, borderBottom: `1px solid ${C.border}` }}>
+                        <Typography variant="h6" sx={{ fontWeight: 700, color: C.text, fontSize: "1rem" }}>Inventory Configuration</Typography>
+                        <Typography variant="caption" sx={{ color: C.textMid }}>Setup inventory tracking, valuation method, and reorder points</Typography>
+                      </Box>
+                      <Box sx={{ p: 3 }}>
+                        <Stack spacing={3}>
+                          {/* Inventory Tracking */}
+                          <Box sx={{ p: 2, borderRadius: "8px", backgroundColor: C.bg, border: `1px solid ${C.border}` }}>
+                            <Stack direction="row" alignItems="center" justifyContent="space-between">
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: C.text, mb: 0.5 }}>Track Inventory</Typography>
+                                <Typography variant="caption" sx={{ color: C.textMid }}>Enable inventory tracking for this product</Typography>
+                              </Box>
+                              <Switch checked={values.track_inventory} size="small"
+                                onChange={(e) => setFieldValue("track_inventory", e.target.checked)}
+                                sx={{
+                                  "& .MuiSwitch-switchBase.Mui-checked": { color: C.success },
+                                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: C.success },
+                                }}
+                              />
+                            </Stack>
+                          </Box>
+
+                          {values.track_inventory && (
+                            <>
+                              <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
+                                <Box sx={{ flex: 1 }}>
+                                  <Label required>Inventory Account</Label>
+                                  <Select fullWidth name="inventory_account" value={values.inventory_account} onChange={handleChange} size="small" sx={selectSx}>
+                                    <MenuItem value="Raw Materials">Raw Materials</MenuItem>
+                                    <MenuItem value="Finished Goods">Finished Goods</MenuItem>
+                                    <MenuItem value="Work in Progress">Work in Progress</MenuItem>
+                                    <MenuItem value="Inventory">Inventory</MenuItem>
+                                  </Select>
+                                </Box>
+                                <Box sx={{ flex: 1 }}>
+                                  <Label required>Valuation Method</Label>
+                                  <Select fullWidth name="inventory_valuation_method" value={values.inventory_valuation_method} onChange={handleChange} size="small" sx={selectSx}>
+                                    <MenuItem value="FIFO">FIFO (First In, First Out)</MenuItem>
+                                    <MenuItem value="LIFO">LIFO (Last In, First Out)</MenuItem>
+                                    <MenuItem value="WEIGHTED_AVERAGE">Weighted Average</MenuItem>
+                                  </Select>
+                                </Box>
+                              </Stack>
+
+                              <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
+                                <Box sx={{ flex: 1 }}>
+                                  <Label required>Reorder Point</Label>
+                                  <Tooltip title="Minimum stock level that triggers a reorder" placement="top">
+                                    <TextField fullWidth name="reorder_point" type="number" value={values.reorder_point}
+                                      onChange={(e) => {
+                                        const value = e.target.value ? parseInt(e.target.value) : 0;
+                                        setFieldValue("reorder_point", value);
+                                      }}
+                                      placeholder="e.g., 10" inputProps={{ min: "0" }} size="small" sx={inputSx} />
+                                  </Tooltip>
+                                </Box>
+                                <Box sx={{ flex: 1 }} />
+                              </Stack>
+                            </>
+                          )}
+                        </Stack>
+                      </Box>
+                    </Card>
+
+                    <Card sx={{ borderRadius: "16px", border: `1px solid ${C.brandMid}`, backgroundColor: C.brandSoft, boxShadow: "none", p: 3 }}>
+                      <Stack direction="row" alignItems="flex-start" spacing={2}>
+                        <Box sx={{ mt: 0.5, flexShrink: 0 }}>
+                          <Settings size={18} color={C.brand} />
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: C.brand, mb: 0.5 }}>Inventory Setup Complete</Typography>
+                          <Typography variant="caption" sx={{ color: C.textMid }}>Reorder points will be applied per variant in the next step. The inventory account determines where stock is tracked in your books.</Typography>
+                        </Box>
+                      </Stack>
+                    </Card>
+                  </Stack>
+                )}
+
+                {/* ══ STEP 3: Variants ══════════════════════════════════════════════ */}
+                {step === 3 && !values.is_resource && !values.is_raw && (
                   <Stack spacing={3}>
 
                     {/* Attribute definitions */}
@@ -1350,6 +1576,7 @@ export default function CreateProductPage() {
                         const stepFields: Record<number, string[]> = {
                           0: ["name", "unit", "base_sku", "description"],
                           1: ["selling_price", "cost_price"],
+                          2: [],
                         };
                         const relevant = stepFields[step] ?? [];
                         if (!relevant.some((f) => errs[f as keyof typeof errs])) {

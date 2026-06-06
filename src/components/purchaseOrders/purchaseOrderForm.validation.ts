@@ -22,18 +22,46 @@ export const purchaseOrderValidationSchema = Yup.object({
   shipment_preference: Yup.string().optional(),
   line_items: Yup.array()
     .of(
-      Yup.object({
-        product_id: Yup.string().optional(),
-        product_name: Yup.string().optional(),
-        sku: Yup.string().optional(),
-        account: Yup.string().required('Account is required'),
-        quantity: Yup.number()
-          .required('Quantity is required')
-          .positive('Quantity must be greater than 0'),
-        rate: Yup.number()
-          .required('Rate is required')
-          .min(0, 'Rate must be non-negative'),
-      })
+      Yup.object().shape(
+        {
+          product_id: Yup.string().optional(),
+          product_name: Yup.string().optional(),
+          sku: Yup.string().optional(),
+          account: Yup.string().required('Account is required'),
+          is_raw_material: Yup.boolean(),
+          quantity: Yup.number().when('is_raw_material', {
+            is: false,
+            then: (schema) => schema
+              .required('Quantity is required')
+              .min(0.01, 'Quantity must be greater than 0'),
+            otherwise: (schema) => schema.optional(),
+          }),
+          purchase_unit: Yup.string().optional(),
+          rate: Yup.number()
+            .required('Rate is required')
+            .min(0.01, 'Rate must be greater than 0'),
+          // Raw material fields
+          raw_material_unit: Yup.string().when('is_raw_material', {
+            is: true,
+            then: (schema) => schema.required('Unit is required'),
+            otherwise: (schema) => schema.optional(),
+          }),
+          number_of_packs: Yup.number().when('is_raw_material', {
+            is: true,
+            then: (schema) => schema
+              .required('Number of packs is required')
+              .min(1, 'Must be greater than 0'),
+            otherwise: (schema) => schema.optional(),
+          }),
+          quantity_per_pack: Yup.number().when('is_raw_material', {
+            is: true,
+            then: (schema) => schema
+              .required('Quantity per pack is required')
+              .min(0.01, 'Must be greater than 0'),
+            otherwise: (schema) => schema.optional(),
+          }),
+        }
+      )
     )
     .min(1, 'At least one line item is required'),
   discount: Yup.number().optional().min(0, 'Discount cannot be negative'),

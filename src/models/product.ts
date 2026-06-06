@@ -20,18 +20,12 @@ export interface ProductVariantInput {
 export interface ProductDetailsInput {
   unit: string;
   base_sku: string;
-  upc?: string;
-  ean?: string;
-  description?: string;
-  manufacturer_id: number | null;
-  attribute_definitions?: AttributeDefinition[];
   variants?: ProductVariantInput[];
 }
 
 export interface SalesInfoInput {
   account: string;
   selling_price: number;
-  markup_percent: number;
   currency?: string;
 }
 
@@ -39,14 +33,29 @@ export interface PurchaseInfoInput {
   account: string;
   cost_price: number;
   currency?: string;
-  preferred_vendor_id?: number | null;
 }
 
 export interface CreateProductRequest {
   name: string;
+  is_resource?: boolean;
+  is_raw?: boolean;
+  consumption_per_unit?: number;
+  // Optional unit conversion fields for kg-based products
+  base_unit?: string;
+  purchase_unit?: string;
+  conversion_factor?: number;
   product_details: ProductDetailsInput;
   sales_info: SalesInfoInput;
   purchase_info: PurchaseInfoInput;
+  inventory?: {
+    track_inventory?: boolean;
+    inventory_account?: string;
+    inventory_valuation_method?: string;
+    reorder_point?: number;
+  };
+  return_policy?: {
+    returnable: boolean;
+  };
 }
 
 export interface UpdateProductRequest extends CreateProductRequest {}
@@ -74,12 +83,6 @@ export interface ProductVariantOutput {
 export interface ProductDetailsOutput {
   unit: string;
   base_sku: string;
-  upc?: string;
-  ean?: string;
-  description?: string;
-  manufacturer_id?: number;
-  manufacturer?: Manufacturer;
-  attribute_definitions?: AttributeDefinition[];
   variants: ProductVariantOutput[];
 }
 
@@ -113,6 +116,13 @@ export interface ReturnPolicy {
 export interface Product {
   id: string;
   name: string;
+  is_resource?: boolean;
+  is_raw?: boolean;
+  consumption_per_unit?: number;
+  // Optional unit conversion fields for kg-based products
+  base_unit?: string;
+  purchase_unit?: string;
+  conversion_factor?: number;
   product_details: ProductDetailsOutput;
   sales_info: SalesInfoOutput;
   purchase_info: PurchaseInfoOutput;
@@ -125,13 +135,11 @@ export interface Product {
   company_id: number;
   company_name: string;
   // Raw Material Fields
-  is_raw?: boolean;
   raw_name?: string;
   raw_specification?: string;
   raw_cost_per_unit?: number;
   required_gram_per_unit?: number;
   // Resource Fields
-  is_resource?: boolean;
   resource_name?: string;
   resource_unit?: string;
   resource_cost_per_unit?: number;

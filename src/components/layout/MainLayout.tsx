@@ -77,6 +77,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             flexDirection: "column",
             flexGrow: 1,
             transition: "margin-left 0.3s",
+            marginLeft: { xs: 0, md: drawerOpen ? "240px" : "70px" },
           }}
         >
           <Box component="main" sx={classes.mainLayoutBox}>
