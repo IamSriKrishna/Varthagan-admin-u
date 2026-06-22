@@ -50,7 +50,13 @@ export const vendorValidationSchema = (isEdit: boolean) => {
         Yup.object().shape({
           bank_id: Yup.string().required("Bank is required"),
           account_holder_name: Yup.string().required("Account holder name is required"),
-          account_number: Yup.string().required("Account number is required"),
+          confirm_account_number: Yup.string()
+            .matches(/^\d+$/, "Account number must contain only digits")
+            .oneOf([Yup.ref("account_number")], "Account numbers do not match")
+            .required("Please re-enter account number"),
+          account_number: Yup.string()
+            .matches(/^\d+$/, "Account number must contain only digits")
+            .required("Account number is required"),
           is_primary: Yup.boolean(),
           is_active: Yup.boolean(),
         }),

@@ -315,7 +315,10 @@ export const companyApi = {
   },
 
   // Update company - protected endpoint
-  updateCompany: async (id: number, input: Partial<CompleteCompanySetupInput>) => {
+  updateCompany: async (
+    id: number,
+    input: Partial<CreateCompanyInput> | Partial<CompleteCompanySetupInput>
+  ) => {
     const token = getToken();
     if (!token) {
       throw new Error("Authentication token not found. Please log in first.");

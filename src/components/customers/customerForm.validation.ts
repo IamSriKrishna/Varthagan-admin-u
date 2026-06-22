@@ -8,8 +8,8 @@ export const customerValidationSchema = (isEdit: boolean) => {
     customer_type: Yup.string().required("Customer type is required"),
     display_name: Yup.string().required("Display name is required"),
     email_address: Yup.string().email("Invalid email").required("Email is required"),
-    work_phone: Yup.string().required("Work phone is required"),
-    mobile: Yup.string().required("Mobile is required"),
+    // work_phone: Yup.string().required("Work phone is required"),
+    // mobile: Yup.string().required("Mobile is required"),
 
     // Other Details
     other_details: Yup.object().shape({

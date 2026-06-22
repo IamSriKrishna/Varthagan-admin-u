@@ -16,8 +16,6 @@ import { useSelector } from "react-redux";
 import * as Yup from "yup";
 const userTypes = [
   { label: "Admin", value: "admin" },
-  { label: "Partner", value: "partner" },
-  { label: "Mobile User", value: "mobile_user" },
 ];
 
 export interface Response {
@@ -53,7 +51,6 @@ const validationSchema = Yup.object().shape({
     .required("Phone is required")
     .matches(/^[0-9]{10}$/, "Phone number must be exactly 10 digits"),
   username: Yup.string().required("UserName is required"),
-  user_type: Yup.string().required("User Type is required"),
   role_name: Yup.string().required("Role is required"),
   company_id: Yup.number().required("Company is required"),
 });
@@ -104,7 +101,7 @@ export default function UserManagementForm({ open, setOpen, userId, refetch }: U
         username: res?.username ?? "",
         password: "",
         phone,
-        user_type: res?.user_type ?? "",
+        user_type: res?.user_type ?? res?.role ?? "",
         role_name: res?.role ?? "",
         status: res?.status ?? "",
         company_id: res?.company_id ?? undefined,
@@ -131,6 +128,7 @@ export default function UserManagementForm({ open, setOpen, userId, refetch }: U
       ...values,
       number: values?.phone,
       phone: undefined,
+      user_type: values.user_type || values.role_name,
     };
     try {
       const response = await submitUser(payload, isEdit ? String(userId) : undefined);
@@ -216,15 +214,9 @@ export default function UserManagementForm({ open, setOpen, userId, refetch }: U
                         />
                       </Grid>
                       {!isEdit && (
-                        <>
-                          <Grid size={{ xs: 12, md: 6 }} component="div">
-                            <BBInput name="password" label="Password" type="password" />
-                          </Grid>
-
-                          <Grid size={{ xs: 12, md: 6 }} component="div">
-                            <BBDropdown name="user_type" label="Type" options={userTypes || []} />
-                          </Grid>
-                        </>
+                        <Grid size={{ xs: 12, md: 6 }} component="div">
+                          <BBInput name="password" label="Password" type="password" />
+                        </Grid>
                       )}
                       <Grid size={{ xs: 12, md: 6 }} component="div">
                         <BBDropdown name="role_name" label="Role" options={userTypes || []} />

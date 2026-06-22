@@ -9,6 +9,7 @@ import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import { TokenValidator } from "@/components/auth/TokenValidator";
 
 const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [queryClient] = useState(() => new QueryClient());
@@ -24,7 +25,10 @@ const AppProvider = ({ children }: { children: React.ReactNode }) => {
           }}
         >
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <BBThemeProvider>{children}</BBThemeProvider>
+            <BBThemeProvider>
+              <TokenValidator />
+              {children}
+            </BBThemeProvider>
           </LocalizationProvider>
         </PersistGate>
       </QueryClientProvider>

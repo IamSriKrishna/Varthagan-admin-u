@@ -33,7 +33,7 @@ export const VendorBankDetails: React.FC<VendorBankDetailsProps> = ({ values, pu
         setBanks(Array.isArray(banksArray) ? banksArray : []);
         const options = (Array.isArray(banksArray) ? banksArray : []).map((bank: Bank) => ({
           value: bank.id,
-          label: `${bank.bank_name}${bank.city ? ` - ${bank.city}` : ''}${bank.state ? `, ${bank.state}` : ''}`,
+          label: `${bank.bank_name}${bank.city ? ` - ${bank.city}` : ""}${bank.state ? `, ${bank.state}` : ""}`,
         }));
         setBankOptions(options);
       }
@@ -59,6 +59,7 @@ export const VendorBankDetails: React.FC<VendorBankDetailsProps> = ({ values, pu
               bank_id: "",
               account_holder_name: "",
               account_number: "",
+              confirm_account_number: "",
               ifsc_code: "",
               branch_name: "",
               is_primary: false,
@@ -71,61 +72,47 @@ export const VendorBankDetails: React.FC<VendorBankDetailsProps> = ({ values, pu
       </Box>
       <Divider sx={{ mb: 3 }} />
 
-      {values.bank_details && values.bank_details.map((bank, index) => (
-        <Box key={index} sx={{ mb: 4, p: 2, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-            <Typography variant="subtitle1" fontWeight={600}>
-              Bank Account {index + 1}
-            </Typography>
-            {values.bank_details && values.bank_details.length > 1 && (
-              <IconButton size="small" onClick={() => remove(index)} color="error">
-                <Trash2 size={16} />
-              </IconButton>
-            )}
+      {values.bank_details &&
+        values.bank_details.map((bank, index) => (
+          <Box key={index} sx={{ mb: 4, p: 2, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Bank Account {index + 1}
+              </Typography>
+              {values.bank_details && values.bank_details.length > 1 && (
+                <IconButton size="small" onClick={() => remove(index)} color="error">
+                  <Trash2 size={16} />
+                </IconButton>
+              )}
+            </Box>
+
+            <Grid container spacing={3} component="div">
+              <Grid size={{ xs: 12, md: 6 }} component="div">
+                <BBDropdown
+                  name={`bank_details[${index}].bank_id`}
+                  label="Bank Name*"
+                  options={bankOptions}
+                  disabled={loadingBanks}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }} component="div">
+                <BBInput name={`bank_details[${index}].account_holder_name`} label="Account Holder Name*" fullWidth />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }} component="div">
+                <BBInput name={`bank_details[${index}].account_number`} label="Account Number*" fullWidth />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }} component="div">
+                <BBInput name={`bank_details[${index}].confirm_account_number`} label="Re Enter Account Number*" />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }} component="div">
+                <BBInput name={`bank_details[${index}].ifsc_code`} label="IFSC Code" fullWidth />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }} component="div">
+                <BBInput name={`bank_details[${index}].branch_name`} label="Branch Name" fullWidth />
+              </Grid>{" "}
+            </Grid>
           </Box>
-
-          <Grid container spacing={3} component="div">
-            <Grid size={{ xs: 12, md: 6 }} component="div">
-              <BBDropdown
-                name={`bank_details[${index}].bank_id`}
-                label="Bank Name*"
-                options={bankOptions}
-                disabled={loadingBanks}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }} component="div">
-              <BBInput 
-                name={`bank_details[${index}].account_holder_name`} 
-                label="Account Holder Name*" 
-                fullWidth 
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }} component="div">
-              <BBInput 
-                name={`bank_details[${index}].account_number`} 
-                label="Account Number*" 
-                fullWidth 
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }} component="div">
-              <BBInput 
-                name={`bank_details[${index}].ifsc_code`} 
-                label="IFSC Code" 
-                fullWidth 
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }} component="div">
-              <BBInput 
-                name={`bank_details[${index}].branch_name`} 
-                label="Branch Name" 
-                fullWidth 
-              />
-            </Grid>          </Grid>
-        </Box>
-      ))}
+        ))}
     </Box>
   );
 };

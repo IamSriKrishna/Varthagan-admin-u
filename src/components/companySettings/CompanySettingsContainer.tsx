@@ -25,8 +25,17 @@ export default function CompanySettingsContainer() {
   const [isEditing, setIsEditing] = useState(false);
   const [loadingCompany, setLoadingCompany] = useState(false);
 
+  const shouldFetchCompanyDetails = (company: CompanyData | null) => {
+    return (
+      !company ||
+      !company.invoice_settings ||
+      !company.tax_settings ||
+      !company.regional_settings
+    );
+  };
+
   useEffect(() => {
-    if (isEditing && selectedCompanyId && !selectedCompany) {
+    if (isEditing && selectedCompanyId && shouldFetchCompanyDetails(selectedCompany)) {
       fetchCompanyData();
     }
   }, [isEditing, selectedCompanyId, selectedCompany]);
@@ -61,7 +70,7 @@ export default function CompanySettingsContainer() {
 
   const handleEditClick = (company: CompanyData) => {
     setSelectedCompanyId(company.company.id);
-    setSelectedCompany(null);
+    setSelectedCompany(company);
     setIsEditing(true);
     setView("form");
   };

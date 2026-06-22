@@ -120,6 +120,65 @@ const INITIAL_FORM: CompleteCompanySetupInput = {
   regional_settings: { timezone: "Asia/Kolkata", date_format: "DD/MM/YYYY", time_format: "24h", currency_code: "INR", currency_symbol: "₹", language_code: "en" },
 };
 
+function buildInitialFormData(company: CompanyData | null): CompleteCompanySetupInput {
+  if (!company) return INITIAL_FORM;
+
+  return {
+    company: {
+      company_name: company.company?.company_name || "",
+      business_type_id: company.company?.business_type_id || 0,
+      gst_number: company.company?.gst_number || "",
+      pan_number: company.company?.pan_number || "",
+    },
+    contact: {
+      mobile: company.contact?.mobile || "",
+      alternate_mobile: company.contact?.alternate_mobile || "",
+      email: company.contact?.email || "",
+    },
+    address: {
+      address_line1: company.address?.address_line1 || "",
+      address_line2: company.address?.address_line2 || "",
+      city: company.address?.city || "",
+      state_id: company.address?.state_id || 0,
+      country_id: company.address?.country_id || 0,
+      pincode: company.address?.pincode || "",
+    },
+    bank_details: company.bank_details?.[0]
+      ? {
+          bank_id: company.bank_details[0].bank_id || 0,
+          account_holder_name: company.bank_details[0].account_holder_name || "",
+          account_number: company.bank_details[0].account_number || "",
+          is_primary: company.bank_details[0].is_primary ?? true,
+        }
+      : { bank_id: 0, account_holder_name: "", account_number: "", is_primary: true },
+    upi_details: company.upi_details
+      ? { upi_id: company.upi_details.upi_id || "", upi_qr_url: company.upi_details.upi_qr_url || "" }
+      : { upi_id: "", upi_qr_url: "" },
+    invoice_settings: company.invoice_settings
+      ? {
+          invoice_prefix: company.invoice_settings.invoice_prefix || "INV",
+          invoice_start_number: company.invoice_settings.invoice_start_number || 1,
+          show_logo: company.invoice_settings.show_logo ?? true,
+          show_signature: company.invoice_settings.show_signature ?? false,
+          round_off_total: company.invoice_settings.round_off_total ?? true,
+        }
+      : { invoice_prefix: "INV", invoice_start_number: 1, show_logo: true, show_signature: false, round_off_total: true },
+    tax_settings: company.tax_settings
+      ? { gst_enabled: company.tax_settings.gst_enabled ?? true, tax_type_id: company.tax_settings.tax_type_id || 0 }
+      : { gst_enabled: true, tax_type_id: 0 },
+    regional_settings: company.regional_settings
+      ? {
+          timezone: company.regional_settings.timezone || "Asia/Kolkata",
+          date_format: company.regional_settings.date_format || "DD/MM/YYYY",
+          time_format: company.regional_settings.time_format || "24h",
+          currency_code: company.regional_settings.currency_code || "INR",
+          currency_symbol: company.regional_settings.currency_symbol || "₹",
+          language_code: company.regional_settings.language_code || "en",
+        }
+      : { timezone: "Asia/Kolkata", date_format: "DD/MM/YYYY", time_format: "24h", currency_code: "INR", currency_symbol: "₹", language_code: "en" },
+  };
+}
+
 /* ─────────────────────────────────────────────────────────────
    Main Component
 ───────────────────────────────────────────────────────────── */
@@ -134,40 +193,11 @@ export default function CompanySetupWizard({ company, onClose, onSuccess }: Comp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [formData, setFormData] = useState<CompleteCompanySetupInput>(INITIAL_FORM);
+  const [formData, setFormData] = useState<CompleteCompanySetupInput>(() => buildInitialFormData(company || null));
   const [animDir, setAnimDir] = useState<"forward" | "back">("forward");
 
   useEffect(() => {
-    if (company && Object.keys(company).length > 0 && company.company && company.contact && company.address) {
-      setFormData({
-        company: {
-          company_name: company.company?.company_name || "",
-          business_type_id: company.company?.business_type_id || 0,
-          gst_number: company.company?.gst_number || "",
-          pan_number: company.company?.pan_number || "",
-        },
-        contact: {
-          mobile: company.contact?.mobile || "",
-          alternate_mobile: company.contact?.alternate_mobile || "",
-          email: company.contact?.email || "",
-        },
-        address: {
-          address_line1: company.address?.address_line1 || "",
-          address_line2: company.address?.address_line2 || "",
-          city: company.address?.city || "",
-          state_id: company.address?.state_id || 0,
-          country_id: company.address?.country_id || 0,
-          pincode: company.address?.pincode || "",
-        },
-        bank_details: company.bank_details?.[0]
-          ? { bank_id: company.bank_details[0].bank_id || 0, account_holder_name: company.bank_details[0].account_holder_name || "", account_number: company.bank_details[0].account_number || "", is_primary: company.bank_details[0].is_primary ?? true }
-          : { bank_id: 0, account_holder_name: "", account_number: "", is_primary: true },
-        upi_details: company.upi_details ? { upi_id: company.upi_details.upi_id || "", upi_qr_url: company.upi_details.upi_qr_url || "" } : { upi_id: "", upi_qr_url: "" },
-        invoice_settings: company.invoice_settings ? { invoice_prefix: company.invoice_settings.invoice_prefix || "INV", invoice_start_number: company.invoice_settings.invoice_start_number || 1, show_logo: company.invoice_settings.show_logo ?? true, show_signature: company.invoice_settings.show_signature ?? false, round_off_total: company.invoice_settings.round_off_total ?? true } : { invoice_prefix: "INV", invoice_start_number: 1, show_logo: true, show_signature: false, round_off_total: true },
-        tax_settings: company.tax_settings ? { gst_enabled: company.tax_settings.gst_enabled ?? true, tax_type_id: company.tax_settings.tax_type_id || 0 } : { gst_enabled: true, tax_type_id: 0 },
-        regional_settings: company.regional_settings ? { timezone: company.regional_settings.timezone || "Asia/Kolkata", date_format: company.regional_settings.date_format || "DD/MM/YYYY", time_format: company.regional_settings.time_format || "24h", currency_code: company.regional_settings.currency_code || "INR", currency_symbol: company.regional_settings.currency_symbol || "₹", language_code: company.regional_settings.language_code || "en" } : { timezone: "Asia/Kolkata", date_format: "DD/MM/YYYY", time_format: "24h", currency_code: "INR", currency_symbol: "₹", language_code: "en" },
-      });
-    }
+    setFormData(buildInitialFormData(company || null));
   }, [company]);
 
   const handleNext = () => {
@@ -200,18 +230,18 @@ export default function CompanySetupWizard({ company, onClose, onSuccess }: Comp
       if (formData.address.country_id === 0) throw new Error("Please select a country");
       if (formData.address.state_id === 0) throw new Error("Please select a state");
 
-      const submitData: CompleteCompanySetupInput = {
+      const createPayload: CompleteCompanySetupInput = {
         ...formData,
-        tax_settings: formData.tax_settings?.tax_type_id ?? 0 > 0 ? formData.tax_settings : undefined,
-        bank_details: formData.bank_details?.bank_id ?? 0 > 0 ? formData.bank_details : undefined,
+        tax_settings: (formData.tax_settings?.tax_type_id ?? 0) > 0 ? formData.tax_settings : undefined,
+        bank_details: (formData.bank_details?.bank_id ?? 0) > 0 ? formData.bank_details : undefined,
         upi_details: formData.upi_details?.upi_id?.trim() ? formData.upi_details : undefined,
       };
 
       let response;
       if (company) {
-        response = await companyApi.updateCompany(company.company.id, submitData);
+        response = await companyApi.updateCompany(company.company.id, createPayload.company);
       } else {
-        response = await companyApi.completeCompanySetup(submitData);
+        response = await companyApi.completeCompanySetup(createPayload);
       }
 
       setSuccess(true);
