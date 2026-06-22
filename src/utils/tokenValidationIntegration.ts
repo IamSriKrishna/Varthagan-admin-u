@@ -101,7 +101,7 @@ export function createQueryClientConfig(): any {
   return {
     defaultOptions: {
       queries: {
-        retry: async (failureCount, error: any) => {
+        retry: async (failureCount: number, error: any) => {
           // Validate token on retry
           if (error?.response?.status === 401) {
             const isValid = await validateTokenViaAPI();
