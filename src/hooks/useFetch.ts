@@ -33,8 +33,11 @@ function useFetch<T = unknown, F = unknown>({
     setLoading(true);
     setError(null);
     try {
-      const finalBase = baseUrl || config.apiDomain;
-      const fullUrl = url.startsWith("http") ? url : `${finalBase}${url}`;
+      const defaultBase = process.env.NEXT_PUBLIC_API_DOMAIN || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8088";
+      const finalBase = baseUrl || config.apiDomain || defaultBase;
+      const normalizedBase = finalBase.replace(/\/$/, "");
+      const normalizedUrl = url.startsWith("/") ? url : `/${url}`;
+      const fullUrl = url.startsWith("http") ? url : `${normalizedBase}${normalizedUrl}`;
       const res = await appFetch(fullUrl, {
         method: "GET",
         headers: {

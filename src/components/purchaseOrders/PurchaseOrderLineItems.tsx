@@ -214,7 +214,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
       }
     } else {
       if (!formData.quantity || formData.quantity <= 0) {
-        alert("Please fill all required fields correctly");
+        alert("Please enter a valid quantity");
         return;
       }
     }
@@ -222,19 +222,24 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
     const items_ = [...formik.values.line_items];
 
     // Calculate quantity for raw materials
-    let calculatedQty = formData.quantity || 0;
+    let calculatedQty = formData.quantity || 1;
 
     if ((formData as any).is_raw_material) {
       calculatedQty = ((formData as any).number_of_packs || 0) * ((formData as any).quantity_per_pack || 0);
+    }
+
+    // Ensure quantity is at least 1 for non-raw materials
+    if (!((formData as any).is_raw_material) && calculatedQty < 1) {
+      calculatedQty = formData.quantity || 1;
     }
 
     const amount = calculatedQty * formData.rate;
 
     const lineItem: any = {
       ...formData,
-      quantity: 0,
-      purchase_unit: (formData as any).raw_material_unit || "kg",
-      raw_material_unit: (formData as any).raw_material_unit || "kg",
+      quantity: calculatedQty,
+      purchase_unit: (formData as any).is_raw_material ? (formData as any).raw_material_unit : (formData as any).purchase_unit || "",
+      raw_material_unit: (formData as any).raw_material_unit || "",
       amount,
     };
 
@@ -739,13 +744,15 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                     const isResource = (val as any)?.is_resource || false;
                     const isRawMaterial = isRaw || isResource;
 
-                    setFormData({
-                      ...formData,
+                    setFormData((prev) => ({
+                      ...prev,
                       product_id: val?.id || "",
                       product_name: val?.name || "",
                       is_raw_material: isRawMaterial,
                       raw_material_unit: isRawMaterial ? (isResource ? (val as any)?.resource_unit : "kg") : "",
-                    });
+                      // Preserve quantity for non-raw materials
+                      quantity: isRawMaterial ? 0 : (prev.quantity || 1),
+                    }));
                     if (val) {
                       setSelectedProduct(val);
                       setSelectedVariant(null);
@@ -764,14 +771,19 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                           ...prev,
                           rate: rateValue,
                           sku: v.sku,
-                          is_raw_material: isRawMaterial,
+                          quantity: prev.quantity || 1,
                         }));
                       } else if (val.purchase_info?.cost_price) {
                         rateValue = val.purchase_info.cost_price;
                       }
 
                       if (isRaw || isResource) {
-                        setFormData((prev) => ({ ...prev, rate: rateValue, is_raw_material: isRawMaterial }));
+                        setFormData((prev) => ({ 
+                          ...prev, 
+                          rate: rateValue, 
+                          is_raw_material: isRawMaterial,
+                          quantity: 0,
+                        }));
                       }
                     } else {
                       setSelectedProduct(null);
@@ -988,14 +1000,23 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                       </Grid>
                       <Grid size={{ xs: 12 }} component="div">
                         <Field label="Unit" required>
-                          <TextField
-                            fullWidth
+                          <Select
                             size="small"
+                            fullWidth
                             value={(formData as any).raw_material_unit || "kg"}
                             onChange={(e) => setFormData({ ...formData, raw_material_unit: e.target.value })}
-                            sx={inputSx}
-                            placeholder="e.g., kg"
-                          />
+                            sx={selectSx}
+                          >
+                            <MenuItem value="kg">kg (Kilogram)</MenuItem>
+                            <MenuItem value="gm">gm (Gram)</MenuItem>
+                            <MenuItem value="liter">Liter</MenuItem>
+                            <MenuItem value="ml">ml (Milliliter)</MenuItem>
+                            <MenuItem value="pcs">pcs (Pieces)</MenuItem>
+                            <MenuItem value="box">Box</MenuItem>
+                            <MenuItem value="carton">Carton</MenuItem>
+                            <MenuItem value="meter">Meter</MenuItem>
+                            <MenuItem value="sqft">Sq.Ft (Square Feet)</MenuItem>
+                          </Select>
                         </Field>
                       </Grid>
                       {/* Calculate and display total */}
@@ -1169,14 +1190,27 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                       </Grid>
                       <Grid size={{ xs: 12 }} component="div">
                         <Field label="Material Unit" required>
-                          <TextField
-                            fullWidth
+                          <Select
                             size="small"
+                            fullWidth
                             value={(formData as any).raw_material_unit || ""}
+                            displayEmpty
                             onChange={(e) => setFormData({ ...formData, raw_material_unit: e.target.value })}
-                            sx={inputSx}
-                            placeholder="e.g., kg, liter, pieces"
-                          />
+                            sx={selectSx}
+                          >
+                            <MenuItem value="" disabled>
+                              <em>Select unit</em>
+                            </MenuItem>
+                            <MenuItem value="kg">kg (Kilogram)</MenuItem>
+                            <MenuItem value="gm">gm (Gram)</MenuItem>
+                            <MenuItem value="liter">Liter</MenuItem>
+                            <MenuItem value="ml">ml (Milliliter)</MenuItem>
+                            <MenuItem value="pcs">pcs (Pieces)</MenuItem>
+                            <MenuItem value="box">Box</MenuItem>
+                            <MenuItem value="carton">Carton</MenuItem>
+                            <MenuItem value="meter">Meter</MenuItem>
+                            <MenuItem value="sqft">Sq.Ft (Square Feet)</MenuItem>
+                          </Select>
                         </Field>
                       </Grid>
                       <Grid size={{ xs: 12 }} component="div">
@@ -1212,14 +1246,27 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                   </Grid>
                   <Grid size={{ xs: 4 }} component="div">
                     <Field label="Unit">
-                      <TextField
-                        fullWidth
+                      <Select
                         size="small"
+                        fullWidth
                         value={(formData as any).purchase_unit || ""}
+                        displayEmpty
                         onChange={(e) => setFormData({ ...formData, purchase_unit: e.target.value })}
-                        sx={inputSx}
-                        placeholder="e.g., kg, pcs"
-                      />
+                        sx={selectSx}
+                      >
+                        <MenuItem value="" disabled>
+                          <em>Select unit</em>
+                        </MenuItem>
+                        <MenuItem value="kg">kg (Kilogram)</MenuItem>
+                        <MenuItem value="gm">gm (Gram)</MenuItem>
+                        <MenuItem value="liter">Liter</MenuItem>
+                        <MenuItem value="ml">ml (Milliliter)</MenuItem>
+                        <MenuItem value="pcs">pcs (Pieces)</MenuItem>
+                        <MenuItem value="box">Box</MenuItem>
+                        <MenuItem value="carton">Carton</MenuItem>
+                        <MenuItem value="meter">Meter</MenuItem>
+                        <MenuItem value="sqft">Sq.Ft (Square Feet)</MenuItem>
+                      </Select>
                     </Field>
                   </Grid>
                   <Grid size={{ xs: 4 }} component="div">

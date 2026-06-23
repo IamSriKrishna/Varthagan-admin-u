@@ -44,6 +44,11 @@ import { SalesOrder, SalesOrderLineItemInput } from '@/models/salesOrder.model';
 import { apiService } from '@/lib/api/api.service';
 import { localStorageAuthKey } from '@/constants/localStorageConstant';
 import { LoginResponse } from '@/models/IUser';
+import { customerPricingService } from '@/lib/api/customerPricing.service';
+import { productGroupService } from '@/services/productGroupService';
+import type { Manufacturer as ManufacturerModel } from '@/models/manufacturer.model';
+import type { CustomerPricing } from '@/models/customerPricing.model';
+import type { ProductGroupDetailsOutput } from '@/models/product-group.model';
 
 // ────────────────────────────────────────────────────────────────────────
 // Helper to get auth token from localStorage
@@ -67,18 +72,18 @@ interface SalesOrderLineItemsProps {
   customerId?: number | string;
 }
 
-interface Manufacturer {
-  id: string;
-  name: string;
-  description?: string;
-  is_active: boolean;
-  cost: number;
-  selling_price: number;
-  profit: number;
-  components: any[];
-  created_at: string;
-  updated_at: string;
-}
+type UIManufacturer = ManufacturerModel & {
+  selling_price?: number;
+  cost?: number;
+  profit?: number;
+  components?: Array<{
+    product_id: string;
+    quantity: number;
+    product?: {
+      selling_price?: number;
+    };
+  }>;
+};
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const T = {
@@ -131,15 +136,19 @@ const EMPTY_ITEM: SalesOrderLineItemInput = {
 };
 
 export default function SalesOrderLineItems({ formik, customerId }: SalesOrderLineItemsProps) {
-  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
+  const [manufacturers, setManufacturers] = useState<UIManufacturer[]>([]);
   const [loadingManufacturers, setLoadingManufacturers] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState<SalesOrderLineItemInput>(EMPTY_ITEM);
-  const [selectedManufacturer, setSelectedManufacturer] = useState<Manufacturer | null>(null);
+  const [selectedManufacturer, setSelectedManufacturer] = useState<UIManufacturer | null>(null);
   const [loadingCustomerPricing, setLoadingCustomerPricing] = useState(false);
+  const [customerPricing, setCustomerPricing] = useState<CustomerPricing | null>(null);
+  const [pricingSource, setPricingSource] = useState<'product' | 'manufacturer' | 'default' | null>(null);
+  const [productGroupDetails, setProductGroupDetails] = useState<ProductGroupDetailsOutput | null>(null);
   const [manufacturerDetails, setManufacturerDetails] = useState<any>(null);
   const [loadingManufacturerDetails, setLoadingManufacturerDetails] = useState(false);
+  const [loadingProductGroup, setLoadingProductGroup] = useState(false);
 
   // Fetch manufacturers
   useEffect(() => {
@@ -147,7 +156,7 @@ export default function SalesOrderLineItems({ formik, customerId }: SalesOrderLi
     const fetchManufacturers = async () => {
       try {
         const token = getToken();
-        const response = await fetch('https://api.guruaqua.com/manufacturers', {
+        const response = await fetch('http://127.0.0.1:8088/manufacturers', {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
@@ -166,58 +175,138 @@ export default function SalesOrderLineItems({ formik, customerId }: SalesOrderLi
     fetchManufacturers();
   }, []);
 
-  // Fetch customer pricing for a specific manufacturer
-  const fetchCustomerPricing = async (manufacturerId: string): Promise<number | null> => {
-    if (!customerId || !manufacturerId) return null;
-    
-    try {
+  useEffect(() => {
+    const loadCustomerPricing = async () => {
+      if (!customerId) {
+        setCustomerPricing(null);
+        return;
+      }
+
       setLoadingCustomerPricing(true);
-      const token = getToken();
-      const response = await fetch(
-        `https://api.guruaqua.com/customer-pricing/customer?customer_id=${customerId}&offset=0&limit=100`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          }
+      try {
+        const numericCustomerId = Number(customerId);
+        if (Number.isNaN(numericCustomerId)) {
+          console.warn('Invalid customerId for pricing lookup:', customerId);
+          setCustomerPricing(null);
+          return;
         }
-      );
-      
-      if (!response.ok) {
-        console.warn('Failed to fetch customer pricing');
-        return null;
-      }
 
-      const result = await response.json();
-      
-      // Handle nested structure: result.data.pricings or result.data array
-      const pricingList = result.data?.pricings || result.data || [];
-      const pricingsArray = Array.isArray(pricingList) ? pricingList : [];
-      
-      if (pricingsArray.length === 0) {
-        console.warn('No pricing data found');
-        return null;
-      }
+        const pricingResponse = await customerPricingService.getByCustomerId(numericCustomerId, 100, 0);
+        const pricingRecords = pricingResponse.data?.pricings || [];
+        const mergedLineItems = pricingRecords.flatMap((pricing) => pricing.line_items || []);
 
-      // Find pricing for this manufacturer (handle both string and number IDs)
-      const pricing = pricingsArray.find(
-        (p: any) => String(p.manufacturer_id) === String(manufacturerId)
-      );
-      
-      if (pricing && pricing.rate) {
-        console.log(`Found pricing for manufacturer ${manufacturerId}: ₹${pricing.rate}`);
-        return pricing.rate;
+        setCustomerPricing({
+          customer_id: numericCustomerId,
+          customer_name: pricingRecords[0]?.customer_name,
+          line_items: mergedLineItems,
+        });
+      } catch (error) {
+        console.error('Failed to load customer pricing:', error);
+        setCustomerPricing(null);
+      } finally {
+        setLoadingCustomerPricing(false);
       }
-      
-      console.warn(`No matching pricing found for manufacturer ${manufacturerId}`);
-      return null;
+    };
+
+    loadCustomerPricing();
+  }, [customerId]);
+
+  const fetchProductGroupDetails = async (productGroupId: string) => {
+    if (!productGroupId) return;
+    setLoadingProductGroup(true);
+    try {
+      const response = await productGroupService.getProductGroup(productGroupId);
+      setProductGroupDetails(response.data);
     } catch (error) {
-      console.error('Failed to fetch customer pricing:', error);
-      return null;
+      console.error('Failed to fetch product group details:', error);
+      setProductGroupDetails(null);
     } finally {
-      setLoadingCustomerPricing(false);
+      setLoadingProductGroup(false);
     }
   };
+
+  const calculateProductGroupRate = async (manufacturer: UIManufacturer): Promise<number | null> => {
+    if (!customerPricing || !manufacturer.product_group_id) return null;
+
+    let group = productGroupDetails?.id === manufacturer.product_group_id ? productGroupDetails : null;
+
+    if (!group) {
+      try {
+        setLoadingProductGroup(true);
+        const response = await productGroupService.getProductGroup(manufacturer.product_group_id);
+        group = response.data;
+        setProductGroupDetails(group);
+      } catch (error) {
+        console.error('Failed to fetch product group details:', error);
+        return null;
+      } finally {
+        setLoadingProductGroup(false);
+      }
+    }
+
+    if (!group?.components?.length) return null;
+
+    let total = 0;
+    let hasPricing = false;
+
+    for (const component of group.components) {
+      const productPricing = customerPricing.line_items.find(
+        (item) => String(item.product_id) === String(component.product_id)
+      );
+
+      if (productPricing?.rate != null) {
+        total += productPricing.rate * component.quantity;
+        hasPricing = true;
+        continue;
+      }
+
+      if (component.product?.selling_price != null) {
+        total += component.product.selling_price * component.quantity;
+        continue;
+      }
+
+      return null;
+    }
+
+    return hasPricing ? total : null;
+  };
+
+  const getBestCustomerRate = async (manufacturer: UIManufacturer): Promise<{ rate: number; source: 'product' | 'manufacturer' | 'default' }> => {
+    const productRate = await calculateProductGroupRate(manufacturer);
+    if (productRate !== null) {
+      return { rate: productRate, source: 'product' };
+    }
+
+    const manufacturerPricing = customerPricing?.line_items.find(
+      (item) => String(item.manufacturer_id) === String(manufacturer.id)
+    );
+
+    if (manufacturerPricing?.rate != null) {
+      return { rate: manufacturerPricing.rate, source: 'manufacturer' };
+    }
+
+    return { rate: manufacturer.selling_price ?? 0, source: 'default' };
+  };
+
+  useEffect(() => {
+    if (!selectedManufacturer) return;
+
+    const applyBestRate = async () => {
+      setLoadingCustomerPricing(true);
+      try {
+        const { rate, source } = await getBestCustomerRate(selectedManufacturer);
+        setFormData((prev) => ({
+          ...prev,
+          rate,
+        }));
+        setPricingSource(source);
+      } finally {
+        setLoadingCustomerPricing(false);
+      }
+    };
+
+    applyBestRate();
+  }, [selectedManufacturer, customerPricing]);
 
   // Fetch detailed manufacturer information
   const fetchManufacturerDetails = async (manufacturerId: string) => {
@@ -301,37 +390,28 @@ export default function SalesOrderLineItems({ formik, customerId }: SalesOrderLi
     );
   };
 
-  const handleManufacturerChange = (value: any) => {
+  const handleManufacturerChange = (value: UIManufacturer | null) => {
     if (!value?.id) {
       setSelectedManufacturer(null);
       setFormData(EMPTY_ITEM);
       setManufacturerDetails(null);
+      setPricingSource(null);
       return;
     }
 
-    // Set initial form data with manufacturer's default selling price
-    setFormData((p) => ({
-      ...p,
+    setSelectedManufacturer(value);
+    setFormData((prev) => ({
+      ...prev,
       manufacturer_id: value.id,
       manufacturer_name: value.name,
       rate: value.selling_price || 0,
     }));
-    setSelectedManufacturer(value);
+    setPricingSource(null);
+    setManufacturerDetails(null);
 
-    // Fetch detailed manufacturer information
     fetchManufacturerDetails(value.id);
-
-    // Fetch customer pricing if customer is selected
-    if (customerId) {
-      fetchCustomerPricing(value.id).then((customerRate) => {
-        if (customerRate !== null) {
-          // Update rate with customer-specific pricing
-          setFormData((p) => ({
-            ...p,
-            rate: customerRate,
-          }));
-        }
-      });
+    if (value.product_group_id) {
+      fetchProductGroupDetails(value.product_group_id);
     }
   };
 
@@ -703,38 +783,41 @@ export default function SalesOrderLineItems({ formik, customerId }: SalesOrderLi
                   getOptionLabel={(o) => `${o.name || ''}`}
                   value={selectedManufacturerOption || null}
                   onChange={(_, val) => handleManufacturerChange(val)}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props} sx={{ py: '10px !important', gap: 1.5 }}>
-                      <Box
-                        sx={{
-                          width: 30,
-                          height: 30,
-                          borderRadius: 1.5,
-                          bgcolor: '#f1f5f9',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#94a3b8',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <InventoryOutlinedIcon sx={{ fontSize: 16 }} />
+                  renderOption={(props, option) => {
+                    const componentCount = option.components?.length ?? 0;
+                    return (
+                      <Box component="li" {...props} sx={{ py: '10px !important', gap: 1.5 }}>
+                        <Box
+                          sx={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: 1.5,
+                            bgcolor: '#f1f5f9',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#94a3b8',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <InventoryOutlinedIcon sx={{ fontSize: 16 }} />
+                        </Box>
+                        <Box>
+                          <Typography sx={{ fontSize: '0.875rem', fontWeight: 500 }}>{option.name}</Typography>
+                          {componentCount > 0 && (
+                            <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                              {componentCount} component{componentCount > 1 ? 's' : ''}
+                            </Typography>
+                          )}
+                          {option.selling_price != null && (
+                            <Typography sx={{ fontSize: '0.75rem', color: '#64748b' }}>
+                              Selling: ₹{option.selling_price.toFixed(2)}
+                            </Typography>
+                          )}
+                        </Box>
                       </Box>
-                      <Box>
-                        <Typography sx={{ fontSize: '0.875rem', fontWeight: 500 }}>{option.name}</Typography>
-                        {option.components?.length > 0 && (
-                          <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                            {option.components.length} component{option.components.length > 1 ? 's' : ''}
-                          </Typography>
-                        )}
-                        {option.selling_price && (
-                          <Typography sx={{ fontSize: '0.75rem', color: '#64748b' }}>
-                            Selling: ₹{option.selling_price.toFixed(2)}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-                  )}
+                    );
+                  }}
                   renderInput={(params) => (
                     <TextField {...params} placeholder="Search and select a manufacturer…" sx={{ mb: 0 }} />
                   )}
@@ -756,16 +839,83 @@ export default function SalesOrderLineItems({ formik, customerId }: SalesOrderLi
                     border: '1px solid #86EFAC',
                   }}
                 >
-                  <Stack direction="row" alignItems="center" spacing={1}>
+                  <Stack direction="column" spacing={0.5}>
                     <Typography sx={{ fontSize: '0.825rem', color: '#15803D', fontWeight: 500 }}>
                       {loadingCustomerPricing ? 'Fetching customer pricing...' : `Customer rate: ₹${formData.rate.toFixed(2)}`}
                     </Typography>
+                    {!loadingCustomerPricing && pricingSource && (
+                      <Typography sx={{ fontSize: '0.75rem', color: '#0f5132' }}>
+                        {pricingSource === 'product'
+                          ? 'Applied from product-level customer pricing for manufacturing components'
+                          : pricingSource === 'manufacturer'
+                          ? 'Applied from customer pricing for this manufacturer'
+                          : 'Using default manufacturer selling price'}
+                      </Typography>
+                    )}
                   </Stack>
-                  {loadingCustomerPricing && (
+                  {(loadingCustomerPricing || loadingProductGroup) && (
                     <CircularProgress size={16} sx={{ color: '#15803D' }} />
                   )}
                 </Box>
               )}
+
+              {selectedManufacturer && productGroupDetails?.components?.length ? (
+                <Box
+                  sx={{
+                    p: 2,
+                    bgcolor: '#f8fafc',
+                    borderRadius: 2,
+                    border: '1px solid #e2e8f0',
+                  }}
+                >
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', mb: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Product Components & Customer Pricing
+                  </Typography>
+                  <Stack spacing={1.25}>
+                    {productGroupDetails.components.map((component, idx) => {
+                      const productPrice = customerPricing?.line_items.find(
+                        (item) => String(item.product_id) === String(component.product_id)
+                      )?.rate;
+                      const unitPrice = productPrice ?? component.product?.selling_price ?? 0;
+                      return (
+                        <Box key={idx} sx={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 1, p: 1, bgcolor: '#fff', borderRadius: 2, border: '1px solid #e2e8f0' }}>
+                          <Box>
+                            <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#0f172a' }}>
+                              {component.product?.name || component.product_id}
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.75rem', color: '#64748b' }}>
+                              Qty per unit: {component.quantity}
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.75rem', color: '#64748b' }}>
+                              Price source: {productPrice != null ? 'Customer pricing' : component.product?.selling_price != null ? 'Product selling price' : 'None'}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ textAlign: 'right' }}>
+                            <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a' }}>
+                              ₹{unitPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.75rem', color: '#64748b' }}>
+                              Total: ₹{(unitPrice * component.quantity).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      );
+                    })}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 1, borderTop: '1px solid #e2e8f0' }}>
+                      <Typography sx={{ fontSize: '0.825rem', color: '#0f172a', fontWeight: 700 }}>Component bundle rate</Typography>
+                      <Typography sx={{ fontSize: '0.825rem', color: '#0f172a', fontWeight: 700 }}>
+                        ₹{productGroupDetails.components.reduce((sum, component) => {
+                          const productPrice = customerPricing?.line_items.find(
+                            (item) => String(item.product_id) === String(component.product_id)
+                          )?.rate;
+                          const unitPrice = productPrice ?? component.product?.selling_price ?? 0;
+                          return sum + unitPrice * component.quantity;
+                        }, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+              ) : null}
 
               {/* Manufacturer Details */}
               {selectedManufacturer && (

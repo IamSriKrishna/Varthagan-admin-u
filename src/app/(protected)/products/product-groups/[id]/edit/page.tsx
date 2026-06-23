@@ -50,17 +50,33 @@ export default function EditProductGroupPage({ params }: { params: { id: string 
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [initialValues, setInitialValues] = useState<ProductGroupFormData | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const { data: productGroupData, loading: groupLoading } = useFetch<ProductGroupResponse>({
+  const { data: productGroupData, loading: groupLoading, error: groupError } = useFetch<ProductGroupResponse>({
     url: `/product-groups/${params.id}`,
+    options: { skip: !params.id },
   });
 
-  const { data: productsData, loading: productsLoading } = useFetch<{ products: any[]; total: number }>({
+  const { data: productsData, loading: productsLoading, error: productsError } = useFetch<{ products: any[]; total: number }>({
     url: products.postProduct,
   });
 
   useEffect(() => {
+    if (groupError) {
+      setFetchError(groupError);
+      showToastMessage(groupError, "error");
+      return;
+    }
+
+    if (productGroupData && !productGroupData.success) {
+      const message = productGroupData.message || "Failed to load product group";
+      setFetchError(message);
+      showToastMessage(message, "error");
+      return;
+    }
+
     if (productGroupData?.data) {
+      setFetchError(null);
       setInitialValues({
         name: productGroupData.data.name,
         description: productGroupData.data.description,
@@ -76,7 +92,7 @@ export default function EditProductGroupPage({ params }: { params: { id: string 
       }));
       setSelectedProducts(components);
     }
-  }, [productGroupData]);
+  }, [productGroupData, groupError]);
 
   const availableProducts = productsData?.products?.map((p: any) => ({
     id: p.id,
@@ -168,10 +184,36 @@ export default function EditProductGroupPage({ params }: { params: { id: string 
     }
   };
 
-  if (groupLoading || !initialValues) {
+  if (groupLoading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
         <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!initialValues && fetchError) {
+    return (
+      <Box sx={{ px: 4, py: 10 }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {fetchError}
+        </Alert>
+        <Button variant="contained" onClick={() => router.back()}>
+          Go back
+        </Button>
+      </Box>
+    );
+  }
+
+  if (!initialValues) {
+    return (
+      <Box sx={{ px: 4, py: 10 }}>
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          Unable to load product group data. Please refresh the page.
+        </Alert>
+        <Button variant="contained" onClick={() => router.back()}>
+          Go back
+        </Button>
       </Box>
     );
   }

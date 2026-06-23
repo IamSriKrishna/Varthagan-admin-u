@@ -28,6 +28,7 @@ import {
   CreateCustomerPricingRequest,
   CustomerPricingLineItem,
 } from '@/models/customerPricing.model';
+import { customerPricingService } from '@/lib/api/customerPricing.service';
 import { apiService } from '@/lib/api/api.service';
 import { localStorageAuthKey } from '@/constants/localStorageConstant';
 import { LoginResponse } from '@/models/IUser';
@@ -143,52 +144,78 @@ export default function CustomerPricingScreen({
       const token = getToken();
       if (!token) { setError('Authentication token not found'); return; }
 
-      const response = await apiService.get('/customer-pricing');
-      if (!response?.data) { setCustomersWithPricing([]); return; }
+      // Fetch customer-specific pricing if customerId is provided, otherwise fetch all
+      let apiResp;
+      if (customerId) {
+        apiResp = await customerPricingService.getByCustomerId(customerId, 100, 0);
+      } else {
+        apiResp = await customerPricingService.list(100, 0);
+      }
 
-      // Extract pricings array from nested structure
-      const pricingsData = response.data?.pricings || response.data;
-      const lineItems: any[] = Array.isArray(pricingsData) ? pricingsData : [];
+      // Normalize response shapes: service may return axios response (with .data)
+      // or the service may already return the payload. Handle double-wrapped cases too.
+      let payload: any = apiResp;
+      if (apiResp && typeof apiResp === 'object') {
+        if (apiResp.data) payload = apiResp.data;
+        if (payload && payload.data) payload = payload.data;
+      }
 
-      if (lineItems.length === 0) {
+      // Extract pricings array from normalized payload
+      const pricingsData: any[] = Array.isArray(payload?.pricings)
+        ? payload.pricings
+        : Array.isArray(payload)
+        ? payload
+        : [];
+      
+      if (pricingsData.length === 0) {
         setCustomersWithPricing([]);
         return;
       }
 
-      const grouped: Record<number, CustomerWithPricing> = {};
-      lineItems.forEach((item) => {
-        if (!grouped[item.customer_id]) {
-          grouped[item.customer_id] = {
-            id: item.customer_id,
-            name: item.customer_name || `Customer ${item.customer_id}`,
-            pricings: [
-              {
-                id: item.customer_id.toString(),
-                customer_id: item.customer_id,
-                customer_name: item.customer_name,
-                line_items: [],
-                created_at: item.created_at,
-                updated_at: item.updated_at,
-              },
-            ],
-          };
+      // Transform flat pricing entries into CustomerPricing objects grouped by customer.
+      // Many APIs return one row per line-item; UI expects `CustomerPricing` with `line_items`.
+      const byCustomer: Record<number, { id: number; name: string; line_items: any[] }> = {};
+
+      pricingsData.forEach((row: any) => {
+        const cid = row.customer_id;
+        if (!byCustomer[cid]) {
+          byCustomer[cid] = { id: cid, name: row.customer_name || `Customer ${cid}`, line_items: [] };
         }
 
+        // Map API row to a line item shape
         const lineItem: CustomerPricingLineItem = {
-          id: item.id,
-          manufacturer_id: item.manufacturer_id,
-          manufacturer_name: item.manufacturer_name,
-          rate: item.rate,
-          account: item.account,
-          description: item.description,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
+          id: row.id,
+          product_id: row.product_id,
+          product_name: row.product_name,
+          manufacturer_id: row.manufacturer_id,
+          manufacturer_name: row.manufacturer_name,
+          rate: row.rate ?? 0,
+          account: row.account ?? 'SALES_REVENUE',
+          description: row.description || row.notes || '',
+          effective_from: row.effective_from || null,
+          effective_to: row.effective_to || null,
+          is_active: row.is_active ?? true,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
         };
 
-        grouped[item.customer_id].pricings[0].line_items.push(lineItem);
+        byCustomer[cid].line_items.push(lineItem);
       });
 
-      setCustomersWithPricing(Object.values(grouped));
+      // Convert to CustomerWithPricing[] where each customer has one pricing record containing all line items
+      const customersArr: CustomerWithPricing[] = Object.values(byCustomer).map(c => ({
+        id: c.id,
+        name: c.name,
+        pricings: [
+          {
+            customer_id: c.id,
+            customer_name: c.name,
+            line_items: c.line_items,
+          },
+        ],
+      }));
+
+      setCustomersWithPricing(customersArr);
     } catch (err) {
       console.error('Failed to fetch customer pricing:', err);
       setError(err instanceof Error ? err.message : 'Failed to load customer pricing');
@@ -224,10 +251,17 @@ export default function CustomerPricingScreen({
       if (!getToken()) { setError('Authentication token not found'); return; }
 
       if (selectedPricing?.id) {
-        await apiService.put(`/customer-pricing/${selectedPricing.id}`, data);
+        // Update individual pricing record
+        await customerPricingService.update(selectedPricing.id, {
+          rate: data.line_items[0]?.rate || 0,
+          account: data.line_items[0]?.account || 'SALES_REVENUE',
+          description: data.line_items[0]?.description,
+          is_active: true,
+        });
         setSuccessMessage('Customer pricing updated successfully');
       } else {
-        await apiService.post('/customer-pricing', data);
+        // Create new customer pricing with line items
+        await customerPricingService.create(data);
         setSuccessMessage('Customer pricing created successfully');
       }
 
@@ -239,17 +273,17 @@ export default function CustomerPricingScreen({
     }
   };
 
-  const handleDeleteLineItem = async (pricingId: string, lineItemId: string) => {
+  const handleDeletePricing = async (pricingId: string) => {
     try {
       setError(null);
       if (!getToken()) { setError('Authentication token not found'); return; }
 
-      await apiService.delete(`/customer-pricing/${pricingId}/line-items/${lineItemId}`);
-      setSuccessMessage('Line item deleted successfully');
+      await customerPricingService.delete(pricingId);
+      setSuccessMessage('Pricing record deleted successfully');
       await fetchCustomerPricings();
       setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete line item');
+      setError(err instanceof Error ? err.message : 'Failed to delete pricing');
     }
   };
 
@@ -444,25 +478,32 @@ export default function CustomerPricingScreen({
                           <Table size="small" sx={{ tableLayout: 'fixed' }}>
                             <TableHead>
                               <TableRow sx={{ bgcolor: '#F7F8FA' }}>
-                                {['Mfg ID', 'Manufacturer', 'Rate', 'Account', 'Description', ''].map(
-                                  (h, i) => (
-                                    <TableCell
-                                      key={h + i}
-                                      align={i === 5 ? 'center' : 'left'}
-                                      sx={{
-                                        fontSize: 11,
-                                        fontWeight: 500,
-                                        color: 'text.secondary',
-                                        borderBottom: '0.5px solid',
-                                        borderColor: 'divider',
-                                        py: 1,
-                                        width: ['10%', '20%', '12%', '14%', '34%', '10%'][i],
-                                      }}
-                                    >
-                                      {h}
-                                    </TableCell>
-                                  ),
-                                )}
+                                {[
+                                  'Product',
+                                  'Rate',
+                                  'Account',
+                                  'Active',
+                                  'Date Range',
+                                  'Description',
+                                  '',
+                                ].map((h, i) => (
+                                  <TableCell
+                                    key={h + i}
+                                    align={i === 6 ? 'center' : 'left'}
+                                    sx={{
+                                      fontSize: 11,
+                                      fontWeight: 500,
+                                      color: 'text.secondary',
+                                      borderBottom: '0.5px solid',
+                                      borderColor: 'divider',
+                                      py: 1,
+                                      width:
+                                        ['18%', '12%', '12%', '8%', '18%', '15%', '7%'][i],
+                                    }}
+                                  >
+                                    {h}
+                                  </TableCell>
+                                ))}
                               </TableRow>
                             </TableHead>
                             <TableBody>
@@ -472,12 +513,30 @@ export default function CustomerPricingScreen({
                                   hover
                                   sx={{ '&:last-child td': { borderBottom: 0 } }}
                                 >
-                                  <TableCell sx={tdSx('#888780')}>{item.manufacturer_id}</TableCell>
-                                  <TableCell sx={tdSx()}>{item.manufacturer_name}</TableCell>
+                                  <TableCell sx={tdSx()}>
+                                    {item.product_name || '—'}
+                                  </TableCell>
                                   <TableCell sx={{ ...tdSx('#0F6E56'), fontWeight: 500 }}>
                                     {fmt(item.rate)}
                                   </TableCell>
                                   <TableCell sx={tdSx()}>{item.account}</TableCell>
+                                  <TableCell sx={tdSx()}>
+                                    <span
+                                      style={{
+                                        display: 'inline-block',
+                                        width: '8px',
+                                        height: '8px',
+                                        borderRadius: '50%',
+                                        backgroundColor: item.is_active ? '#15803d' : '#6b6860',
+                                      }}
+                                      title={item.is_active ? 'Active' : 'Inactive'}
+                                    />
+                                  </TableCell>
+                                  <TableCell sx={tdSx('text.secondary')}>
+                                    {item.effective_from || item.effective_to
+                                      ? `${item.effective_from ? new Date(item.effective_from).toLocaleDateString() : 'Start'} - ${item.effective_to ? new Date(item.effective_to).toLocaleDateString() : 'End'}`
+                                      : '—'}
+                                  </TableCell>
                                   <TableCell sx={tdSx('text.secondary')}>
                                     {item.description || '—'}
                                   </TableCell>
@@ -485,7 +544,7 @@ export default function CustomerPricingScreen({
                                     <Button
                                       size="small"
                                       onClick={() =>
-                                        handleDeleteLineItem(pricing.id ?? '', item.id ?? '')
+                                        handleDeletePricing(item.id ?? '')
                                       }
                                       sx={{
                                         minWidth: 0,

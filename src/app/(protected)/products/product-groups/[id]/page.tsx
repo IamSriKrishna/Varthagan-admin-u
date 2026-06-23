@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import {
   Box, Button, Stack, Typography, CircularProgress,
   Tooltip, Table, TableBody, TableCell, TableContainer,
@@ -276,12 +276,15 @@ function ProductCell({ name, id }: { name: string; id: string }) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function ProductGroupDetailsPage({ params }: { params: { id: string } }) {
+export default function ProductGroupDetailsPage() {
   const router = useRouter();
+  const params = useParams();
+  const groupId = params?.id as string | undefined;
   const [productGroup, setProductGroup] = useState<ProductGroupDetailsOutput | null>(null);
 
   const { data: fetchedData, loading: isLoading, error } = useFetch<ProductGroupDetailsResponse>({
-    url: `/product-groups/${params.id}`,
+    url: groupId ? `/product-groups/${groupId}` : "/product-groups/",
+    options: { skip: !groupId },
   });
 
   useEffect(() => {
@@ -375,7 +378,7 @@ export default function ProductGroupDetailsPage({ params }: { params: { id: stri
             <Button
               variant="contained"
               startIcon={<Edit size={14} />}
-              onClick={() => router.push(`/products/product-groups/${params.id}/edit`)}
+              onClick={() => groupId && router.push(`/products/product-groups/${groupId}/edit`)}
               sx={{
                 background: `linear-gradient(135deg, ${T.brand}, ${T.brandDark})`,
                 borderRadius: "11px", textTransform: "none",
@@ -430,10 +433,12 @@ export default function ProductGroupDetailsPage({ params }: { params: { id: stri
               <AlertTriangle size={28} color={T.danger} />
             </Box>
             <Typography sx={{ fontWeight: 900, color: T.text, mb: 0.75, fontSize: "1rem" }}>
-              Product group not found
+              {groupId ? "Product group not found" : "Invalid product group ID"}
             </Typography>
             <Typography sx={{ color: T.textLight, mb: 3, fontSize: "0.85rem" }}>
-              This group may have been deleted or the ID is invalid
+              {groupId
+                ? "This group may have been deleted or the ID is invalid"
+                : "No product group ID was provided in the URL."}
             </Typography>
             <Button
               onClick={() => router.back()}

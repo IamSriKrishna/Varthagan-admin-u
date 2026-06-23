@@ -751,9 +751,9 @@ export default function ProductGroupsPage() {
                 key={group.id}
                 group={group}
                 index={i}
-                onView={() => router.push(`/products/product-groups/${group.id}`)}
-                onEdit={() => router.push(`/products/product-groups/${group.id}/edit`)}
-                onReorder={() => router.push(`/products/product-groups/${group.id}/reorder`)}
+                onView={() => group.id ? router.push(`/products/product-groups/${group.id}`) : showToastMessage("Invalid product group ID", "error")}
+                onEdit={() => group.id ? router.push(`/products/product-groups/${group.id}/edit`) : showToastMessage("Invalid product group ID", "error")}
+                onReorder={() => group.id ? router.push(`/products/product-groups/${group.id}/reorder`) : showToastMessage("Invalid product group ID", "error")}
                 onDelete={() => { setSelectedId(group.id); setOpenDeleteDialog(true); }}
               />
             ))}

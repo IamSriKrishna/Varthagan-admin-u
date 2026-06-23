@@ -7,6 +7,7 @@ import {
   CreateCustomerPricingRequest,
 } from '@/models/customerPricing.model';
 import { Manufacturer } from '@/models/manufacturer.model';
+import { IProduct } from '@/models/IProduct';
 import { apiService } from '@/lib/api/api.service';
 import { localStorageAuthKey } from '@/constants/localStorageConstant';
 import { LoginResponse } from '@/models/IUser';
@@ -377,11 +378,14 @@ interface CustomerPricingFormProps {
 }
 
 const BLANK_LINE: LineItemFormData = {
-  manufacturer_id: '',
-  manufacturer_name: '',
+  product_id: '',
+  product_name: '',
   rate: 0,
   account: 'SALES_REVENUE',
   description: '',
+  is_active: true,
+  effective_from: null,
+  effective_to: null,
 };
 
 /* ─── Main component ─────────────────────────────────────── */
@@ -397,21 +401,37 @@ export default function CustomerPricingForm({
   const [customerId, setCustomerId]             = useState<number | null>(initialData?.customer_id ?? null);
   const [lineItems, setLineItems]               = useState<LineItemFormData[]>(initialData?.line_items ?? []);
   const [newItem, setNewItem]                   = useState<LineItemFormData>(BLANK_LINE);
-  const [manufacturers, setManufacturers]       = useState<Manufacturer[]>([]);
+  const [products, setProducts]                 = useState<any[]>([]);
   const [loading, setLoading]                   = useState(false);
   const [error, setError]                       = useState<string | null>(null);
 
   useEffect(() => {
-    fetchManufacturers();
+    fetchProducts();
     fetchCustomers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function fetchManufacturers() {
+  async function fetchProducts() {
     try {
-      const res = await apiService.get('/manufacturers?limit=100&offset=0');
-      setManufacturers(res?.data?.manufacturers ?? []);
-    } catch { setManufacturers([]); }
+      const res = await apiService.get('/products?limit=100&offset=0');
+      console.log('Products API Response:', res);
+      
+      // Handle different response structures
+      let productsList = [];
+      if (res?.data?.products && Array.isArray(res.data.products)) {
+        productsList = res.data.products;
+      } else if (res?.products && Array.isArray(res.products)) {
+        productsList = res.products;
+      } else if (Array.isArray(res?.data)) {
+        productsList = res.data;
+      }
+      
+      console.log('Extracted Products List:', productsList);
+      setProducts(productsList);
+    } catch (err) { 
+      console.error('Error fetching products:', err);
+      setProducts([]); 
+    }
   }
 
   async function fetchCustomers() {
@@ -431,8 +451,12 @@ export default function CustomerPricingForm({
 
   /* ── Line item actions ── */
   const handleAddLineItem = () => {
-    if (!newItem.manufacturer_id) { setError('Please select a manufacturer'); return; }
-    if (newItem.rate <= 0)        { setError('Rate must be greater than 0');   return; }
+    if (!newItem.product_id) {
+      setError('Please select a product');
+      return;
+    }
+    if (newItem.rate < 0) { setError('Rate must be greater than or equal to 0'); return; }
+    
     setLineItems(prev => [...prev, { ...newItem }]);
     setNewItem(BLANK_LINE);
     setError(null);
@@ -441,11 +465,11 @@ export default function CustomerPricingForm({
   const handleDeleteLineItem = (idx: number) =>
     setLineItems(prev => prev.filter((_, i) => i !== idx));
 
-  const handleManufacturerSelect = (m: Manufacturer | null) => {
+  const handleProductSelect = (p: any | null) => {
     setNewItem(prev => ({
       ...prev,
-      manufacturer_id:   m?.id   ?? '',
-      manufacturer_name: m?.name ?? '',
+      product_id:   p?.id   ?? '',
+      product_name: p?.name ?? '',
     }));
   };
 
@@ -465,13 +489,9 @@ export default function CustomerPricingForm({
   };
 
   /* ── Derived ── */
-  const selectedMfg   = manufacturers.find(m => m.id === newItem.manufacturer_id) ?? null;
   const totalValue    = lineItems.reduce((s, i) => s + (i.rate || 0), 0);
   const avgRate       = lineItems.length ? totalValue / lineItems.length : 0;
   const modeLabel     = isViewMode ? 'View' : initialData ? 'Edit' : 'Create';
-
-  const statusClass = (s?: string) =>
-    s === 'completed' ? 'completed' : s === 'in_progress' ? 'in_progress' : 'pending';
 
   if (!open) return null;
 
@@ -526,35 +546,36 @@ export default function CustomerPricingForm({
 
         {/* Line items */}
         <div>
-          <p className="cpf-section-label">Manufacturer Pricing</p>
+          <p className="cpf-section-label">Product Pricing</p>
 
           {/* Add-item panel */}
           {!isViewMode && (
             <div className="cpf-add-panel">
               <p className="cpf-add-title">Add New Pricing</p>
 
-              {/* Manufacturer + Rate on one row */}
-              <div className="cpf-form-row">
-                <div className="cpf-field">
-                  <label className="cpf-label">Manufacturer</label>
-                  <Combo<Manufacturer>
-                    options={manufacturers}
-                    value={selectedMfg}
-                    onChange={handleManufacturerSelect}
-                    getLabel={m => m.name}
-                    placeholder="Select manufacturer…"
-                    disabled={loading}
-                    renderOption={m => (
-                      <>
-                        <div>
-                          <div className="cpf-combo-item-name">{m.name}</div>
-                          <div className="cpf-combo-item-sub">Qty: {m.quantity} · {m.status}</div>
-                        </div>
-                      </>
-                    )}
-                  />
-                </div>
+              {/* Product Selection */}
+              <div className="cpf-field">
+                <label className="cpf-label">Product</label>
+                <Combo<any>
+                  options={products}
+                  value={products.find(p => p.id === newItem.product_id) ?? null}
+                  onChange={handleProductSelect}
+                  getLabel={p => p.name}
+                  placeholder="Search products…"
+                  disabled={loading}
+                  renderOption={p => (
+                    <>
+                      <div>
+                        <div className="cpf-combo-item-name">{p.name}</div>
+                        <div className="cpf-combo-item-sub">ID: {p.id}</div>
+                      </div>
+                    </>
+                  )}
+                />
+              </div>
 
+              {/* Rate + Account on one row */}
+              <div className="cpf-form-row">
                 <div className="cpf-field">
                   <label className="cpf-label" htmlFor="cpf-rate">Rate</label>
                   <div className="cpf-input-prefix">
@@ -572,20 +593,19 @@ export default function CustomerPricingForm({
                     />
                   </div>
                 </div>
-              </div>
 
-              {/* Account */}
-              <div className="cpf-field">
-                <label className="cpf-label" htmlFor="cpf-account">Account</label>
-                <select
-                  id="cpf-account"
-                  className="cpf-select"
-                  value={newItem.account}
-                  onChange={e => setNewItem(prev => ({ ...prev, account: e.target.value }))}
-                  disabled={loading}
-                >
-                  {SALES_ACCOUNTS.map(a => <option key={a} value={a}>{a}</option>)}
-                </select>
+                <div className="cpf-field">
+                  <label className="cpf-label" htmlFor="cpf-account">Account</label>
+                  <select
+                    id="cpf-account"
+                    className="cpf-select"
+                    value={newItem.account}
+                    onChange={e => setNewItem(prev => ({ ...prev, account: e.target.value }))}
+                    disabled={loading}
+                  >
+                    {SALES_ACCOUNTS.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
               </div>
 
               {/* Description */}
@@ -601,6 +621,45 @@ export default function CustomerPricingForm({
                   disabled={loading}
                 />
               </div>
+
+              {/* Date Range */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="cpf-field">
+                  <label className="cpf-label" htmlFor="cpf-from-date">Effective From <span style={{ color: 'var(--text-3)' }}>(optional)</span></label>
+                  <input
+                    id="cpf-from-date"
+                    className="cpf-input"
+                    type="datetime-local"
+                    value={newItem.effective_from ? new Date(newItem.effective_from).toISOString().slice(0, 16) : ''}
+                    onChange={e => setNewItem(prev => ({ ...prev, effective_from: e.target.value ? new Date(e.target.value) : null }))}
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="cpf-field">
+                  <label className="cpf-label" htmlFor="cpf-to-date">Effective To <span style={{ color: 'var(--text-3)' }}>(optional)</span></label>
+                  <input
+                    id="cpf-to-date"
+                    className="cpf-input"
+                    type="datetime-local"
+                    value={newItem.effective_to ? new Date(newItem.effective_to).toISOString().slice(0, 16) : ''}
+                    onChange={e => setNewItem(prev => ({ ...prev, effective_to: e.target.value ? new Date(e.target.value) : null }))}
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              {/* Active Status */}
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'var(--surface-2)', borderRadius: 'var(--r)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={newItem.is_active ?? true}
+                  onChange={e => setNewItem(prev => ({ ...prev, is_active: e.target.checked }))}
+                  disabled={loading}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '14px' }}>Active</span>
+              </label>
 
               <button className="cpf-btn cpf-btn-add" onClick={handleAddLineItem} disabled={loading}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
@@ -623,45 +682,54 @@ export default function CustomerPricingForm({
                 <table className="cpf-table">
                   <thead>
                     <tr>
-                      <th>Manufacturer</th>
-                      <th>Qty</th>
-                      <th>Status</th>
+                      <th>Product</th>
                       <th>Rate</th>
                       <th>Account</th>
+                      <th>Active</th>
+                      <th style={{ fontSize: '11px', fontWeight: 500 }}>Effective Range</th>
                       {!isViewMode && <th style={{ width: 48 }}></th>}
                     </tr>
                   </thead>
                   <tbody>
-                    {lineItems.map((item, idx) => {
-                      const mfg = manufacturers.find(m => m.id === item.manufacturer_id);
-                      return (
-                        <tr key={idx}>
-                          <td>{item.manufacturer_name}</td>
-                          <td>{mfg?.quantity ?? '—'}</td>
+                    {lineItems.map((item, idx) => (
+                      <tr key={idx}>
+                        <td>{item.product_name}</td>
+                        <td><span className="cpf-rate">₹ {(item.rate || 0).toFixed(2)}</span></td>
+                        <td style={{ color: 'var(--text-2)' }}>{item.account}</td>
+                        <td>
+                          <span style={{ 
+                            display: 'inline-block', 
+                            width: '16px', 
+                            height: '16px', 
+                            borderRadius: '50%', 
+                            backgroundColor: item.is_active ? '#15803d' : '#6b6860',
+                            opacity: item.is_active ? 1 : 0.5
+                          }} title={item.is_active ? 'Active' : 'Inactive'} />
+                        </td>
+                        <td style={{ fontSize: '12px', color: 'var(--text-3)' }}>
+                          {item.effective_from && item.effective_to
+                            ? `${new Date(item.effective_from).toLocaleDateString()} - ${new Date(item.effective_to).toLocaleDateString()}`
+                            : item.effective_from
+                            ? `From ${new Date(item.effective_from).toLocaleDateString()}`
+                            : item.effective_to
+                            ? `Until ${new Date(item.effective_to).toLocaleDateString()}`
+                            : '—'}
+                        </td>
+                        {!isViewMode && (
                           <td>
-                            <span className={`cpf-pill ${statusClass(mfg?.status)}`}>
-                              <span className="cpf-pill-dot" aria-hidden="true" />
-                              {mfg?.status ?? '—'}
-                            </span>
+                            <button
+                              className="cpf-del-btn"
+                              aria-label="Remove pricing item"
+                              onClick={() => handleDeleteLineItem(idx)}
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                              </svg>
+                            </button>
                           </td>
-                          <td><span className="cpf-rate">₹ {(item.rate || 0).toFixed(2)}</span></td>
-                          <td style={{ color: 'var(--text-2)' }}>{item.account}</td>
-                          {!isViewMode && (
-                            <td>
-                              <button
-                                className="cpf-del-btn"
-                                aria-label="Remove pricing item"
-                                onClick={() => handleDeleteLineItem(idx)}
-                              >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-                                  <path d="M18 6L6 18M6 6l12 12"/>
-                                </svg>
-                              </button>
-                            </td>
-                          )}
-                        </tr>
-                      );
-                    })}
+                        )}
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
