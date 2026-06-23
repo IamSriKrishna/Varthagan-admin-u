@@ -14,10 +14,23 @@ import {
   Autocomplete,
   CircularProgress,
   Chip,
+  Avatar,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, PlayCircle } from 'lucide-react';
-import { useForm, Controller } from 'react-hook-form';
+import {
+  ArrowLeft,
+  PlayCircle,
+  Package,
+  Factory,
+  CheckCircle2,
+  AlertTriangle,
+  ArrowRight,
+  Calculator,
+  Scale,
+} from 'lucide-react';
+import { useForm } from 'react-hook-form';
 import { BBButton, BBLoader } from '@/lib';
 import { showToastMessage } from '@/utils/toastUtil';
 import { conversionService } from '@/services/conversionService';
@@ -30,9 +43,83 @@ import {
 import { RawMaterialBag } from '@/models/rawMaterial.model';
 import dayjs from 'dayjs';
 
+const pageSx = {
+  minHeight: '100vh',
+  width: '100%',
+  bgcolor: '#f9fafb',
+  py: 2,
+};
+
+const containerSx = {
+  width: '100%',
+  px: { xs: 2, sm: 2.5, md: 3 },
+};
+
+const cardSx = {
+  borderRadius: '16px',
+  border: '1px solid #e5e7eb',
+  background: '#ffffff',
+  boxShadow: '0 1px 3px rgba(15, 23, 42, 0.08)',
+};
+
+const inputSx = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '12px',
+    bgcolor: '#ffffff',
+  },
+};
+
+const formatGram = (grams: number) => {
+  if (!grams || grams <= 0) return '0 g';
+  if (grams >= 1000) return `${(grams / 1000).toFixed(2)} kg`;
+  return `${grams.toFixed(2)} g`;
+};
+
+function SummaryCard({
+  icon,
+  label,
+  value,
+  color = '#2563eb',
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+  color?: string;
+}) {
+  return (
+    <Card sx={cardSx}>
+      <CardContent sx={{ p: 2 }}>
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Avatar
+            sx={{
+              width: 42,
+              height: 42,
+              bgcolor: `${color}12`,
+              color,
+              borderRadius: '12px',
+            }}
+          >
+            {icon}
+          </Avatar>
+
+          <Box>
+            <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
+              {label}
+            </Typography>
+            <Typography sx={{ fontSize: 20, color: '#111827', fontWeight: 850 }}>
+              {value}
+            </Typography>
+          </Box>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function ExecuteConversionPage() {
   const params = useParams();
   const router = useRouter();
+
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<IConversionExecutionResponse | null>(null);
   const [executeLoading, setExecuteLoading] = useState(false);
@@ -44,7 +131,7 @@ export default function ExecuteConversionPage() {
 
   const id = params?.id as string;
 
-  const { control, handleSubmit, watch, formState: { errors } } = useForm<IConversionExecutionRequest>({
+  const { handleSubmit } = useForm<IConversionExecutionRequest>({
     defaultValues: {
       conversion_id: id,
       conversion_date: dayjs().format('YYYY-MM-DDTHH:mm:ss'),
@@ -52,15 +139,14 @@ export default function ExecuteConversionPage() {
     },
   });
 
-  // Fetch conversion rule and bags on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+
         const rule = await conversionService.getConversion(id);
         setConversionRule(rule);
-        
-        // Fetch bags for this product
+
         if (rule.raw_product_id) {
           await fetchBags(rule.raw_product_id);
         }
@@ -71,19 +157,17 @@ export default function ExecuteConversionPage() {
         setLoading(false);
       }
     };
-    
-    if (id) {
-      fetchData();
-    }
+
+    if (id) fetchData();
   }, [id]);
 
   const fetchBags = async (productId: string) => {
     try {
       setBagsLoading(true);
       const response = await rawMaterialService.getBagsByProduct(productId);
+
       if (response.success && response.data) {
-        const availableBags = response.data.filter((bag) => bag.remaining_kg > 0);
-        setBags(availableBags);
+        setBags(response.data.filter((bag) => bag.remaining_kg > 0));
       }
     } catch (error) {
       console.error('Error fetching bags:', error);
@@ -93,6 +177,18 @@ export default function ExecuteConversionPage() {
     }
   };
 
+  const getRequiredGrams = (finishedQty: number) => {
+    const ratio = Number(conversionRule?.conversion_ratio || 0);
+    return finishedQty * ratio;
+  };
+
+  const totalFinishedQty = selectedBags.reduce(
+    (sum, bag) => sum + Number(finishedQuantities[bag.id] || 0),
+    0
+  );
+
+  const totalRawGrams = getRequiredGrams(totalFinishedQty);
+
   const onSubmit = async (data: IConversionExecutionRequest) => {
     try {
       if (selectedBags.length === 0) {
@@ -100,17 +196,28 @@ export default function ExecuteConversionPage() {
         return;
       }
 
-      // Validate that all bags have finished quantities
       for (const bag of selectedBags) {
-        if ((finishedQuantities[bag.id] || 0) <= 0) {
+        const qty = finishedQuantities[bag.id] || 0;
+        const gramsNeeded = getRequiredGrams(qty);
+        const availableGrams = bag.remaining_kg * 1000;
+
+        if (qty <= 0) {
           showToastMessage(`Please enter finished quantity for Bag ${bag.bag_number}`, 'error');
+          return;
+        }
+
+        if (gramsNeeded > availableGrams) {
+          showToastMessage(
+            `Bag ${bag.bag_number} has only ${formatGram(availableGrams)} available`,
+            'error'
+          );
           return;
         }
       }
 
       setExecuteLoading(true);
-      // Ensure all required fields have correct types
-      const submitData: any = {
+
+      const submitData = {
         conversion_id: data.conversion_id,
         execute_conversion: true,
         finished_variant_sku: conversionRule?.finished_variant_sku,
@@ -119,6 +226,7 @@ export default function ExecuteConversionPage() {
           finished_quantity: finishedQuantities[bag.id] || 0,
         })),
       };
+
       const response = await conversionService.executeConversion(submitData);
       setResult(response);
       showToastMessage('Conversion executed successfully', 'success');
@@ -132,250 +240,451 @@ export default function ExecuteConversionPage() {
 
   if (result) {
     return (
-      <Container maxWidth="lg" sx={{ py: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-          <BBButton
-            variant="outlined"
-            startIcon={<ArrowLeft size={18} />}
-            onClick={() => router.push('/conversion')}
+      <Box sx={pageSx}>
+        <Container maxWidth={false} disableGutters sx={containerSx}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            justifyContent="space-between"
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
+            spacing={1.5}
+            mb={2}
           >
-            Back
-          </BBButton>
-          <Typography sx={{ fontSize: '1.5rem', fontWeight: 700, color: '#1f2937' }}>
-            Conversion Executed
-          </Typography>
-        </Box>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Tooltip title="Back">
+                <IconButton
+                  onClick={() => router.push('/conversion')}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    bgcolor: '#ffffff',
+                    border: '1px solid #e5e7eb',
+                    color: '#374151',
+                  }}
+                >
+                  <ArrowLeft size={20} />
+                </IconButton>
+              </Tooltip>
 
-        <Alert severity="success" sx={{ mb: 3 }}>
-          {result.message}
-        </Alert>
-
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Box>
-            <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px' }}>
-              <CardContent>
-                <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 2 }}>
-                  Record ID
+              <Box>
+                <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
+                  Conversion
                 </Typography>
-                <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#1f2937', fontFamily: 'monospace' }}>
-                  {result.record_id}
+                <Typography sx={{ fontSize: { xs: 22, md: 28 }, fontWeight: 850 }}>
+                  Conversion Executed
                 </Typography>
-              </CardContent>
-            </Card>
-          </Box>
+              </Box>
+            </Stack>
 
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
-            <Box sx={{ flex: 1 }}>
-              <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px' }}>
-                <CardContent>
-                  <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 2 }}>
-                    Raw Material
-                  </Typography>
-                  <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#1f2937', mb: 1 }}>
-                    {result.raw_product_name}
-                  </Typography>
-                  <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, color: '#1f2937' }}>
-                    {result.raw_quantity_used.toLocaleString()} units used
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Box>
-
-            <Box sx={{ flex: 1 }}>
-              <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px' }}>
-                <CardContent>
-                  <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280', mb: 2 }}>
-                    Finished Product
-                  </Typography>
-                  <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#1f2937', mb: 1 }}>
-                    {result.finished_product_name}
-                  </Typography>
-                  <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, color: '#065f46' }}>
-                    {result.finished_quantity_produced.toLocaleString()} units produced
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Box>
-          </Box>
-
-          {result.loss_quantity > 0 && (
-            <Box>
-              <Card sx={{ border: '1px solid #eeeff5', borderRadius: '8px', bgcolor: '#fef3c7' }}>
-                <CardContent>
-                  <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#92400e', mb: 1 }}>
-                    Loss/Waste During Conversion
-                  </Typography>
-                  <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, color: '#92400e' }}>
-                    {result.loss_quantity.toLocaleString()} units
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Box>
-          )}
-
-          <Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <BBButton
-                variant="outlined"
-                onClick={() => router.push('/conversion')}
-              >
-                Back to Conversions
+            <Stack direction="row" spacing={1}>
+              <BBButton variant="outlined" onClick={() => router.push('/conversion')}>
+                Back
               </BBButton>
-              <BBButton
-                variant="contained"
-                onClick={() => router.push(`/conversion/${id}`)}
-              >
+              <BBButton variant="contained" onClick={() => router.push(`/conversion/${id}`)}>
                 View Details
               </BBButton>
-            </Box>
-          </Box>
-        </Box>
-      </Container>
+            </Stack>
+          </Stack>
+
+          <Alert severity="success" sx={{ mb: 2, borderRadius: '12px' }}>
+            {result.message}
+          </Alert>
+
+          <Card sx={cardSx}>
+            <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
+              <Stack spacing={2}>
+                <Chip
+                  icon={<CheckCircle2 size={14} />}
+                  label="Completed"
+                  size="small"
+                  sx={{
+                    width: 'fit-content',
+                    bgcolor: '#ecfdf5',
+                    color: '#047857',
+                    fontWeight: 700,
+                  }}
+                />
+
+                <Typography sx={{ fontSize: 14, color: '#6b7280', fontFamily: 'monospace' }}>
+                  Record ID: {result.record_id}
+                </Typography>
+
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  <Box sx={{ flex: 1, p: 2, borderRadius: '14px', bgcolor: '#fff7ed' }}>
+                    <Typography sx={{ fontWeight: 800 }}>{result.raw_product_name}</Typography>
+                    <Typography sx={{ fontSize: 24, fontWeight: 850, color: '#dc2626' }}>
+                      {result.raw_quantity_used.toLocaleString()} used
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ flex: 1, p: 2, borderRadius: '14px', bgcolor: '#ecfdf5' }}>
+                    <Typography sx={{ fontWeight: 800 }}>{result.finished_product_name}</Typography>
+                    <Typography sx={{ fontSize: 24, fontWeight: 850, color: '#059669' }}>
+                      {result.finished_quantity_produced.toLocaleString()} produced
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Container>
+      </Box>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <BBButton
-          variant="outlined"
-          startIcon={<ArrowLeft size={18} />}
-          onClick={() => router.push('/conversion')}
-        >
-          Back
-        </BBButton>
-        <Typography sx={{ fontSize: '1.5rem', fontWeight: 700, color: '#1f2937' }}>
-          Execute Conversion
-        </Typography>
-      </Box>
-
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-          <BBLoader />
-        </Box>
-      ) : (
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box>
-              <Alert severity="info">
-                Select raw material bags and enter the quantity to convert. The system will automatically calculate the expected output.
-              </Alert>
-            </Box>
-          </Box>
+    <Box sx={pageSx}>
+      <Container maxWidth={false} disableGutters sx={containerSx}>
+        <Stack direction="row" spacing={1.5} alignItems="center" mb={2}>
+          <Tooltip title="Back">
+            <IconButton
+              onClick={() => router.push('/conversion')}
+              sx={{
+                width: 40,
+                height: 40,
+                bgcolor: '#ffffff',
+                color: '#374151',
+                border: '1px solid #e5e7eb',
+                '&:hover': { bgcolor: '#f3f4f6' },
+              }}
+            >
+              <ArrowLeft size={20} />
+            </IconButton>
+          </Tooltip>
 
           <Box>
-            <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', mb: 1 }}>
-              Select Raw Material Bags
+            <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
+              Conversion
             </Typography>
-            <Autocomplete
-              multiple
-              options={bags}
-              getOptionLabel={(option) => `Bag ${option.bag_number} - ${option.remaining_kg.toFixed(2)} KG remaining`}
-              value={selectedBags}
-              onChange={(_, newValue) => {
-                setSelectedBags(newValue);
-                // Initialize finished quantities for new bags
-                const newQuantities = { ...finishedQuantities };
-                newValue.forEach((bag) => {
-                  if (!(bag.id in newQuantities)) {
-                    newQuantities[bag.id] = 0;
-                  }
-                });
-                // Remove quantities for deselected bags
-                Object.keys(newQuantities).forEach((bagId) => {
-                  if (!newValue.find((bag) => bag.id === bagId)) {
-                    delete newQuantities[bagId];
-                  }
-                });
-                setFinishedQuantities(newQuantities);
-              }}
-              loading={bagsLoading}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Select bags to use for conversion"
-                  placeholder="Choose one or more bags"
-                  variant="outlined"
-                  helperText={`${selectedBags.length} bag(s) selected`}
-                  InputProps={{
-                    ...params.InputProps,
-                    endAdornment: (
-                      <>
-                        {bagsLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                        {params.InputProps.endAdornment}
-                      </>
-                    ),
-                  }}
-                />
-              )}
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => (
-                  <Chip
-                    label={`Bag ${option.bag_number} (${option.remaining_kg.toFixed(2)} KG)`}
-                    {...getTagProps({ index })}
-                    size="small"
-                    sx={{ bgcolor: '#EEF2FF', color: '#4F46E5' }}
-                  />
-                ))
-              }
-              noOptionsText="No available bags for this product"
-            />
+            <Typography sx={{ fontSize: { xs: 22, md: 28 }, fontWeight: 850, color: '#111827' }}>
+              Execute Conversion
+            </Typography>
           </Box>
+        </Stack>
 
-          {selectedBags.length > 0 && (
-            <Box>
-              <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', mb: 2 }}>
-                Finished Quantity per Bag
-              </Typography>
-              <Stack spacing={2}>
-                {selectedBags.map((bag) => (
-                  <Box key={bag.id} sx={{ display: 'flex', gap: 2, alignItems: 'flex-end', bgcolor: '#f9fafb', p: 2, borderRadius: '6px' }}>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography sx={{ fontSize: '0.875rem', color: '#6b7280', mb: 1 }}>
-                        Bag {bag.bag_number} (Available: {bag.remaining_kg.toFixed(2)} KG)
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
+            <BBLoader />
+          </Box>
+        ) : (
+          <form onSubmit={handleSubmit(onSubmit)}>
+            {conversionRule && (
+              <Card sx={{ ...cardSx, mb: 2 }}>
+                <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
+                  <Stack
+                    direction={{ xs: 'column', md: 'row' }}
+                    justifyContent="space-between"
+                    alignItems={{ xs: 'flex-start', md: 'center' }}
+                    spacing={2}
+                  >
+                    <Box>
+                      <Chip
+                        size="small"
+                        icon={<PlayCircle size={14} />}
+                        label="Ready to Execute"
+                        sx={{
+                          bgcolor: '#eff6ff',
+                          color: '#2563eb',
+                          fontWeight: 700,
+                          mb: 1.5,
+                        }}
+                      />
+
+                      <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={1.5}
+                        alignItems={{ xs: 'flex-start', sm: 'center' }}
+                      >
+                        <Typography sx={{ fontSize: { xs: 24, md: 30 }, fontWeight: 850 }}>
+                          {conversionRule.raw_product_name}
+                        </Typography>
+
+                        <ArrowRight size={25} color="#2563eb" />
+
+                        <Typography sx={{ fontSize: { xs: 24, md: 30 }, fontWeight: 850 }}>
+                          {conversionRule.finished_product_name}
+                        </Typography>
+                      </Stack>
+                    </Box>
+
+                    <Box
+                      sx={{
+                        minWidth: { xs: '100%', md: 240 },
+                        p: 2,
+                        borderRadius: '14px',
+                        bgcolor: '#f9fafb',
+                        border: '1px solid #e5e7eb',
+                      }}
+                    >
+                      <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
+                        Usage Formula
+                      </Typography>
+                      <Typography sx={{ fontSize: 24, color: '#111827', fontWeight: 850 }}>
+                        1 Qty = {conversionRule.conversion_ratio} g
+                      </Typography>
+
+                      <Divider sx={{ my: 1.4 }} />
+
+                      <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
+                        Finished SKU
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontSize: 14,
+                          color: '#111827',
+                          fontWeight: 700,
+                          fontFamily: 'monospace',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {conversionRule.finished_variant_sku || '-'}
                       </Typography>
                     </Box>
-                    <TextField
-                      type="number"
-                      label="Finished Quantity"
-                      value={finishedQuantities[bag.id] || 0}
-                      onChange={(e) => {
-                        setFinishedQuantities({
-                          ...finishedQuantities,
-                          [bag.id]: Number(e.target.value),
-                        });
-                      }}
-                      inputProps={{ step: '1', min: '0' }}
-                      variant="outlined"
-                      size="small"
-                      sx={{ width: '150px' }}
-                    />
-                  </Box>
-                ))}
-              </Stack>
-            </Box>
-          )}
+                  </Stack>
+                </CardContent>
+              </Card>
+            )}
 
-          <Box>
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-              <BBButton
-                variant="outlined"
-                onClick={() => router.push('/conversion')}
-              >
-                Cancel
-              </BBButton>
-              <BBButton
-                variant="contained"
-                type="submit"
-                loading={executeLoading}
-                startIcon={<PlayCircle size={18} />}
-              >
-                Execute Conversion
-              </BBButton>
-            </Box>
-          </Box>
-        </form>
-      )}
-    </Container>
+            <Alert severity="info" sx={{ mb: 2, borderRadius: '12px' }}>
+              Enter finished quantity. The system will show how many grams or kg of raw material will be used.
+            </Alert>
+
+            <Card sx={{ ...cardSx, mb: 2 }}>
+              <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
+                <Typography sx={{ fontSize: 18, fontWeight: 850, color: '#111827', mb: 1.5 }}>
+                  Select Raw Material Bags
+                </Typography>
+
+                <Autocomplete
+                  multiple
+                  options={bags}
+                  value={selectedBags}
+                  loading={bagsLoading}
+                  getOptionLabel={(option) =>
+                    `Bag ${option.bag_number} - ${option.remaining_kg.toFixed(2)} KG remaining`
+                  }
+                  onChange={(_, newValue) => {
+                    setSelectedBags(newValue);
+
+                    const newQuantities = { ...finishedQuantities };
+
+                    newValue.forEach((bag) => {
+                      if (!(bag.id in newQuantities)) {
+                        newQuantities[bag.id] = 0;
+                      }
+                    });
+
+                    Object.keys(newQuantities).forEach((bagId) => {
+                      if (!newValue.find((bag) => bag.id === bagId)) {
+                        delete newQuantities[bagId];
+                      }
+                    });
+
+                    setFinishedQuantities(newQuantities);
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select bags"
+                      placeholder="Choose bags"
+                      helperText={`${selectedBags.length} bag(s) selected`}
+                      sx={inputSx}
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {bagsLoading && <CircularProgress color="inherit" size={20} />}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                    />
+                  )}
+                  renderTags={(value, getTagProps) =>
+                    value.map((option, index) => (
+                      <Chip
+                        label={`Bag ${option.bag_number} (${option.remaining_kg.toFixed(2)} KG)`}
+                        {...getTagProps({ index })}
+                        size="small"
+                        sx={{
+                          bgcolor: '#eff6ff',
+                          color: '#2563eb',
+                          fontWeight: 700,
+                          borderRadius: '8px',
+                        }}
+                      />
+                    ))
+                  }
+                  noOptionsText="No available bags for this product"
+                />
+              </CardContent>
+            </Card>
+
+            {selectedBags.length > 0 && (
+              <>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+                    gap: 2,
+                    mb: 2,
+                  }}
+                >
+                  <SummaryCard
+                    icon={<Factory size={20} />}
+                    label="Total Finished Qty"
+                    value={totalFinishedQty.toLocaleString()}
+                    color="#2563eb"
+                  />
+
+                  <SummaryCard
+                    icon={<Scale size={20} />}
+                    label="Raw Material Needed"
+                    value={formatGram(totalRawGrams)}
+                    color="#dc2626"
+                  />
+
+                  <SummaryCard
+                    icon={<Package size={20} />}
+                    label="Selected Bags"
+                    value={selectedBags.length}
+                    color="#059669"
+                  />
+                </Box>
+
+                <Card sx={{ ...cardSx, mb: 2 }}>
+                  <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
+                    <Typography sx={{ fontSize: 18, fontWeight: 850, color: '#111827', mb: 2 }}>
+                      Finished Quantity per Bag
+                    </Typography>
+
+                    <Stack spacing={1.5}>
+                      {selectedBags.map((bag) => {
+                        const qty = finishedQuantities[bag.id] || 0;
+                        const gramsNeeded = getRequiredGrams(qty);
+                        const availableGrams = bag.remaining_kg * 1000;
+                        const exceedsAvailable = gramsNeeded > availableGrams;
+
+                        return (
+                          <Box
+                            key={bag.id}
+                            sx={{
+                              display: 'grid',
+                              gridTemplateColumns: { xs: '1fr', md: '1.2fr 220px 220px' },
+                              gap: 2,
+                              alignItems: 'center',
+                              bgcolor: '#ffffff',
+                              border: `1px solid ${exceedsAvailable ? '#fecaca' : '#e5e7eb'}`,
+                              p: 2,
+                              borderRadius: '14px',
+                            }}
+                          >
+                            <Stack direction="row" spacing={1.5} alignItems="center">
+                              <Avatar
+                                sx={{
+                                  width: 42,
+                                  height: 42,
+                                  bgcolor: '#fff7ed',
+                                  color: '#ea580c',
+                                  borderRadius: '12px',
+                                }}
+                              >
+                                <Package size={20} />
+                              </Avatar>
+
+                              <Box>
+                                <Typography sx={{ fontSize: 15, color: '#111827', fontWeight: 850 }}>
+                                  Bag {bag.bag_number}
+                                </Typography>
+                                <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>
+                                  Available: {bag.remaining_kg.toFixed(2)} kg
+                                </Typography>
+                              </Box>
+                            </Stack>
+
+                            <TextField
+                              type="number"
+                              label="Finished Quantity"
+                              value={qty}
+                              onChange={(e) => {
+                                setFinishedQuantities({
+                                  ...finishedQuantities,
+                                  [bag.id]: Number(e.target.value),
+                                });
+                              }}
+                              inputProps={{ step: '1', min: '0' }}
+                              size="small"
+                              fullWidth
+                              error={exceedsAvailable}
+                              helperText={
+                                exceedsAvailable
+                                  ? `Only ${formatGram(availableGrams)} available`
+                                  : `${formatGram(gramsNeeded)} raw material will be used`
+                              }
+                              sx={inputSx}
+                            />
+
+                            <Box
+                              sx={{
+                                px: 1.5,
+                                py: 1.2,
+                                borderRadius: '12px',
+                                bgcolor: exceedsAvailable ? '#fef2f2' : '#f9fafb',
+                                border: `1px solid ${exceedsAvailable ? '#fecaca' : '#e5e7eb'}`,
+                              }}
+                            >
+                              <Stack direction="row" spacing={1.2} alignItems="center">
+                                {exceedsAvailable ? (
+                                  <AlertTriangle size={19} color="#dc2626" />
+                                ) : (
+                                  <Calculator size={19} color="#2563eb" />
+                                )}
+
+                                <Box>
+                                  <Typography sx={{ fontSize: 11, color: '#6b7280', fontWeight: 700 }}>
+                                    Raw Usage
+                                  </Typography>
+                                  <Typography
+                                    sx={{
+                                      fontSize: 16,
+                                      color: exceedsAvailable ? '#dc2626' : '#111827',
+                                      fontWeight: 850,
+                                    }}
+                                  >
+                                    {formatGram(gramsNeeded)}
+                                  </Typography>
+                                </Box>
+                              </Stack>
+                            </Box>
+                          </Box>
+                        );
+                      })}
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+
+            <Card sx={cardSx}>
+              <CardContent sx={{ p: 2 }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="flex-end">
+                  <BBButton variant="outlined" onClick={() => router.push('/conversion')}>
+                    Cancel
+                  </BBButton>
+
+                  <BBButton
+                    variant="contained"
+                    type="submit"
+                    loading={executeLoading}
+                    startIcon={<PlayCircle size={18} />}
+                  >
+                    Execute Conversion
+                  </BBButton>
+                </Stack>
+              </CardContent>
+            </Card>
+          </form>
+        )}
+      </Container>
+    </Box>
   );
 }

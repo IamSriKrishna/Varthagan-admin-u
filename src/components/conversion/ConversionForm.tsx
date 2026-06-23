@@ -5,7 +5,6 @@ import {
   Box,
   Card,
   CardContent,
-  Stack,
   TextField,
   Typography,
   FormControlLabel,
@@ -14,6 +13,16 @@ import {
   Autocomplete,
   Chip,
   alpha,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   ArrowRight,
@@ -24,8 +33,9 @@ import {
   SlidersHorizontal,
   FileText,
   Calculator,
-  ChevronRight,
   Zap,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
@@ -33,113 +43,113 @@ import { BBButton } from '@/lib';
 import { showToastMessage } from '@/utils/toastUtil';
 import { conversionService } from '@/services/conversionService';
 import { productService, Variant } from '@/lib/api/productService';
-import { IConversionRule, IConversionRuleForm } from '@/models/conversion.model';
+import { rawMaterialService } from '@/lib/api/rawMaterialService';
+import { IConversionRule, IConversionRuleForm, IRawMaterialBagInput } from '@/models/conversion.model';
+import { RawMaterialBag } from '@/models/rawMaterial.model';
 
-/* ─── Design tokens ──────────────────────────────────────────────────────── */
 const T = {
-  primary: '#4f63d2',
-  primaryLight: '#eef0fb',
-  secondary: '#7c3aed',
-  accent: '#06b6d4',
-  accentLight: '#ecfeff',
-  success: '#10b981',
-  successLight: '#d1fae5',
-  bg: '#f8f9fc',
+  primary: '#2563eb',
+  primarySoft: '#eff6ff',
+  success: '#16a34a',
+  successSoft: '#f0fdf4',
+  warning: '#d97706',
+  warningSoft: '#fffbeb',
+  purple: '#7c3aed',
+  bg: '#f8fafc',
   surface: '#ffffff',
-  border: '#e8eaf2',
-  borderHover: '#c7cbe8',
-  text: '#1a1d2e',
-  textSecondary: '#6b7280',
-  textMuted: '#9ca3af',
-  rawColor: '#f59e0b',
-  rawLight: '#fffbeb',
-  finishedColor: '#10b981',
-  finishedLight: '#d1fae5',
-} as const;
+  mutedSurface: '#f9fafb',
+  border: '#e5e7eb',
+  borderDark: '#cbd5e1',
+  text: '#111827',
+  sub: '#6b7280',
+  faint: '#9ca3af',
+};
 
-const sectionCard = {
+const cardSx = {
   border: `1px solid ${T.border}`,
-  borderRadius: '14px',
+  borderRadius: '16px',
   background: T.surface,
-  boxShadow: '0 1px 3px rgba(79,99,210,0.06), 0 4px 16px rgba(79,99,210,0.04)',
-  transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
-  '&:hover': {
-    boxShadow: '0 2px 8px rgba(79,99,210,0.1), 0 8px 24px rgba(79,99,210,0.06)',
-    borderColor: T.borderHover,
-  },
-} as const;
+  boxShadow: '0 8px 24px rgba(15,23,42,0.04)',
+  overflow: 'hidden',
+};
 
 const inputSx = {
   '& .MuiOutlinedInput-root': {
-    borderRadius: '10px',
+    borderRadius: '12px',
     fontSize: '0.875rem',
-    fontFamily: "'DM Sans', sans-serif",
-    background: '#fafbff',
+    fontFamily: "'Inter', sans-serif",
+    background: '#ffffff',
     '& fieldset': { borderColor: T.border },
-    '&:hover fieldset': { borderColor: T.primary },
+    '&:hover fieldset': { borderColor: T.borderDark },
     '&.Mui-focused fieldset': {
       borderColor: T.primary,
       borderWidth: '1.5px',
-      boxShadow: `0 0 0 3px ${alpha(T.primary, 0.08)}`,
     },
   },
   '& .MuiInputLabel-root': {
-    fontFamily: "'DM Sans', sans-serif",
-    fontSize: '0.875rem',
-    '&.Mui-focused': { color: T.primary },
+    fontFamily: "'Inter', sans-serif",
+    fontSize: '0.85rem',
   },
   '& .MuiFormHelperText-root': {
-    fontFamily: "'DM Sans', sans-serif",
-    fontSize: '0.75rem',
+    fontFamily: "'Inter', sans-serif",
+    fontSize: '0.74rem',
   },
-} as const;
+};
 
-/* ─── Section header helper ──────────────────────────────────────────────── */
 interface SectionHeaderProps {
   icon: React.ReactNode;
   title: string;
   subtitle?: string;
-  accentColor?: string;
-  accentBg?: string;
+  color?: string;
+  bg?: string;
 }
 
-function SectionHeader({ icon, title, subtitle, accentColor = T.primary, accentBg = T.primaryLight }: SectionHeaderProps) {
+function SectionHeader({
+  icon,
+  title,
+  subtitle,
+  color = T.primary,
+  bg = T.primarySoft,
+}: SectionHeaderProps) {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: 2 }}>
       <Box
         sx={{
-          width: 36,
-          height: 36,
+          width: 34,
+          height: 34,
           borderRadius: '10px',
-          background: `linear-gradient(135deg, ${accentBg}, ${alpha(accentColor, 0.15)})`,
+          bgcolor: bg,
+          color,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: accentColor,
           flexShrink: 0,
         }}
       >
         {icon}
       </Box>
+
       <Box>
         <Typography
           sx={{
-            fontSize: '0.9375rem',
-            fontWeight: 700,
+            fontSize: '0.95rem',
+            fontWeight: 800,
             color: T.text,
-            fontFamily: "'DM Sans', sans-serif",
             lineHeight: 1.2,
+            fontFamily: "'Inter', sans-serif",
           }}
         >
           {title}
         </Typography>
+
         {subtitle && (
           <Typography
             sx={{
               fontSize: '0.75rem',
-              color: T.textMuted,
-              fontFamily: "'DM Sans', sans-serif",
-              mt: 0.25,
+              color: T.sub,
+              mt: 0.2,
+              fontWeight: 500,
+              fontFamily: "'Inter', sans-serif",
             }}
           >
             {subtitle}
@@ -150,47 +160,65 @@ function SectionHeader({ icon, title, subtitle, accentColor = T.primary, accentB
   );
 }
 
-/* ─── Empty state placeholder ────────────────────────────────────────────── */
-function ProductPlaceholder({ color, bg, label }: { color: string; bg: string; label: string }) {
+function ProductPlaceholder({
+  color,
+  bg,
+  label,
+}: {
+  color: string;
+  bg: string;
+  label: string;
+}) {
   return (
     <Box
       sx={{
-        background: `linear-gradient(135deg, ${bg}, ${alpha(color, 0.06)})`,
-        border: `1.5px dashed ${alpha(color, 0.3)}`,
-        borderRadius: '10px',
-        p: 2,
+        bgcolor: bg,
+        border: `1px dashed ${alpha(color, 0.35)}`,
+        borderRadius: '12px',
+        px: 1.75,
+        py: 1.4,
         display: 'flex',
         alignItems: 'center',
-        gap: 1.5,
+        gap: 1.25,
       }}
     >
       <Box
         sx={{
-          width: 8,
-          height: 8,
+          width: 7,
+          height: 7,
           borderRadius: '50%',
-          background: `linear-gradient(135deg, ${color}, ${alpha(color, 0.6)})`,
-          boxShadow: `0 0 6px ${alpha(color, 0.4)}`,
-          animation: 'pulse 2s ease-in-out infinite',
-          '@keyframes pulse': {
-            '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-            '50%': { opacity: 0.5, transform: 'scale(0.85)' },
-          },
+          bgcolor: color,
+          boxShadow: `0 0 0 4px ${alpha(color, 0.12)}`,
         }}
       />
+
       <Box>
-        <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color, fontFamily: "'DM Sans', sans-serif" }}>
+        <Typography
+          sx={{
+            fontSize: '0.8rem',
+            fontWeight: 800,
+            color,
+            fontFamily: "'Inter', sans-serif",
+          }}
+        >
           {label}
         </Typography>
-        <Typography sx={{ fontSize: '0.6875rem', color: T.textMuted, fontFamily: "'DM Sans', sans-serif" }}>
-          Select a product above to see details
+
+        <Typography
+          sx={{
+            fontSize: '0.72rem',
+            color: T.sub,
+            fontWeight: 500,
+            fontFamily: "'Inter', sans-serif",
+          }}
+        >
+          Select product to view details
         </Typography>
       </Box>
     </Box>
   );
 }
 
-/* ─── Types ──────────────────────────────────────────────────────────────── */
 interface ConversionFormProps {
   initialData?: IConversionRule;
   isEdit?: boolean;
@@ -204,14 +232,23 @@ interface Product {
   product_details?: { variants?: Variant[] };
 }
 
-/* ─── Main component ─────────────────────────────────────────────────────── */
-export default function ConversionForm({ initialData, isEdit = false }: ConversionFormProps) {
+export default function ConversionForm({
+  initialData,
+  isEdit = false,
+}: ConversionFormProps) {
   const router = useRouter();
+
   const [loading, setLoading] = useState(false);
   const [productsLoading, setProductsLoading] = useState(true);
+  const [bagsLoading, setBagsLoading] = useState(false);
   const [rawMaterials, setRawMaterials] = useState<Product[]>([]);
   const [finishedProducts, setFinishedProducts] = useState<Product[]>([]);
   const [finishedProductVariants, setFinishedProductVariants] = useState<Variant[]>([]);
+  const [availableBags, setAvailableBags] = useState<RawMaterialBag[]>([]);
+  const [selectedBags, setSelectedBags] = useState<IRawMaterialBagInput[]>([]);
+  const [bagDialogOpen, setBagDialogOpen] = useState(false);
+  const [selectedBagForAdd, setSelectedBagForAdd] = useState<RawMaterialBag | null>(null);
+  const [finishedQuantityForBag, setFinishedQuantityForBag] = useState<number>(1);
 
   const {
     control,
@@ -229,7 +266,11 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
           is_active: initialData.is_active,
           notes: initialData.notes,
         }
-      : { conversion_ratio: 1.0, loss_percentage: 0, is_active: true },
+      : {
+          conversion_ratio: 1,
+          loss_percentage: 0,
+          is_active: true,
+        },
   });
 
   const conversionRatio = watch('conversion_ratio') || 1;
@@ -242,6 +283,7 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
         setProductsLoading(true);
         const response = await productService.getProducts(1, 1000);
         const products: Product[] = response.products || [];
+
         setRawMaterials(products.filter((p) => p.is_raw === true));
         setFinishedProducts(products.filter((p) => p.is_raw === false));
       } catch {
@@ -253,22 +295,50 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
   }, []);
 
   useEffect(() => {
-    if (finishedProductId) {
-      const product = finishedProducts.find((p) => p.id === finishedProductId);
-      setFinishedProductVariants(product?.product_details?.variants ?? []);
-    } else {
+    if (!finishedProductId) {
       setFinishedProductVariants([]);
+      return;
     }
+
+    const product = finishedProducts.find((p) => p.id === finishedProductId);
+    setFinishedProductVariants(product?.product_details?.variants ?? []);
   }, [finishedProductId, finishedProducts]);
+
+  // Load bags when raw product is selected
+  useEffect(() => {
+    const rawProductId = watch('raw_product_id');
+    
+    if (!rawProductId) {
+      setAvailableBags([]);
+      setSelectedBags([]);
+      return;
+    }
+
+    (async () => {
+      try {
+        setBagsLoading(true);
+        const response = await rawMaterialService.getBagsByProduct(rawProductId);
+        setAvailableBags(response.data || []);
+      } catch (error) {
+        console.error('Failed to load bags:', error);
+        showToastMessage('Failed to load bags for selected raw material', 'error');
+        setAvailableBags([]);
+      } finally {
+        setBagsLoading(false);
+      }
+    })();
+  }, [watch('raw_product_id')]);
 
   const onSubmit = async (data: IConversionRuleForm) => {
     try {
       setLoading(true);
+
       const submitData = {
         ...data,
         conversion_ratio: Number(data.conversion_ratio),
         loss_percentage: Number(data.loss_percentage),
       };
+
       if (isEdit && initialData) {
         await conversionService.updateConversion(initialData.id, submitData);
         showToastMessage('Conversion updated successfully', 'success');
@@ -276,7 +346,8 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
         await conversionService.createConversion(submitData);
         showToastMessage('Conversion created successfully', 'success');
       }
-      setTimeout(() => router.push('/conversion'), 800);
+
+      setTimeout(() => router.push('/conversion'), 700);
     } catch {
       showToastMessage('Failed to save conversion', 'error');
     } finally {
@@ -284,106 +355,145 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
     }
   };
 
-  const finishedUnits = Math.round((1000 / conversionRatio) * (1 - lossPercentage / 100));
+  const handleAddBag = () => {
+    if (!selectedBagForAdd) {
+      showToastMessage('Please select a bag', 'error');
+      return;
+    }
+
+    if (finishedQuantityForBag <= 0) {
+      showToastMessage('Finished quantity must be greater than 0', 'error');
+      return;
+    }
+
+    // Check if bag is already added
+    if (selectedBags.some((b) => b.bag_id === selectedBagForAdd.id)) {
+      showToastMessage('Bag already added', 'error');
+      return;
+    }
+
+    setSelectedBags([
+      ...selectedBags,
+      {
+        bag_id: selectedBagForAdd.id,
+        finished_quantity: finishedQuantityForBag,
+      },
+    ]);
+
+    setBagDialogOpen(false);
+    setSelectedBagForAdd(null);
+    setFinishedQuantityForBag(1);
+  };
+
+  const handleRemoveBag = (bagId: string) => {
+    setSelectedBags(selectedBags.filter((b) => b.bag_id !== bagId));
+  };
+
+  const finishedUnits = Math.round(
+    (1000 / Number(conversionRatio || 1)) * (1 - Number(lossPercentage || 0) / 100)
+  );
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, background: T.bg, minHeight: '100vh', fontFamily: "'DM Sans', sans-serif" }}>
-
-      {/* ── Page header ────────────────────────────────────────────────── */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: T.bg,
+        p: { xs: 2, md: 3 },
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      <Box
+        sx={{
+          mb: 2.5,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 2,
+          flexWrap: 'wrap',
+        }}
+      >
         <Box>
-          {/* Breadcrumb */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-            <Typography
-              onClick={() => router.push('/conversion')}
-              sx={{
-                fontSize: '0.8125rem',
-                color: T.textMuted,
-                cursor: 'pointer',
-                fontFamily: "'DM Sans', sans-serif",
-                '&:hover': { color: T.primary },
-                transition: 'color 0.15s',
-              }}
-            >
-              Conversion Rules
-            </Typography>
-            <ChevronRight size={13} color={T.textMuted} />
-            <Typography sx={{ fontSize: '0.8125rem', color: T.primary, fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>
-              {isEdit ? 'Edit Rule' : 'New Rule'}
-            </Typography>
-          </Box>
+          <Typography
+            sx={{
+              fontSize: '0.78rem',
+              color: T.sub,
+              fontWeight: 700,
+              mb: 0.45,
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            Conversion Rules / {isEdit ? 'Edit Rule' : 'New Rule'}
+          </Typography>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box
-              sx={{
-                width: 42,
-                height: 42,
-                borderRadius: '12px',
-                background: `linear-gradient(135deg, ${T.primary}, ${T.secondary})`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: `0 4px 12px ${alpha(T.primary, 0.3)}`,
-              }}
-            >
-              <FlaskConical size={20} color="#fff" />
-            </Box>
-            <Box>
-              <Typography
-                sx={{
-                  fontSize: '1.375rem',
-                  fontWeight: 800,
-                  color: T.text,
-                  fontFamily: "'DM Sans', sans-serif",
-                  letterSpacing: '-0.02em',
-                  lineHeight: 1.2,
-                }}
-              >
-                {isEdit ? 'Edit Conversion Rule' : 'New Conversion Rule'}
-              </Typography>
-              <Typography sx={{ fontSize: '0.8125rem', color: T.textSecondary, fontFamily: "'DM Sans', sans-serif", mt: 0.25 }}>
-                {isEdit ? 'Update production parameters and ratios' : 'Define how raw materials convert to finished goods'}
-              </Typography>
-            </Box>
-          </Box>
+          <Typography
+            sx={{
+              fontSize: '1.6rem',
+              fontWeight: 800,
+              color: T.text,
+              letterSpacing: '-0.025em',
+              lineHeight: 1.15,
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            {isEdit ? 'Edit Conversion Rule' : 'New Conversion Rule'}
+          </Typography>
+
+          <Typography
+            sx={{
+              fontSize: '0.88rem',
+              color: T.sub,
+              mt: 0.45,
+              fontWeight: 500,
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            {isEdit
+              ? 'Update conversion settings and production parameters.'
+              : 'Create a clean raw material to finished goods rule.'}
+          </Typography>
         </Box>
 
         <BBButton
           variant="outlined"
-          startIcon={<X size={16} />}
+          startIcon={<X size={15} />}
           onClick={() => router.push('/conversion')}
           sx={{
-            borderColor: T.border,
-            color: T.textSecondary,
             borderRadius: '10px',
-            fontFamily: "'DM Sans', sans-serif",
-            fontWeight: 600,
-            fontSize: '0.875rem',
+            borderColor: T.border,
+            color: T.sub,
             textTransform: 'none',
-            px: 2.5,
-            '&:hover': { borderColor: T.borderHover, background: T.bg, color: T.text },
+            fontWeight: 800,
+            fontSize: '0.82rem',
+            px: 2,
+            '&:hover': {
+              borderColor: T.borderDark,
+              bgcolor: '#ffffff',
+              color: T.text,
+            },
           }}
         >
           Discard
         </BBButton>
       </Box>
 
-      {/* ── Form body ──────────────────────────────────────────────────── */}
       <form onSubmit={handleSubmit(onSubmit)}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-
-          {/* ── Products row ───────────────────────────────────────────── */}
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr auto 1fr' }, gap: 2, alignItems: 'stretch' }}>
-
-            {/* Raw Material card */}
-            <Card sx={{ ...sectionCard, borderTop: `3px solid ${T.rawColor}` }}>
-              <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: '1fr 44px 1fr' },
+              gap: 2,
+              alignItems: 'stretch',
+            }}
+          >
+            <Card sx={cardSx}>
+              <CardContent sx={{ p: 2.25, '&:last-child': { pb: 2.25 } }}>
                 <SectionHeader
                   icon={<FlaskConical size={17} />}
                   title="Raw Material"
                   subtitle="Input product for production"
-                  accentColor={T.rawColor}
-                  accentBg={T.rawLight}
+                  color={T.warning}
+                  bg={T.warningSoft}
                 />
 
                 <Controller
@@ -400,11 +510,13 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
                       disabled={productsLoading}
                       fullWidth
                       size="small"
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                      sx={{ mb: 1.5 }}
                       renderInput={(params) => (
                         <TextField
                           {...params}
                           label="Select Raw Material"
-                          placeholder="Search products…"
+                          placeholder="Search raw material"
                           error={!!errors.raw_product_id}
                           helperText={errors.raw_product_id?.message}
                           sx={inputSx}
@@ -412,60 +524,61 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
                             ...params.InputProps,
                             endAdornment: (
                               <>
-                                {productsLoading ? <CircularProgress size={16} sx={{ color: T.rawColor }} /> : null}
+                                {productsLoading && (
+                                  <CircularProgress size={16} sx={{ color: T.warning }} />
+                                )}
                                 {params.InputProps.endAdornment}
                               </>
                             ),
                           }}
                         />
                       )}
-                      isOptionEqualToValue={(option, value) => option.id === value.id}
-                      sx={{ mb: 2 }}
                     />
                   )}
                 />
 
-                <ProductPlaceholder color={T.rawColor} bg={T.rawLight} label="Raw Material Details" />
+                <ProductPlaceholder
+                  color={T.warning}
+                  bg={T.warningSoft}
+                  label="Raw Material Details"
+                />
               </CardContent>
             </Card>
 
-            {/* Arrow connector */}
             <Box
               sx={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                px: { xs: 0, md: 0.5 },
-                py: { xs: 0.5, md: 0 },
+                py: { xs: 0.25, md: 0 },
               }}
             >
               <Box
                 sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: '50%',
-                  background: `linear-gradient(135deg, ${T.primary}, ${T.secondary})`,
+                  width: 38,
+                  height: 38,
+                  borderRadius: '12px',
+                  bgcolor: T.primary,
+                  color: '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: `0 4px 12px ${alpha(T.primary, 0.35)}`,
-                  flexShrink: 0,
                   transform: { xs: 'rotate(90deg)', md: 'none' },
+                  boxShadow: '0 8px 18px rgba(37,99,235,0.22)',
                 }}
               >
-                <ArrowRight size={18} color="#fff" />
+                <ArrowRight size={18} />
               </Box>
             </Box>
 
-            {/* Finished Product card */}
-            <Card sx={{ ...sectionCard, borderTop: `3px solid ${T.finishedColor}` }}>
-              <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
+            <Card sx={cardSx}>
+              <CardContent sx={{ p: 2.25, '&:last-child': { pb: 2.25 } }}>
                 <SectionHeader
                   icon={<Package size={17} />}
                   title="Finished Product"
                   subtitle="Output product from production"
-                  accentColor={T.finishedColor}
-                  accentBg={T.finishedLight}
+                  color={T.success}
+                  bg={T.successSoft}
                 />
 
                 <Controller
@@ -482,11 +595,13 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
                       disabled={productsLoading}
                       fullWidth
                       size="small"
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                      sx={{ mb: finishedProductVariants.length > 0 ? 1.5 : 0 }}
                       renderInput={(params) => (
                         <TextField
                           {...params}
                           label="Select Finished Product"
-                          placeholder="Search products…"
+                          placeholder="Search finished product"
                           error={!!errors.finished_product_id}
                           helperText={errors.finished_product_id?.message}
                           sx={inputSx}
@@ -494,20 +609,20 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
                             ...params.InputProps,
                             endAdornment: (
                               <>
-                                {productsLoading ? <CircularProgress size={16} sx={{ color: T.finishedColor }} /> : null}
+                                {productsLoading && (
+                                  <CircularProgress size={16} sx={{ color: T.success }} />
+                                )}
                                 {params.InputProps.endAdornment}
                               </>
                             ),
                           }}
                         />
                       )}
-                      isOptionEqualToValue={(option, value) => option.id === value.id}
-                      sx={{ mb: finishedProductVariants.length > 0 ? 2 : 0 }}
                     />
                   )}
                 />
 
-                {finishedProductVariants.length > 0 && (
+                {finishedProductVariants.length > 0 ? (
                   <Controller
                     name="finished_variant_sku"
                     control={control}
@@ -519,52 +634,235 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
                         onChange={(_, newValue) => field.onChange(newValue?.sku || '')}
                         fullWidth
                         size="small"
+                        isOptionEqualToValue={(option, value) => option.sku === value.sku}
                         renderInput={(params) => (
                           <TextField
                             {...params}
-                            label="Variant (Optional)"
-                            placeholder="Select variant…"
+                            label="Variant Optional"
+                            placeholder="Select variant"
                             sx={inputSx}
                           />
-                        )}
-                        isOptionEqualToValue={(option, value) => option.sku === value.sku}
-                        sx={{ mb: 2 }}
-                        renderOption={(props, option) => (
-                          <Box component="li" {...props} sx={{ fontSize: '0.8125rem', fontFamily: "'DM Sans', sans-serif" }}>
-                            <Box>
-                              <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>
-                                {option.variant_name}
-                              </Typography>
-                              <Typography sx={{ fontSize: '0.6875rem', color: T.textMuted, fontFamily: "'DM Mono', monospace" }}>
-                                SKU: {option.sku}
-                              </Typography>
-                            </Box>
-                          </Box>
                         )}
                       />
                     )}
                   />
-                )}
-
-                {finishedProductVariants.length === 0 && (
-                  <Box sx={{ mt: 2 }}>
-                    <ProductPlaceholder color={T.finishedColor} bg={T.finishedLight} label="Finished Product Details" />
+                ) : (
+                  <Box sx={{ mt: 1.5 }}>
+                    <ProductPlaceholder
+                      color={T.success}
+                      bg={T.successSoft}
+                      label="Finished Product Details"
+                    />
                   </Box>
                 )}
               </CardContent>
             </Card>
           </Box>
 
-          {/* ── Conversion Parameters ───────────────────────────────────── */}
-          <Card sx={{ ...sectionCard, borderTop: `3px solid ${T.primary}` }}>
-            <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
+          {/* Bag Selection Card */}
+          {watch('raw_product_id') && availableBags.length > 0 && (
+            <Card sx={cardSx}>
+              <CardContent sx={{ p: 2.25, '&:last-child': { pb: 2.25 } }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <SectionHeader
+                    icon={<Package size={17} />}
+                    title="Raw Material Bags"
+                    subtitle="Select bags to use in production"
+                  />
+                  <BBButton
+                    variant="contained"
+                    size="small"
+                    startIcon={<Plus size={14} />}
+                    onClick={() => setBagDialogOpen(true)}
+                    sx={{
+                      bgcolor: T.primary,
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      textTransform: 'none',
+                      px: 1.75,
+                    }}
+                  >
+                    Add Bag
+                  </BBButton>
+                </Box>
+
+                {selectedBags.length === 0 ? (
+                  <Box
+                    sx={{
+                      bgcolor: alpha(T.primary, 0.05),
+                      border: `1px dashed ${T.primary}`,
+                      borderRadius: '12px',
+                      px: 2,
+                      py: 2,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Typography sx={{ fontSize: '0.85rem', color: T.sub, fontWeight: 500 }}>
+                      No bags selected yet. Click "Add Bag" to select raw material bags for this conversion.
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box sx={{ overflowX: 'auto' }}>
+                    <Table size="small" sx={{ minWidth: 500 }}>
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: alpha(T.primary, 0.08) }}>
+                          <TableCell sx={{ fontWeight: 700, fontSize: '0.8rem', color: T.text }}>
+                            Bag Number
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 700, fontSize: '0.8rem', color: T.text }}>
+                            Bag ID
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 700, fontSize: '0.8rem', color: T.text }}>
+                            Finished Quantity
+                          </TableCell>
+                          <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.8rem', color: T.text }}>
+                            Action
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {selectedBags.map((bag) => {
+                          const bagDetail = availableBags.find((b) => b.id === bag.bag_id);
+                          return (
+                            <TableRow key={bag.bag_id} sx={{ '&:hover': { bgcolor: alpha(T.primary, 0.03) } }}>
+                              <TableCell sx={{ fontSize: '0.8rem', color: T.text, fontWeight: 600 }}>
+                                {bagDetail?.bag_number || 'N/A'}
+                              </TableCell>
+                              <TableCell sx={{ fontSize: '0.8rem', color: T.sub }}>
+                                {bag.bag_id.substring(0, 20)}...
+                              </TableCell>
+                              <TableCell sx={{ fontSize: '0.8rem', color: T.text, fontWeight: 500 }}>
+                                {bag.finished_quantity}
+                              </TableCell>
+                              <TableCell align="center">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleRemoveBag(bag.bag_id)}
+                                  sx={{
+                                    color: '#dc2626',
+                                    '&:hover': { bgcolor: alpha('#dc2626', 0.1) },
+                                  }}
+                                >
+                                  <Trash2 size={16} />
+                                </IconButton>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Add Bag Dialog */}
+          <Dialog open={bagDialogOpen} onClose={() => setBagDialogOpen(false)} maxWidth="sm" fullWidth>
+            <DialogTitle sx={{ fontWeight: 800, fontSize: '1.1rem', color: T.text }}>
+              Select Raw Material Bag
+            </DialogTitle>
+            <DialogContent sx={{ pt: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Autocomplete
+                  options={availableBags.filter((b) => !selectedBags.some((sb) => sb.bag_id === b.id))}
+                  getOptionLabel={(option) => `Bag #${option.bag_number} (${option.id.substring(0, 15)}...)`}
+                  value={selectedBagForAdd}
+                  onChange={(_, newValue) => setSelectedBagForAdd(newValue)}
+                  loading={bagsLoading}
+                  fullWidth
+                  size="small"
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select Bag"
+                      placeholder="Search bags..."
+                      sx={inputSx}
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {bagsLoading && <CircularProgress size={16} sx={{ color: T.primary }} />}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                    />
+                  )}
+                />
+
+                <TextField
+                  label="Finished Quantity"
+                  placeholder="e.g. 1"
+                  type="number"
+                  value={finishedQuantityForBag}
+                  onChange={(e) => setFinishedQuantityForBag(Number(e.target.value))}
+                  size="small"
+                  inputProps={{ min: 1, step: 1 }}
+                  sx={inputSx}
+                />
+
+                {selectedBagForAdd && (
+                  <Box sx={{ bgcolor: T.primarySoft, borderRadius: '8px', p: 1.5, border: `1px solid ${T.primary}` }}>
+                    <Typography sx={{ fontSize: '0.75rem', color: T.sub, fontWeight: 600, mb: 0.5 }}>
+                      Selected Bag Details
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.8rem', color: T.text, fontWeight: 600 }}>
+                      Bag Number: {selectedBagForAdd.bag_number}
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.75rem', color: T.sub }}>
+                      Available Quantity: {selectedBagForAdd.remaining_kg ?? 'N/A'} kg
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </DialogContent>
+            <DialogActions sx={{ p: 2 }}>
+              <BBButton
+                variant="outlined"
+                onClick={() => setBagDialogOpen(false)}
+                sx={{
+                  borderColor: T.border,
+                  color: T.sub,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                }}
+              >
+                Cancel
+              </BBButton>
+              <BBButton
+                variant="contained"
+                onClick={handleAddBag}
+                sx={{
+                  bgcolor: T.primary,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                }}
+              >
+                Add Bag
+              </BBButton>
+            </DialogActions>
+          </Dialog>
+
+          <Card sx={cardSx}>
+            <CardContent sx={{ p: 2.25, '&:last-child': { pb: 2.25 } }}>
               <SectionHeader
                 icon={<SlidersHorizontal size={17} />}
                 title="Conversion Parameters"
-                subtitle="Define ratio and waste for this production rule"
+                subtitle="Define ratio and material loss"
               />
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2.5, mb: 2.5 }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                  gap: 2,
+                  mb: 2,
+                }}
+              >
                 <Controller
                   name="conversion_ratio"
                   control={control}
@@ -579,12 +877,14 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
                       onChange={(e) => onChange(Number(e.target.value))}
                       fullWidth
                       label="Conversion Ratio"
-                      placeholder="e.g., 1.0"
+                      placeholder="e.g. 1"
                       type="number"
                       inputProps={{ step: '0.1', min: '0.1' }}
                       error={!!errors.conversion_ratio}
-                      helperText={errors.conversion_ratio?.message || 'Raw units needed to produce 1 finished unit'}
-                      variant="outlined"
+                      helperText={
+                        errors.conversion_ratio?.message ||
+                        'Raw units required for 1 finished unit'
+                      }
                       size="small"
                       sx={inputSx}
                     />
@@ -602,40 +902,36 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
                   render={({ field: { onChange, value, ...field } }) => (
                     <TextField
                       {...field}
-                      value={value || ''}
+                      value={value ?? ''}
                       onChange={(e) => onChange(Number(e.target.value))}
                       fullWidth
                       label="Loss Percentage"
-                      placeholder="e.g., 5"
+                      placeholder="e.g. 5"
                       type="number"
                       inputProps={{ step: '0.1', min: '0', max: '100' }}
                       error={!!errors.loss_percentage}
-                      helperText={errors.loss_percentage?.message || 'Material waste during conversion'}
-                      variant="outlined"
+                      helperText={
+                        errors.loss_percentage?.message || 'Waste during conversion'
+                      }
                       size="small"
                       sx={inputSx}
-                      InputProps={{
-                        endAdornment: (
-                          <Typography sx={{ fontSize: '0.875rem', color: T.textMuted, fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>
-                            %
-                          </Typography>
-                        ),
-                      }}
                     />
                   )}
                 />
               </Box>
 
-              {/* Live calculation card */}
               <Box
                 sx={{
-                  background: `linear-gradient(135deg, ${T.primaryLight}, ${alpha(T.secondary, 0.06)})`,
-                  border: `1.5px solid ${alpha(T.primary, 0.2)}`,
-                  borderRadius: '12px',
-                  p: 2.5,
+                  bgcolor: T.primarySoft,
+                  border: `1px solid ${alpha(T.primary, 0.16)}`,
+                  borderRadius: '14px',
+                  p: 1.75,
                   display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', sm: 'auto 1fr auto 1fr auto' },
-                  gap: 1.5,
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    md: 'auto 1fr auto 1fr auto',
+                  },
+                  gap: 1.25,
                   alignItems: 'center',
                 }}
               >
@@ -644,108 +940,141 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
                     sx={{
                       width: 30,
                       height: 30,
-                      borderRadius: '8px',
-                      background: `linear-gradient(135deg, ${T.primary}, ${T.secondary})`,
+                      borderRadius: '9px',
+                      bgcolor: T.primary,
+                      color: '#fff',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
                   >
-                    <Calculator size={14} color="#fff" />
+                    <Calculator size={14} />
                   </Box>
-                  <Typography sx={{ fontSize: '0.8125rem', fontWeight: 700, color: T.text, fontFamily: "'DM Sans', sans-serif" }}>
+
+                  <Typography
+                    sx={{
+                      fontSize: '0.82rem',
+                      fontWeight: 800,
+                      color: T.text,
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
                     Example
                   </Typography>
                 </Box>
 
-                {/* Step 1 */}
                 <Box
                   sx={{
-                    background: T.surface,
-                    borderRadius: '10px',
+                    bgcolor: '#fff',
+                    borderRadius: '12px',
                     px: 2,
-                    py: 1.25,
-                    textAlign: 'center',
-                    border: `1px solid ${alpha(T.rawColor, 0.25)}`,
+                    py: 1.1,
+                    border: `1px solid ${alpha(T.warning, 0.22)}`,
                   }}
                 >
-                  <Typography sx={{ fontSize: '1.125rem', fontWeight: 800, color: T.rawColor, fontFamily: "'DM Mono', monospace" }}>
+                  <Typography
+                    sx={{
+                      fontSize: '1.1rem',
+                      fontWeight: 800,
+                      color: T.warning,
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
                     1,000
                   </Typography>
-                  <Typography sx={{ fontSize: '0.6875rem', color: T.textMuted, fontFamily: "'DM Sans', sans-serif", mt: 0.25 }}>
+                  <Typography sx={{ fontSize: '0.72rem', color: T.sub, fontWeight: 600 }}>
                     raw units in
                   </Typography>
                 </Box>
 
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      px: 1.5,
-                      py: 0.5,
-                      borderRadius: '20px',
-                      background: alpha(T.primary, 0.1),
-                    }}
-                  >
-                    <Zap size={11} color={T.primary} />
-                    <Typography sx={{ fontSize: '0.6875rem', color: T.primary, fontFamily: "'DM Sans', sans-serif", fontWeight: 700 }}>
-                      ÷{conversionRatio} · -{lossPercentage}% loss
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {/* Result */}
                 <Box
                   sx={{
-                    background: T.surface,
-                    borderRadius: '10px',
-                    px: 2,
-                    py: 1.25,
-                    textAlign: 'center',
-                    border: `1px solid ${alpha(T.finishedColor, 0.25)}`,
+                    display: 'inline-flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    px: 1.25,
+                    py: 0.65,
+                    borderRadius: '999px',
+                    bgcolor: '#ffffff',
+                    color: T.primary,
+                    border: `1px solid ${alpha(T.primary, 0.16)}`,
                   }}
                 >
-                  <Typography sx={{ fontSize: '1.125rem', fontWeight: 800, color: T.finishedColor, fontFamily: "'DM Mono', monospace" }}>
+                  <Zap size={12} />
+                  <Typography sx={{ fontSize: '0.72rem', fontWeight: 800 }}>
+                    ÷{conversionRatio} · -{lossPercentage}%
+                  </Typography>
+                </Box>
+
+                <Box
+                  sx={{
+                    bgcolor: '#fff',
+                    borderRadius: '12px',
+                    px: 2,
+                    py: 1.1,
+                    border: `1px solid ${alpha(T.success, 0.22)}`,
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: '1.1rem',
+                      fontWeight: 800,
+                      color: T.success,
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
                     {finishedUnits.toLocaleString()}
                   </Typography>
-                  <Typography sx={{ fontSize: '0.6875rem', color: T.textMuted, fontFamily: "'DM Sans', sans-serif", mt: 0.25 }}>
+                  <Typography sx={{ fontSize: '0.72rem', color: T.sub, fontWeight: 600 }}>
                     finished units out
                   </Typography>
                 </Box>
 
-                {/* Efficiency chip */}
                 <Chip
-                  label={`${(100 - lossPercentage).toFixed(1)}% efficiency`}
+                  label={`${(100 - Number(lossPercentage || 0)).toFixed(1)}% efficiency`}
                   size="small"
                   sx={{
-                    background: lossPercentage <= 5 ? T.successLight : lossPercentage <= 15 ? '#fef3c7' : '#fee2e2',
-                    color: lossPercentage <= 5 ? T.success : lossPercentage <= 15 ? '#d97706' : '#dc2626',
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontWeight: 700,
-                    fontSize: '0.75rem',
+                    bgcolor:
+                      lossPercentage <= 5
+                        ? T.successSoft
+                        : lossPercentage <= 15
+                          ? '#fef3c7'
+                          : '#fee2e2',
+                    color:
+                      lossPercentage <= 5
+                        ? T.success
+                        : lossPercentage <= 15
+                          ? T.warning
+                          : '#dc2626',
+                    fontFamily: "'Inter', sans-serif",
+                    fontWeight: 800,
+                    fontSize: '0.74rem',
                     borderRadius: '8px',
-                    height: 26,
-                    '& .MuiChip-label': { px: 1.25 },
                   }}
                 />
               </Box>
             </CardContent>
           </Card>
 
-          {/* ── Additional Information ──────────────────────────────────── */}
-          <Card sx={{ ...sectionCard }}>
-            <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
+          <Card sx={cardSx}>
+            <CardContent sx={{ p: 2.25, '&:last-child': { pb: 2.25 } }}>
               <SectionHeader
                 icon={<FileText size={17} />}
                 title="Additional Information"
-                subtitle="Notes and activation status"
-                accentColor={T.accent}
-                accentBg={T.accentLight}
+                subtitle="Notes and rule status"
+                color={T.purple}
+                bg="#f5f3ff"
               />
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr auto' }, gap: 2.5, alignItems: 'start' }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: '1fr 220px' },
+                  gap: 2,
+                  alignItems: 'start',
+                }}
+              >
                 <Controller
                   name="notes"
                   control={control}
@@ -754,10 +1083,9 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
                       {...field}
                       fullWidth
                       label="Notes"
-                      placeholder="Add notes about this conversion rule, special instructions, or quality parameters…"
+                      placeholder="Add notes or special production instructions"
                       multiline
                       rows={3}
-                      variant="outlined"
                       size="small"
                       sx={inputSx}
                     />
@@ -770,22 +1098,25 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
                   render={({ field }) => (
                     <Box
                       sx={{
-                        border: `1px solid ${field.value ? alpha(T.success, 0.3) : T.border}`,
-                        borderRadius: '12px',
-                        px: 2,
-                        py: 1.5,
-                        background: field.value ? alpha(T.success, 0.04) : T.bg,
-                        transition: 'all 0.2s ease',
-                        minWidth: 200,
+                        border: `1px solid ${
+                          field.value ? alpha(T.success, 0.3) : T.border
+                        }`,
+                        borderRadius: '14px',
+                        px: 1.5,
+                        py: 1.25,
+                        bgcolor: field.value ? T.successSoft : T.mutedSurface,
                       }}
                     >
                       <FormControlLabel
+                        sx={{ m: 0 }}
                         control={
                           <Switch
                             checked={field.value}
                             onChange={(e) => field.onChange(e.target.checked)}
                             sx={{
-                              '& .MuiSwitch-switchBase.Mui-checked': { color: T.success },
+                              '& .MuiSwitch-switchBase.Mui-checked': {
+                                color: T.success,
+                              },
                               '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
                                 backgroundColor: T.success,
                               },
@@ -796,17 +1127,23 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
                           <Box>
                             <Typography
                               sx={{
-                                fontSize: '0.875rem',
-                                fontWeight: 700,
-                                color: field.value ? T.success : T.textSecondary,
-                                fontFamily: "'DM Sans', sans-serif",
-                                transition: 'color 0.2s',
+                                fontSize: '0.85rem',
+                                fontWeight: 800,
+                                color: field.value ? T.success : T.sub,
+                                fontFamily: "'Inter', sans-serif",
                               }}
                             >
                               {field.value ? 'Active' : 'Inactive'}
                             </Typography>
-                            <Typography sx={{ fontSize: '0.6875rem', color: T.textMuted, fontFamily: "'DM Sans', sans-serif" }}>
-                              {field.value ? 'Rule is enabled for use' : 'Rule is disabled'}
+
+                            <Typography
+                              sx={{
+                                fontSize: '0.7rem',
+                                color: T.sub,
+                                fontWeight: 500,
+                              }}
+                            >
+                              {field.value ? 'Enabled for use' : 'Disabled rule'}
                             </Typography>
                           </Box>
                         }
@@ -818,22 +1155,32 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
             </CardContent>
           </Card>
 
-          {/* ── Action bar ─────────────────────────────────────────────── */}
           <Box
             sx={{
-              background: T.surface,
+              bgcolor: T.surface,
               border: `1px solid ${T.border}`,
-              borderRadius: '14px',
-              p: 2.5,
+              borderRadius: '16px',
+              p: 1.75,
               display: 'flex',
               justifyContent: 'flex-end',
               alignItems: 'center',
-              gap: 1.5,
-              boxShadow: '0 1px 3px rgba(79,99,210,0.06)',
+              gap: 1.25,
+              flexWrap: 'wrap',
+              boxShadow: '0 8px 24px rgba(15,23,42,0.04)',
             }}
           >
-            <Typography sx={{ fontSize: '0.8125rem', color: T.textMuted, fontFamily: "'DM Sans', sans-serif", mr: 'auto' }}>
-              {isEdit ? 'Changes will be saved immediately' : 'This rule will be available for production orders'}
+            <Typography
+              sx={{
+                fontSize: '0.8rem',
+                color: T.sub,
+                fontWeight: 600,
+                mr: 'auto',
+                fontFamily: "'Inter', sans-serif",
+              }}
+            >
+              {isEdit
+                ? 'Changes will be saved immediately.'
+                : 'This rule will be available for production orders.'}
             </Typography>
 
             <BBButton
@@ -841,14 +1188,16 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
               onClick={() => router.push('/conversion')}
               sx={{
                 borderColor: T.border,
-                color: T.textSecondary,
+                color: T.sub,
                 borderRadius: '10px',
-                fontFamily: "'DM Sans', sans-serif",
-                fontWeight: 600,
-                fontSize: '0.875rem',
+                fontWeight: 800,
+                fontSize: '0.82rem',
                 textTransform: 'none',
-                px: 2.5,
-                '&:hover': { borderColor: T.borderHover, background: T.bg },
+                px: 2.25,
+                '&:hover': {
+                  borderColor: T.borderDark,
+                  bgcolor: '#ffffff',
+                },
               }}
             >
               Cancel
@@ -858,29 +1207,30 @@ export default function ConversionForm({ initialData, isEdit = false }: Conversi
               variant="contained"
               type="submit"
               loading={loading}
-              startIcon={<Save size={16} />}
+              startIcon={<Save size={15} />}
               sx={{
-                background: `linear-gradient(135deg, ${T.primary}, ${T.secondary})`,
+                bgcolor: T.primary,
                 borderRadius: '10px',
-                fontFamily: "'DM Sans', sans-serif",
-                fontWeight: 700,
-                fontSize: '0.875rem',
+                fontWeight: 800,
+                fontSize: '0.82rem',
                 textTransform: 'none',
-                px: 3,
-                boxShadow: `0 4px 12px ${alpha(T.primary, 0.35)}`,
+                px: 2.5,
+                boxShadow: '0 8px 18px rgba(37,99,235,0.22)',
                 '&:hover': {
-                  background: `linear-gradient(135deg, #3d50c0, #6d28d9)`,
-                  boxShadow: `0 6px 16px ${alpha(T.primary, 0.45)}`,
+                  bgcolor: '#1d4ed8',
+                  boxShadow: '0 10px 22px rgba(37,99,235,0.28)',
                 },
-                '&:disabled': { background: '#e5e7eb', color: '#9ca3af', boxShadow: 'none' },
               }}
             >
               {isEdit ? 'Update Rule' : 'Create Rule'}
             </BBButton>
           </Box>
-
         </Box>
       </form>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+      `}</style>
     </Box>
   );
 }

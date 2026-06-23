@@ -580,7 +580,7 @@ export default function Products() {
     try {
       const response = await productService.deleteProduct(selectedId);
       if (response?.success) {
-        showToastMessage(response.message || "Product deleted successfully", "success");
+        showToastMessage(response.message || "Item deleted successfully", "success");
         refetch();
         setOpen(false);
       } else {
@@ -608,7 +608,7 @@ export default function Products() {
   const columns: ITableColumn<any>[] = [
     {
       key: "name",
-      label: "Product",
+      label: "Item",
       render: (row) => (
         <Stack direction="row" alignItems="center" spacing={1.75}>
           <ProductAvatar name={row.name ?? "P"} />
@@ -716,7 +716,11 @@ export default function Products() {
       label: "",
       render: (row) => (
         <ActionButtons
-          onEdit={() => router.push(`/products/product/${row.id}`)}
+          onEdit={() => {
+            console.log("Navigating to:", `/products/product/${row.id}`);
+            console.log("Row ID:", row.id);
+            router.push(`/products/product/${row.id}`);
+          }}
           onDelete={() => {
             setSelectedId(row.id);
             setOpen(true);
@@ -792,7 +796,7 @@ export default function Products() {
                 <Typography
                   sx={{ fontWeight: 900, color: T.text, fontSize: "1rem", letterSpacing: "-0.03em", lineHeight: 1 }}
                 >
-                  Products
+                  Items
                 </Typography>
                 <Box
                   sx={{
@@ -914,10 +918,10 @@ export default function Products() {
             "& > *": {
               animation: "fadeSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both",
             },
-            "& > *:nth-child(1)": { animationDelay: "0ms" },
-            "& > *:nth-child(2)": { animationDelay: "60ms" },
-            "& > *:nth-child(3)": { animationDelay: "120ms" },
-            "& > *:nth-child(4)": { animationDelay: "180ms" },
+            "& > *:nth-of-type(1)": { animationDelay: "0ms" },
+            "& > *:nth-of-type(2)": { animationDelay: "60ms" },
+            "& > *:nth-of-type(3)": { animationDelay: "120ms" },
+            "& > *:nth-of-type(4)": { animationDelay: "180ms" },
             "@keyframes fadeSlideUp": {
               from: { opacity: 0, transform: "translateY(12px)" },
               to: { opacity: 1, transform: "translateY(0)" },

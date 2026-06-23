@@ -4,13 +4,10 @@ import React, { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import {
   Box,
-  Container,
   Button,
   CircularProgress,
   Alert,
   Card,
-  CardContent,
-  Divider,
   alpha,
   Fade,
   Typography,
@@ -40,35 +37,32 @@ import PurchaseOrderLineItems from './PurchaseOrderLineItems';
 import PurchaseOrderBilling from './PurchaseOrderBilling';
 import BBButton from '@/lib/BBButton/BBButton';
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
 const tokens = {
-  brand:    '#2563EB',
-  brandSoft:'#EFF6FF',
-  accent:   '#0EA5E9',
-  success:  '#16A34A',
-  warn:     '#D97706',
-  error:    '#DC2626',
-  neutral0: '#FFFFFF',
-  neutral50:'#F8FAFC',
-  neutral100:'#F1F5F9',
-  neutral200:'#E2E8F0',
-  neutral300:'#CBD5E1',
-  neutral500:'#64748B',
-  neutral700:'#334155',
-  neutral900:'#0F172A',
-  radius:   '14px',
-  shadow:   '0 1px 3px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.06)',
-  shadowMd: '0 4px 24px rgba(37,99,235,0.10)',
+  brand: '#4f22f2',
+  brandSoft: '#eef2ff',
+  accent: '#0ea5e9',
+  success: '#16a34a',
+  warn: '#d97706',
+  error: '#dc2626',
+  neutral0: '#ffffff',
+  neutral50: '#f8fafc',
+  neutral100: '#f1f5f9',
+  neutral200: '#e2e8f0',
+  neutral300: '#cbd5e1',
+  neutral500: '#64748b',
+  neutral700: '#334155',
+  neutral900: '#0f172a',
+  radius: '14px',
+  shadow: '0 4px 14px rgba(15,23,42,0.04)',
+  shadowMd: '0 8px 18px rgba(79,34,242,0.25)',
 };
 
-// ─── Step definitions ─────────────────────────────────────────────────────────
 const STEPS = [
-  { label: 'Basic Info',  sublabel: 'Order details & vendor', Icon: DescriptionIcon },
-  { label: 'Line Items',  sublabel: 'Products & quantities',  Icon: ShoppingCartIcon },
-  { label: 'Billing',     sublabel: 'Payment & totals',       Icon: PaymentIcon },
+  { label: 'Basic Info', sublabel: 'Order details & vendor', Icon: DescriptionIcon },
+  { label: 'Line Items', sublabel: 'Products & quantities', Icon: ShoppingCartIcon },
+  { label: 'Billing', sublabel: 'Payment & totals', Icon: PaymentIcon },
 ];
 
-// ─── Step Indicator ───────────────────────────────────────────────────────────
 interface StepIndicatorProps {
   active: number;
   onChange: (i: number) => void;
@@ -80,18 +74,17 @@ function StepIndicator({ active, onChange }: StepIndicatorProps) {
       sx={{
         display: 'flex',
         alignItems: 'center',
-        gap: 0,
-        p: '6px',
-        borderRadius: '50px',
+        p: '5px',
+        borderRadius: '999px',
         background: tokens.neutral100,
         border: `1px solid ${tokens.neutral200}`,
         width: 'fit-content',
       }}
     >
       {STEPS.map((step, i) => {
-        const done    = i < active;
+        const done = i < active;
         const current = i === active;
-        const Icon    = step.Icon;
+        const Icon = step.Icon;
 
         return (
           <React.Fragment key={i}>
@@ -101,28 +94,26 @@ function StepIndicator({ active, onChange }: StepIndicatorProps) {
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 1,
-                  px: current ? 2.5 : 1.5,
-                  py: 1,
-                  borderRadius: '40px',
+                  gap: 0.8,
+                  px: current ? 2 : 1.25,
+                  py: 0.85,
+                  borderRadius: '999px',
                   cursor: 'pointer',
-                  transition: 'all 0.35s cubic-bezier(0.4,0,0.2,1)',
+                  transition: '0.25s ease',
                   background: current
                     ? tokens.brand
                     : done
-                    ? alpha(tokens.success, 0.1)
-                    : 'transparent',
+                      ? alpha(tokens.success, 0.1)
+                      : 'transparent',
                   '&:hover': {
-                    background: current
-                      ? tokens.brand
-                      : alpha(tokens.brand, 0.06),
+                    background: current ? tokens.brand : alpha(tokens.brand, 0.06),
                   },
                 }}
               >
                 <Box
                   sx={{
-                    width: 26,
-                    height: 26,
+                    width: 24,
+                    height: 24,
                     borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
@@ -130,29 +121,20 @@ function StepIndicator({ active, onChange }: StepIndicatorProps) {
                     background: current
                       ? 'rgba(255,255,255,0.2)'
                       : done
-                      ? alpha(tokens.success, 0.15)
-                      : tokens.neutral200,
-                    color: current
-                      ? 'white'
-                      : done
-                      ? tokens.success
-                      : tokens.neutral500,
-                    flexShrink: 0,
+                        ? alpha(tokens.success, 0.15)
+                        : tokens.neutral200,
+                    color: current ? '#fff' : done ? tokens.success : tokens.neutral500,
                   }}
                 >
-                  {done ? (
-                    <CheckCircleIcon sx={{ fontSize: 16 }} />
-                  ) : (
-                    <Icon sx={{ fontSize: 15 }} />
-                  )}
+                  {done ? <CheckCircleIcon sx={{ fontSize: 15 }} /> : <Icon sx={{ fontSize: 14 }} />}
                 </Box>
+
                 {current && (
                   <Typography
                     sx={{
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
-                      color: 'white',
-                      letterSpacing: 0.2,
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      color: '#fff',
                       whiteSpace: 'nowrap',
                       fontFamily: "'DM Sans', sans-serif",
                     }}
@@ -162,14 +144,13 @@ function StepIndicator({ active, onChange }: StepIndicatorProps) {
                 )}
               </Box>
             </Tooltip>
+
             {i < STEPS.length - 1 && (
               <Box
                 sx={{
-                  width: 20,
+                  width: 16,
                   height: 1,
                   background: i < active ? alpha(tokens.success, 0.4) : tokens.neutral200,
-                  transition: 'background 0.4s',
-                  flexShrink: 0,
                 }}
               />
             )}
@@ -180,19 +161,17 @@ function StepIndicator({ active, onChange }: StepIndicatorProps) {
   );
 }
 
-// ─── Tab Panel ────────────────────────────────────────────────────────────────
-interface TabPanelProps { children?: React.ReactNode; index: number; value: number; }
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
 
 function TabPanel({ children, value, index }: TabPanelProps) {
   return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`tabpanel-${index}`}
-      aria-labelledby={`tab-${index}`}
-    >
+    <div hidden={value !== index}>
       {value === index && (
-        <Fade in timeout={350}>
+        <Fade in timeout={250}>
           <Box>{children}</Box>
         </Fade>
       )}
@@ -200,19 +179,21 @@ function TabPanel({ children, value, index }: TabPanelProps) {
   );
 }
 
-// ─── Progress bar ─────────────────────────────────────────────────────────────
 function StepProgressBar({ active }: { active: number }) {
   const pct = Math.round(((active + 1) / STEPS.length) * 100);
+
   return (
-    <Box sx={{ px: 4, pb: 3, pt: 1 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
-        <Typography sx={{ fontSize: '0.72rem', fontWeight: 600, color: tokens.neutral500, fontFamily: "'DM Sans', sans-serif" }}>
+    <Box sx={{ px: { xs: 1.5, md: 2 }, pb: 1.5, pt: 1 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.65 }}>
+        <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: tokens.neutral500 }}>
           Step {active + 1} of {STEPS.length}
         </Typography>
-        <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: tokens.brand, fontFamily: "'DM Sans', sans-serif" }}>
+
+        <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: tokens.brand }}>
           {pct}% complete
         </Typography>
       </Box>
+
       <Box
         sx={{
           height: 5,
@@ -227,7 +208,7 @@ function StepProgressBar({ active }: { active: number }) {
             width: `${pct}%`,
             background: `linear-gradient(90deg, ${tokens.brand}, ${tokens.accent})`,
             borderRadius: 99,
-            transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',
+            transition: 'width 0.35s ease',
           }}
         />
       </Box>
@@ -235,21 +216,28 @@ function StepProgressBar({ active }: { active: number }) {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-interface PurchaseOrderFormProps { purchaseOrderId?: string; }
+interface PurchaseOrderFormProps {
+  purchaseOrderId?: string;
+}
 
 const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }) => {
   const router = useRouter();
+
   const { getPurchaseOrder, createPurchaseOrder, updatePurchaseOrder, loading, error } =
     usePurchaseOrder();
-  const [tabValue, setTabValue]       = useState(0);
-  const [initialValues, setInitialValues] = useState<PurchaseOrder>(initialPurchaseOrderValues as any);
-  const [pageError, setPageError]     = useState<string | null>(null);
-  const [saved, setSaved]             = useState(false);
+
+  const [tabValue, setTabValue] = useState(0);
+  const [initialValues, setInitialValues] = useState<PurchaseOrder>(
+    initialPurchaseOrderValues as any
+  );
+  const [pageError, setPageError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
   const isEdit = purchaseOrderId && purchaseOrderId !== 'new';
 
   useEffect(() => {
     if (!isEdit) return;
+
     const loadPurchaseOrder = async () => {
       try {
         const po = await getPurchaseOrder(purchaseOrderId!);
@@ -258,6 +246,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
         setPageError('Failed to load purchase order');
       }
     };
+
     loadPurchaseOrder();
   }, [purchaseOrderId, getPurchaseOrder, isEdit]);
 
@@ -271,11 +260,13 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
       try {
         setPageError(null);
         const payload = transformPOToPayload(values);
+
         if (isEdit) {
           await updatePurchaseOrder(purchaseOrderId!, payload);
         } else {
           await createPurchaseOrder(payload);
         }
+
         setSaved(true);
         setTimeout(() => router.push('/purchase-orders'), 800);
       } catch (err: any) {
@@ -290,104 +281,90 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
     (k) => formik.touched[k as keyof typeof formik.touched]
   ).length;
 
-  // Loading state
   if (loading && isEdit) {
     return (
       <Box
         sx={{
           minHeight: '100vh',
-          background: tokens.neutral50,
+          width: '100%',
+          bgcolor: tokens.neutral50,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Box sx={{ textAlign: 'center' }}>
-          <Box
-            sx={{
-              width: 56,
-              height: 56,
-              borderRadius: '16px',
-              background: tokens.brandSoft,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mx: 'auto',
-              mb: 2,
-            }}
-          >
-            <CircularProgress size={28} sx={{ color: tokens.brand }} />
-          </Box>
-          <Typography
-            sx={{ color: tokens.neutral700, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
-          >
-            Loading purchase order…
-          </Typography>
-        </Box>
+        <CircularProgress size={28} sx={{ color: tokens.brand }} />
       </Box>
     );
   }
 
   return (
     <>
-      {/* Google Fonts */}
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap');`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap');
+      `}</style>
 
       <Box
         sx={{
           minHeight: '100vh',
-          background: `radial-gradient(ellipse 80% 60% at 50% -10%, ${alpha(tokens.brand, 0.06)} 0%, ${tokens.neutral50} 60%)`,
+          width: '100%',
+          bgcolor: tokens.neutral50,
           fontFamily: "'DM Sans', sans-serif",
+          p: 0,
+          m: 0,
         }}
       >
-        <Container maxWidth="lg" sx={{ py: 5 }}>
-
-          {/* ── Header ─────────────────────────────────────────────────────── */}
-          <Fade in timeout={400}>
+        <Box
+          sx={{
+            width: '100%',
+            maxWidth: 'none',
+            px: { xs: 1.25, md: 1.5 },
+            py: { xs: 1.25, md: 1.5 },
+          }}
+        >
+          <Fade in timeout={300}>
             <Box
               sx={{
                 display: 'flex',
                 alignItems: 'flex-start',
                 justifyContent: 'space-between',
-                mb: 4,
+                mb: 1.5,
                 flexWrap: 'wrap',
-                gap: 2,
+                gap: 1.25,
               }}
             >
               <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.4 }}>
                   <Box
                     sx={{
                       display: 'inline-flex',
-                      alignItems: 'center',
-                      px: 1.5,
-                      py: 0.4,
-                      borderRadius: '6px',
+                      px: 1.4,
+                      py: 0.35,
+                      borderRadius: '7px',
                       background: tokens.brandSoft,
-                      border: `1px solid ${alpha(tokens.brand, 0.15)}`,
+                      border: `1px solid ${alpha(tokens.brand, 0.16)}`,
                     }}
                   >
                     <Typography
                       sx={{
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
+                        fontSize: '0.68rem',
+                        fontWeight: 800,
                         color: tokens.brand,
                         textTransform: 'uppercase',
                         letterSpacing: 1,
-                        fontFamily: "'DM Sans', sans-serif",
                       }}
                     >
                       {isEdit ? 'Editing' : 'New'}
                     </Typography>
                   </Box>
+
                   {isEdit && initialValues.purchase_order_no && (
                     <Chip
                       label={`# ${initialValues.purchase_order_no}`}
                       size="small"
                       sx={{
-                        fontFamily: "'DM Sans', sans-serif",
-                        fontWeight: 700,
-                        fontSize: '0.75rem',
+                        fontWeight: 800,
+                        fontSize: '0.72rem',
                         background: tokens.neutral100,
                         border: `1px solid ${tokens.neutral200}`,
                         color: tokens.neutral700,
@@ -395,25 +372,27 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
                     />
                   )}
                 </Box>
+
                 <Typography
                   variant="h4"
                   sx={{
                     fontFamily: "'Sora', sans-serif",
                     fontWeight: 800,
                     color: tokens.neutral900,
-                    fontSize: { xs: '1.5rem', sm: '1.9rem' },
-                    lineHeight: 1.2,
-                    letterSpacing: -0.5,
+                    fontSize: { xs: '1.45rem', sm: '1.8rem' },
+                    lineHeight: 1.15,
+                    letterSpacing: -0.8,
                   }}
                 >
                   {isEdit ? 'Edit Purchase Order' : 'New Purchase Order'}
                 </Typography>
+
                 <Typography
                   sx={{
-                    mt: 0.5,
+                    mt: 0.35,
                     color: tokens.neutral500,
-                    fontSize: '0.875rem',
-                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: '0.84rem',
+                    fontWeight: 600,
                   }}
                 >
                   {isEdit
@@ -422,106 +401,77 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
                 </Typography>
               </Box>
 
-              {/* Step pill */}
               <StepIndicator active={tabValue} onChange={setTabValue} />
             </Box>
           </Fade>
 
-          {/* ── Alerts ──────────────────────────────────────────────────────── */}
           {(pageError || error) && (
-            <Fade in>
-              <Alert
-                severity="error"
-                icon={<ErrorOutlineIcon />}
-                sx={{
-                  mb: 3,
-                  borderRadius: tokens.radius,
-                  border: `1px solid ${alpha(tokens.error, 0.3)}`,
-                  background: '#FEF2F2',
-                  fontFamily: "'DM Sans', sans-serif",
-                  '& .MuiAlert-message': { width: '100%' },
-                }}
-              >
-                <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', mb: 0.25 }}>
-                  Something went wrong
-                </Typography>
-                <Typography sx={{ fontSize: '0.82rem', color: '#7f1d1d' }}>
-                  {pageError || error}
-                </Typography>
-              </Alert>
-            </Fade>
+            <Alert
+              severity="error"
+              icon={<ErrorOutlineIcon />}
+              sx={{
+                mb: 1.25,
+                borderRadius: tokens.radius,
+                border: `1px solid ${alpha(tokens.error, 0.3)}`,
+                background: '#fef2f2',
+              }}
+            >
+              {pageError || error}
+            </Alert>
           )}
 
           {errorCount > 0 && (
-            <Fade in>
-              <Alert
-                severity="warning"
-                sx={{
-                  mb: 3,
-                  borderRadius: tokens.radius,
-                  border: `1px solid ${alpha(tokens.warn, 0.3)}`,
-                  background: '#FFFBEB',
-                  fontFamily: "'DM Sans', sans-serif",
-                }}
-              >
-                <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', mb: 0.5 }}>
-                  {errorCount} field{errorCount > 1 ? 's need' : ' needs'} attention
-                </Typography>
-                <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
-                  {Object.entries(formik.errors)
-                    .filter(([k]) => formik.touched[k as keyof typeof formik.touched])
-                    .map(([k, e]) => (
-                      <Typography
-                        key={k}
-                        component="li"
-                        sx={{ fontSize: '0.8rem', color: '#92400e', mb: 0.25 }}
-                      >
-                        {String(e)}
-                      </Typography>
-                    ))}
-                </Box>
-              </Alert>
-            </Fade>
+            <Alert
+              severity="warning"
+              sx={{
+                mb: 1.25,
+                borderRadius: tokens.radius,
+                border: `1px solid ${alpha(tokens.warn, 0.3)}`,
+                background: '#fffbeb',
+              }}
+            >
+              {errorCount} field{errorCount > 1 ? 's need' : ' needs'} attention
+            </Alert>
           )}
 
-          {/* ── Main Card ────────────────────────────────────────────────────── */}
-          <Fade in timeout={500}>
+          <Fade in timeout={350}>
             <Card
               sx={{
-                borderRadius: '20px',
+                borderRadius: '16px',
                 border: `1px solid ${tokens.neutral200}`,
                 boxShadow: tokens.shadow,
                 overflow: 'hidden',
                 background: tokens.neutral0,
+                width: '100%',
               }}
             >
               {loading && (
                 <LinearProgress
                   sx={{
                     height: 3,
+                    background: tokens.neutral100,
                     '& .MuiLinearProgress-bar': {
                       background: `linear-gradient(90deg, ${tokens.brand}, ${tokens.accent})`,
                     },
-                    background: tokens.neutral100,
                   }}
                 />
               )}
 
-              {/* Tab strip */}
               <Box
                 sx={{
                   display: 'flex',
                   borderBottom: `1px solid ${tokens.neutral200}`,
                   background: tokens.neutral50,
-                  px: 2,
-                  pt: 2,
-                  gap: 1,
+                  px: 1.25,
+                  pt: 1.25,
+                  gap: 0.75,
                 }}
               >
                 {STEPS.map((step, i) => {
-                  const done    = i < tabValue;
+                  const done = i < tabValue;
                   const current = i === tabValue;
-                  const Icon    = step.Icon;
+                  const Icon = step.Icon;
+
                   return (
                     <Box
                       key={i}
@@ -529,27 +479,28 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 1.25,
-                        px: 2.5,
-                        py: 1.5,
+                        gap: 1,
+                        px: 1.75,
+                        py: 1.1,
                         borderRadius: '10px 10px 0 0',
                         cursor: 'pointer',
-                        position: 'relative',
-                        transition: 'all 0.25s ease',
                         background: current ? tokens.neutral0 : 'transparent',
-                        borderTop: current ? `2px solid ${tokens.brand}` : '2px solid transparent',
-                        borderLeft: current ? `1px solid ${tokens.neutral200}` : '1px solid transparent',
-                        borderRight: current ? `1px solid ${tokens.neutral200}` : '1px solid transparent',
+                        borderTop: current
+                          ? `2px solid ${tokens.brand}`
+                          : '2px solid transparent',
+                        borderLeft: current
+                          ? `1px solid ${tokens.neutral200}`
+                          : '1px solid transparent',
+                        borderRight: current
+                          ? `1px solid ${tokens.neutral200}`
+                          : '1px solid transparent',
                         mb: current ? '-1px' : 0,
-                        '&:hover': {
-                          background: current ? tokens.neutral0 : alpha(tokens.brand, 0.04),
-                        },
                       }}
                     >
                       <Box
                         sx={{
-                          width: 28,
-                          height: 28,
+                          width: 26,
+                          height: 26,
                           borderRadius: '8px',
                           display: 'flex',
                           alignItems: 'center',
@@ -557,35 +508,37 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
                           background: current
                             ? alpha(tokens.brand, 0.1)
                             : done
-                            ? alpha(tokens.success, 0.1)
-                            : tokens.neutral200,
+                              ? alpha(tokens.success, 0.1)
+                              : tokens.neutral200,
                           color: current
                             ? tokens.brand
                             : done
-                            ? tokens.success
-                            : tokens.neutral500,
-                          flexShrink: 0,
+                              ? tokens.success
+                              : tokens.neutral500,
                         }}
                       >
-                        {done ? <CheckCircleIcon sx={{ fontSize: 16 }} /> : <Icon sx={{ fontSize: 15 }} />}
+                        {done ? (
+                          <CheckCircleIcon sx={{ fontSize: 15 }} />
+                        ) : (
+                          <Icon sx={{ fontSize: 14 }} />
+                        )}
                       </Box>
+
                       <Box>
                         <Typography
                           sx={{
-                            fontSize: '0.8rem',
-                            fontWeight: current ? 700 : 500,
+                            fontSize: '0.78rem',
+                            fontWeight: current ? 800 : 600,
                             color: current ? tokens.neutral900 : tokens.neutral500,
-                            fontFamily: "'DM Sans', sans-serif",
-                            lineHeight: 1.2,
                           }}
                         >
                           {step.label}
                         </Typography>
+
                         <Typography
                           sx={{
-                            fontSize: '0.68rem',
+                            fontSize: '0.66rem',
                             color: tokens.neutral500,
-                            fontFamily: "'DM Sans', sans-serif",
                             display: { xs: 'none', sm: 'block' },
                           }}
                         >
@@ -597,79 +550,74 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
                 })}
               </Box>
 
-              {/* Progress bar */}
               <StepProgressBar active={tabValue} />
 
-              {/* Form body */}
               <form onSubmit={formik.handleSubmit}>
-                <Box sx={{ px: { xs: 2, sm: 4 }, pb: 4 }}>
+                <Box sx={{ px: { xs: 1.5, md: 2 }, pb: 2 }}>
                   <TabPanel value={tabValue} index={0}>
                     <PurchaseOrderBasicInfo formik={formik} />
                   </TabPanel>
+
                   <TabPanel value={tabValue} index={1}>
                     <PurchaseOrderLineItems formik={formik} />
                   </TabPanel>
+
                   <TabPanel value={tabValue} index={2}>
                     <PurchaseOrderBilling formik={formik} />
                   </TabPanel>
                 </Box>
 
-                {/* Footer */}
                 <Box
                   sx={{
                     borderTop: `1px solid ${tokens.neutral200}`,
-                    px: { xs: 2, sm: 4 },
-                    py: 2.5,
+                    px: { xs: 1.5, md: 2 },
+                    py: 1.5,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     background: tokens.neutral50,
                     flexWrap: 'wrap',
-                    gap: 1.5,
+                    gap: 1,
                   }}
                 >
-                  {/* Left: Prev / Next */}
-                  <Box sx={{ display: 'flex', gap: 1.5 }}>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
                     {tabValue > 0 && (
                       <Button
                         variant="outlined"
-                        startIcon={<ArrowBackIosNewIcon sx={{ fontSize: '13px !important' }} />}
+                        startIcon={<ArrowBackIosNewIcon sx={{ fontSize: '12px !important' }} />}
                         onClick={() => setTabValue(tabValue - 1)}
                         disabled={loading}
                         sx={{
-                          fontFamily: "'DM Sans', sans-serif",
-                          fontWeight: 600,
-                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          fontSize: '0.8rem',
                           textTransform: 'none',
-                          py: 1,
-                          px: 2.5,
+                          height: 36,
+                          px: 2,
                           borderRadius: '10px',
                           borderColor: tokens.neutral300,
                           color: tokens.neutral700,
-                          '&:hover': { borderColor: tokens.brand, color: tokens.brand, background: tokens.brandSoft },
                         }}
                       >
                         Previous
                       </Button>
                     )}
+
                     {tabValue < STEPS.length - 1 && (
                       <Button
                         variant="outlined"
-                        endIcon={<ArrowForwardIosIcon sx={{ fontSize: '13px !important' }} />}
+                        endIcon={<ArrowForwardIosIcon sx={{ fontSize: '12px !important' }} />}
                         onClick={() => setTabValue(tabValue + 1)}
                         disabled={loading}
                         sx={{
-                          fontFamily: "'DM Sans', sans-serif",
-                          fontWeight: 600,
-                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          fontSize: '0.8rem',
                           textTransform: 'none',
-                          py: 1,
-                          px: 2.5,
+                          height: 36,
+                          px: 2,
                           borderRadius: '10px',
                           borderColor: tokens.brand,
                           color: tokens.brand,
                           background: tokens.brandSoft,
-                          '&:hover': { background: alpha(tokens.brand, 0.1) },
                         }}
                       >
                         Continue
@@ -677,28 +625,21 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
                     )}
                   </Box>
 
-                  {/* Right: Cancel + Save */}
-                  <Box sx={{ display: 'flex', gap: 1.5, ml: 'auto' }}>
+                  <Box sx={{ display: 'flex', gap: 1, ml: 'auto' }}>
                     <BBButton
                       variant="outlined"
-                      startIcon={<CancelIcon sx={{ fontSize: '16px !important' }} />}
+                      startIcon={<CancelIcon sx={{ fontSize: '15px !important' }} />}
                       onClick={() => router.push('/purchase-orders')}
                       disabled={loading}
                       sx={{
-                        fontFamily: "'DM Sans', sans-serif",
-                        fontWeight: 600,
-                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
                         textTransform: 'none',
-                        py: 1,
-                        px: 2.5,
+                        height: 36,
+                        px: 2,
                         borderRadius: '10px',
                         borderColor: tokens.neutral300,
                         color: tokens.neutral500,
-                        '&:hover': {
-                          borderColor: tokens.error,
-                          color: tokens.error,
-                          background: '#FEF2F2',
-                        },
                       }}
                     >
                       Cancel
@@ -707,7 +648,6 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
                     <Tooltip
                       title={!formik.isValid ? 'Please fix all errors before saving' : ''}
                       arrow
-                      placement="top"
                     >
                       <span>
                         <BBButton
@@ -715,43 +655,30 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
                           variant="contained"
                           disabled={loading || !formik.isValid}
                           startIcon={
-                            loading
-                              ? undefined
-                              : saved
-                              ? <CheckCircleIcon sx={{ fontSize: '17px !important' }} />
-                              : <SaveIcon sx={{ fontSize: '17px !important' }} />
+                            loading ? undefined : saved ? (
+                              <CheckCircleIcon sx={{ fontSize: '16px !important' }} />
+                            ) : (
+                              <SaveIcon sx={{ fontSize: '16px !important' }} />
+                            )
                           }
                           sx={{
-                            fontFamily: "'DM Sans', sans-serif",
-                            fontWeight: 700,
-                            fontSize: '0.85rem',
+                            fontWeight: 800,
+                            fontSize: '0.8rem',
                             textTransform: 'none',
-                            py: 1,
-                            px: 3.5,
+                            height: 36,
+                            px: 2.5,
                             borderRadius: '10px',
-                            minWidth: 160,
+                            minWidth: 140,
                             boxShadow: formik.isValid ? tokens.shadowMd : 'none',
                             background: saved
                               ? tokens.success
                               : !formik.isValid
-                              ? tokens.neutral300
-                              : `linear-gradient(135deg, ${tokens.brand} 0%, ${tokens.accent} 100%)`,
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              transform: formik.isValid ? 'translateY(-2px)' : 'none',
-                              boxShadow: formik.isValid
-                                ? `0 8px 28px ${alpha(tokens.brand, 0.35)}`
-                                : 'none',
-                            },
-                            '&:active': { transform: 'translateY(0)' },
-                            '&.Mui-disabled': {
-                              background: tokens.neutral200,
-                              color: tokens.neutral500,
-                            },
+                                ? tokens.neutral300
+                                : `linear-gradient(135deg, ${tokens.brand}, ${tokens.accent})`,
                           }}
                         >
                           {loading ? (
-                            <CircularProgress size={20} sx={{ color: 'white' }} />
+                            <CircularProgress size={18} sx={{ color: '#fff' }} />
                           ) : saved ? (
                             'Saved!'
                           ) : (
@@ -766,21 +693,17 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
             </Card>
           </Fade>
 
-          {/* Bottom hint */}
-          <Fade in timeout={800}>
-            <Typography
-              sx={{
-                mt: 2.5,
-                textAlign: 'center',
-                fontSize: '0.75rem',
-                color: tokens.neutral500,
-                fontFamily: "'DM Sans', sans-serif",
-              }}
-            >
-              All fields marked with an asterisk (*) are required. Changes are not auto-saved.
-            </Typography>
-          </Fade>
-        </Container>
+          <Typography
+            sx={{
+              mt: 1.25,
+              textAlign: 'center',
+              fontSize: '0.72rem',
+              color: tokens.neutral500,
+            }}
+          >
+            All fields marked with an asterisk (*) are required. Changes are not auto-saved.
+          </Typography>
+        </Box>
       </Box>
     </>
   );

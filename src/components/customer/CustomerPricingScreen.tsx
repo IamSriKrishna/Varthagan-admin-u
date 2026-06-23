@@ -1,41 +1,61 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Dialog,
-  CircularProgress,
-  Alert,
-  Typography,
-  Stack,
-  Paper,
-  Collapse,
+  Box, Button, Table, TableBody, TableCell, TableContainer,
+  TableHead, TableRow, Dialog, CircularProgress, Typography,
+  Stack, Collapse, IconButton, Tooltip, Avatar,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import {
-  CustomerPricing,
-  CreateCustomerPricingRequest,
-  CustomerPricingLineItem,
+  Plus, Eye, PencilLine, Trash2, CheckCircle2, AlertCircle,
+  TrendingUp, TrendingDown, Layers, BarChart3, Users, X,
+} from 'lucide-react';
+import {
+  CustomerPricing, CreateCustomerPricingRequest, CustomerPricingLineItem,
 } from '@/models/customerPricing.model';
 import { customerPricingService } from '@/lib/api/customerPricing.service';
-import { apiService } from '@/lib/api/api.service';
 import { localStorageAuthKey } from '@/constants/localStorageConstant';
 import { LoginResponse } from '@/models/IUser';
 import CustomerPricingForm from './CustomerPricingForm';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Design Tokens ─────────────────────────────────────────────────────────────
+const T = {
+  pageBg: '#F7F8FC',
+  cardBg: '#FFFFFF',
+  subtleBg: '#F4F5F9',
 
+  brand: '#4F46E5',
+  brandMid: '#818CF8',
+  brandSoft: '#EEF2FF',
+  brandXSoft: '#F5F3FF',
+  brandDark: '#3730A3',
+  brandGlow: 'rgba(79,70,229,0.18)',
+
+  success: '#059669',
+  successSoft: '#ECFDF5',
+  successMid: '#6EE7B7',
+  danger: '#DC2626',
+  dangerSoft: '#FEF2F2',
+  dangerMid: '#FECACA',
+  warning: '#D97706',
+  warningSoft: '#FFFBEB',
+
+  text: '#0F172A',
+  textMid: '#334155',
+  textLight: '#64748B',
+  textXLight: '#CBD5E1',
+
+  border: '#E8EBF2',
+  borderMid: '#D1D5DB',
+
+  shadowSm: '0 2px 8px rgba(15,23,42,0.07)',
+  shadowMd: '0 4px 16px rgba(15,23,42,0.10)',
+  shadowBrand: '0 4px 18px rgba(79,70,229,0.30)',
+  shadowBrandHover: '0 8px 28px rgba(79,70,229,0.40)',
+};
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
 interface CustomerPricingScreenProps {
   customerId?: number;
   customerName?: string;
@@ -47,211 +67,133 @@ interface CustomerWithPricing {
   pricings: CustomerPricing[];
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
+// ─── Helpers ───────────────────────────────────────────────────────────────────
 const getToken = (): string => {
   if (typeof window === 'undefined') return '';
   try {
-    const persistedRoot = localStorage.getItem(localStorageAuthKey);
-    if (!persistedRoot) return '';
-    const rootData = JSON.parse(persistedRoot);
-    if (!rootData.auth) return '';
-    const authData = JSON.parse(rootData.auth) as LoginResponse;
-    return authData.access_token || '';
-  } catch (e) {
-    console.error('Failed to get token from persisted auth:', e);
-    return '';
-  }
+    const root = localStorage.getItem(localStorageAuthKey);
+    if (!root) return '';
+    const auth = JSON.parse(JSON.parse(root).auth) as LoginResponse;
+    return auth.access_token || '';
+  } catch { return ''; }
 };
 
-/** Returns initials (up to 2 chars) from a customer name */
-const getInitials = (name: string): string =>
-  name
-    .split(' ')
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? '')
-    .join('');
-
-/** Cycles through a small palette for avatar backgrounds */
-const AVATAR_COLORS = [
-  { bg: '#E6F1FB', color: '#185FA5' },
-  { bg: '#FAEEDA', color: '#854F0B' },
-  { bg: '#E1F5EE', color: '#0F6E56' },
-  { bg: '#FBEAF0', color: '#993556' },
-  { bg: '#EEEDFE', color: '#534AB7' },
-];
-
-const getAvatarStyle = (index: number) => AVATAR_COLORS[index % AVATAR_COLORS.length];
+const getInitials = (name: string) =>
+  name.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
 
 const fmt = (n: number) => `₹ ${n.toFixed(2)}`;
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-interface MetricCardProps {
-  label: string;
-  value: string;
-  accent?: boolean;
+function colorFromString(str: string) {
+  const palette = [
+    { bg: '#EEF2FF', fg: '#4F46E5' },
+    { bg: '#F0FDF4', fg: '#059669' },
+    { bg: '#FFF7ED', fg: '#D97706' },
+    { bg: '#FDF2F8', fg: '#BE185D' },
+    { bg: '#EFF6FF', fg: '#1D4ED8' },
+    { bg: '#F5F3FF', fg: '#7C3AED' },
+  ];
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  return palette[Math.abs(hash) % palette.length];
 }
 
-const MetricCard = ({ label, value, accent }: MetricCardProps) => (
-  <Box
-    sx={{
-      flex: '1 1 0',
-      minWidth: 0,
-      bgcolor: 'background.paper',
-      border: '0.5px solid',
-      borderColor: 'divider',
-      borderRadius: 2,
-      p: '12px 14px',
-    }}
-  >
-    <Typography variant="caption" display="block" color="text.secondary" sx={{ mb: 0.5 }}>
-      {label}
-    </Typography>
-    <Typography
-      variant="h6"
-      sx={{ fontSize: 18, fontWeight: 500, color: accent ? '#0F6E56' : 'text.primary' }}
-    >
-      {value}
-    </Typography>
-  </Box>
-);
+// ─── Sub-components ─────────────────────────────────────────────────────────────
+function StatCard({ label, value, icon: Icon, accent }: {
+  label: string; value: string; icon?: any; accent?: string;
+}) {
+  const a = accent ?? T.brand;
+  return (
+    <Box sx={{
+      flex: '1 1 0', minWidth: 0, px: 2, py: 1.75,
+      background: T.cardBg, border: `1.5px solid ${T.border}`,
+      borderRadius: '12px', boxShadow: T.shadowSm,
+      position: 'relative', overflow: 'hidden',
+      transition: 'transform 0.2s, box-shadow 0.2s',
+      '&:hover': { transform: 'translateY(-2px)', boxShadow: T.shadowMd },
+      '&::before': {
+        content: '""', position: 'absolute', top: 0, right: 0,
+        width: 64, height: 64, borderRadius: '50%',
+        background: `radial-gradient(circle, ${a}18 0%, transparent 70%)`,
+        transform: 'translate(16px, -16px)',
+      },
+    }}>
+      {Icon && (
+        <Box sx={{ display: 'inline-flex', p: 0.6, borderRadius: '7px', background: `${a}15`, mb: 0.75 }}>
+          <Icon size={13} color={a} strokeWidth={2.5} />
+        </Box>
+      )}
+      <Typography sx={{ color: T.textLight, fontWeight: 600, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.2 }}>
+        {label}
+      </Typography>
+      <Typography sx={{ fontWeight: 900, color: T.text, fontSize: '1.2rem', fontFamily: "'DM Mono', monospace", letterSpacing: '-0.04em', lineHeight: 1 }}>
+        {value}
+      </Typography>
+    </Box>
+  );
+}
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
-export default function CustomerPricingScreen({
-  customerId,
-  customerName,
-}: CustomerPricingScreenProps) {
+// ─── Main ───────────────────────────────────────────────────────────────────────
+export default function CustomerPricingScreen({ customerId, customerName }: CustomerPricingScreenProps) {
   const [customersWithPricing, setCustomersWithPricing] = useState<CustomerWithPricing[]>([]);
-  const [selectedPricing, setSelectedPricing] = useState<CustomerPricing | undefined>(undefined);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isViewMode, setIsViewMode] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [selectedPricing, setSelectedPricing]           = useState<CustomerPricing | undefined>();
+  const [isFormOpen, setIsFormOpen]                     = useState(false);
+  const [isViewMode, setIsViewMode]                     = useState(false);
+  const [loading, setLoading]                           = useState(false);
+  const [error, setError]                               = useState<string | null>(null);
+  const [successMessage, setSuccessMessage]             = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCustomerPricings();
-  }, [customerId]);
-
-  // ── Data fetching ──────────────────────────────────────────────────────────
+  useEffect(() => { fetchCustomerPricings(); }, [customerId]);
 
   const fetchCustomerPricings = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
-      const token = getToken();
-      if (!token) { setError('Authentication token not found'); return; }
+      if (!getToken()) { setError('Authentication token not found'); return; }
+      const apiResp = customerId
+        ? await customerPricingService.getByCustomerId(customerId, 100, 0)
+        : await customerPricingService.list(100, 0);
 
-      // Fetch customer-specific pricing if customerId is provided, otherwise fetch all
-      let apiResp;
-      if (customerId) {
-        apiResp = await customerPricingService.getByCustomerId(customerId, 100, 0);
-      } else {
-        apiResp = await customerPricingService.list(100, 0);
-      }
-
-      // Normalize response shapes: service may return axios response (with .data)
-      // or the service may already return the payload. Handle double-wrapped cases too.
       let payload: any = apiResp;
       if (apiResp && typeof apiResp === 'object') {
         if (apiResp.data) payload = apiResp.data;
-        if (payload && payload.data) payload = payload.data;
+        if (payload?.data) payload = payload.data;
       }
 
-      // Extract pricings array from normalized payload
-      const pricingsData: any[] = Array.isArray(payload?.pricings)
-        ? payload.pricings
-        : Array.isArray(payload)
-        ? payload
-        : [];
-      
-      if (pricingsData.length === 0) {
-        setCustomersWithPricing([]);
-        return;
-      }
+      const pricingsData: any[] = Array.isArray(payload?.pricings) ? payload.pricings : Array.isArray(payload) ? payload : [];
+      if (!pricingsData.length) { setCustomersWithPricing([]); return; }
 
-      // Transform flat pricing entries into CustomerPricing objects grouped by customer.
-      // Many APIs return one row per line-item; UI expects `CustomerPricing` with `line_items`.
-      const byCustomer: Record<number, { id: number; name: string; line_items: any[] }> = {};
-
+      const byCustomer: Record<number, { id: number; name: string; line_items: CustomerPricingLineItem[] }> = {};
       pricingsData.forEach((row: any) => {
         const cid = row.customer_id;
-        if (!byCustomer[cid]) {
-          byCustomer[cid] = { id: cid, name: row.customer_name || `Customer ${cid}`, line_items: [] };
-        }
-
-        // Map API row to a line item shape
-        const lineItem: CustomerPricingLineItem = {
-          id: row.id,
-          product_id: row.product_id,
-          product_name: row.product_name,
-          manufacturer_id: row.manufacturer_id,
-          manufacturer_name: row.manufacturer_name,
-          rate: row.rate ?? 0,
-          account: row.account ?? 'SALES_REVENUE',
+        if (!byCustomer[cid]) byCustomer[cid] = { id: cid, name: row.customer_name || `Customer ${cid}`, line_items: [] };
+        byCustomer[cid].line_items.push({
+          id: row.id, product_id: row.product_id, product_name: row.product_name,
+          manufacturer_id: row.manufacturer_id, manufacturer_name: row.manufacturer_name,
+          rate: row.rate ?? 0, account: row.account ?? 'SALES_REVENUE',
           description: row.description || row.notes || '',
-          effective_from: row.effective_from || null,
-          effective_to: row.effective_to || null,
-          is_active: row.is_active ?? true,
-          created_at: row.created_at,
-          updated_at: row.updated_at,
-        };
-
-        byCustomer[cid].line_items.push(lineItem);
+          effective_from: row.effective_from || null, effective_to: row.effective_to || null,
+          is_active: row.is_active ?? true, created_at: row.created_at, updated_at: row.updated_at,
+        });
       });
 
-      // Convert to CustomerWithPricing[] where each customer has one pricing record containing all line items
-      const customersArr: CustomerWithPricing[] = Object.values(byCustomer).map(c => ({
-        id: c.id,
-        name: c.name,
-        pricings: [
-          {
-            customer_id: c.id,
-            customer_name: c.name,
-            line_items: c.line_items,
-          },
-        ],
-      }));
-
-      setCustomersWithPricing(customersArr);
+      setCustomersWithPricing(Object.values(byCustomer).map(c => ({
+        id: c.id, name: c.name,
+        pricings: [{ customer_id: c.id, customer_name: c.name, line_items: c.line_items }],
+      })));
     } catch (err) {
-      console.error('Failed to fetch customer pricing:', err);
       setError(err instanceof Error ? err.message : 'Failed to load customer pricing');
       setCustomersWithPricing([]);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  // ── Form handlers ──────────────────────────────────────────────────────────
-
-  const openEdit = (pricing?: CustomerPricing) => {
-    setSelectedPricing(pricing);
-    setIsViewMode(false);
-    setIsFormOpen(true);
-  };
-
-  const openView = (pricing: CustomerPricing) => {
-    setSelectedPricing(pricing);
-    setIsViewMode(true);
-    setIsFormOpen(true);
-  };
-
-  const handleFormClose = () => {
-    setIsFormOpen(false);
-    setSelectedPricing(undefined);
-    setIsViewMode(false);
-  };
+  const openEdit = (pricing?: CustomerPricing) => { setSelectedPricing(pricing); setIsViewMode(false); setIsFormOpen(true); };
+  const openView = (pricing: CustomerPricing)  => { setSelectedPricing(pricing); setIsViewMode(true);  setIsFormOpen(true); };
+  const handleFormClose = () => { setIsFormOpen(false); setSelectedPricing(undefined); setIsViewMode(false); };
 
   const handleFormSubmit = async (data: CreateCustomerPricingRequest) => {
     try {
       setError(null);
       if (!getToken()) { setError('Authentication token not found'); return; }
-
       if (selectedPricing?.id) {
-        // Update individual pricing record
         await customerPricingService.update(selectedPricing.id, {
           rate: data.line_items[0]?.rate || 0,
           account: data.line_items[0]?.account || 'SALES_REVENUE',
@@ -260,11 +202,9 @@ export default function CustomerPricingScreen({
         });
         setSuccessMessage('Customer pricing updated successfully');
       } else {
-        // Create new customer pricing with line items
         await customerPricingService.create(data);
         setSuccessMessage('Customer pricing created successfully');
       }
-
       await fetchCustomerPricings();
       handleFormClose();
       setTimeout(() => setSuccessMessage(null), 4000);
@@ -277,9 +217,8 @@ export default function CustomerPricingScreen({
     try {
       setError(null);
       if (!getToken()) { setError('Authentication token not found'); return; }
-
       await customerPricingService.delete(pricingId);
-      setSuccessMessage('Pricing record deleted successfully');
+      setSuccessMessage('Pricing record deleted');
       await fetchCustomerPricings();
       setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err) {
@@ -287,312 +226,308 @@ export default function CustomerPricingScreen({
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-
   return (
-    <Box sx={{ p: 3, bgcolor: '#F7F8FA', minHeight: '100vh' }}>
-      {/* ── Page header ── */}
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+    <Box>
+      {/* ── Toolbar ── */}
+      <Box sx={{ mb: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5 }}>
         <Box>
-          <Typography variant="h5" sx={{ fontSize: 20, fontWeight: 500 }}>
-            Customer pricing
+          <Typography sx={{ fontWeight: 900, color: T.text, fontSize: '1rem', letterSpacing: '-0.03em', lineHeight: 1 }}>
+            Customer Pricing
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-            Manage manufacturer rates per customer
+          <Typography sx={{ color: T.textLight, fontSize: '0.72rem', mt: 0.3 }}>
+            {customersWithPricing.length === 0
+              ? 'No customers configured yet'
+              : `${customersWithPricing.length} customer${customersWithPricing.length === 1 ? '' : 's'} with pricing rules`}
           </Typography>
         </Box>
         <Button
           variant="contained"
-          startIcon={<AddIcon />}
+          startIcon={<Plus size={15} strokeWidth={2.5} />}
           onClick={() => openEdit()}
           sx={{
-            bgcolor: '#185FA5',
-            '&:hover': { bgcolor: '#0C447C' },
-            borderRadius: 2,
-            textTransform: 'none',
-            fontWeight: 500,
-            fontSize: 13,
-            boxShadow: 'none',
+            background: `linear-gradient(135deg, ${T.brand} 0%, ${T.brandDark} 100%)`,
+            borderRadius: '11px', textTransform: 'none',
+            fontWeight: 800, fontSize: '0.82rem', height: 38, px: 2.25,
+            boxShadow: T.shadowBrand, border: 'none',
+            '&:hover': { background: `linear-gradient(135deg, #6366F1, ${T.brand})`, boxShadow: T.shadowBrandHover, transform: 'translateY(-1.5px)' },
+            transition: 'all 0.18s',
           }}
         >
-          Add pricing
+          Add Pricing
         </Button>
       </Box>
 
       {/* ── Alerts ── */}
       <Collapse in={!!successMessage}>
-        <Alert
-          icon={<CheckCircleOutlineIcon fontSize="small" />}
-          severity="success"
-          sx={{ mb: 2, borderRadius: 2, fontSize: 13 }}
-        >
-          {successMessage}
-        </Alert>
+        <Box sx={{
+          display: 'flex', alignItems: 'center', gap: 1.25,
+          px: 2, py: 1.5, mb: 2, borderRadius: '12px',
+          background: T.successSoft, border: `1.5px solid ${T.successMid}`,
+        }}>
+          <Box sx={{ p: 0.5, borderRadius: '7px', background: `${T.success}15` }}>
+            <CheckCircle2 size={14} color={T.success} />
+          </Box>
+          <Typography sx={{ color: T.success, fontSize: '0.82rem', fontWeight: 600, flex: 1 }}>
+            {successMessage}
+          </Typography>
+          <IconButton size="small" onClick={() => setSuccessMessage(null)} sx={{ color: T.success, borderRadius: '6px', p: 0.25 }}>
+            <X size={13} />
+          </IconButton>
+        </Box>
       </Collapse>
+
       <Collapse in={!!error}>
-        <Alert severity="error" sx={{ mb: 2, borderRadius: 2, fontSize: 13 }}>
-          {error}
-        </Alert>
+        <Box sx={{
+          display: 'flex', alignItems: 'center', gap: 1.25,
+          px: 2, py: 1.5, mb: 2, borderRadius: '12px',
+          background: T.dangerSoft, border: `1.5px solid ${T.dangerMid}`,
+        }}>
+          <Box sx={{ p: 0.5, borderRadius: '7px', background: `${T.danger}15` }}>
+            <AlertCircle size={14} color={T.danger} />
+          </Box>
+          <Typography sx={{ color: T.danger, fontSize: '0.82rem', fontWeight: 600, flex: 1 }}>{error}</Typography>
+          <IconButton size="small" onClick={() => setError(null)} sx={{ color: T.danger, borderRadius: '6px', p: 0.25 }}>
+            <X size={13} />
+          </IconButton>
+        </Box>
       </Collapse>
 
       {/* ── Loading ── */}
       {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', pt: 6 }}>
-          <CircularProgress size={32} />
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 8, gap: 1.5 }}>
+          <CircularProgress size={24} sx={{ color: T.brand }} />
+          <Typography sx={{ color: T.textLight, fontSize: '0.82rem' }}>Loading pricing data…</Typography>
         </Box>
       )}
 
       {/* ── Empty state ── */}
       {!loading && customersWithPricing.length === 0 && (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            py: 8,
-            gap: 1,
-          }}
-        >
-          <Typography color="text.secondary" fontSize={15}>
-            No customer pricing data available
+        <Box sx={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', py: 10, gap: 1,
+          border: `2px dashed ${T.borderMid}`, borderRadius: '16px',
+          background: T.subtleBg,
+        }}>
+          <Box sx={{ position: 'relative', width: 72, height: 72, mb: 1.5 }}>
+            <Box sx={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `2px dashed ${T.brandMid}`, animation: 'spin 12s linear infinite', '@keyframes spin': { to: { transform: 'rotate(360deg)' } } }} />
+            <Box sx={{ position: 'absolute', inset: 10, borderRadius: '50%', border: `1.5px solid ${T.brandSoft}`, animation: 'spin 8s linear infinite reverse' }} />
+            <Box sx={{ position: 'absolute', inset: 18, borderRadius: '50%', background: T.brandSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Users size={20} color={T.brand} />
+            </Box>
+          </Box>
+          <Typography sx={{ fontWeight: 900, color: T.text, fontSize: '0.95rem', letterSpacing: '-0.02em' }}>
+            No pricing rules yet
           </Typography>
-          <Typography color="text.disabled" fontSize={13}>
-            Click "Add pricing" to get started
+          <Typography sx={{ color: T.textLight, fontSize: '0.82rem', maxWidth: 240, textAlign: 'center', lineHeight: 1.6 }}>
+            Add your first customer pricing rule to get started
           </Typography>
+          <Button
+            variant="contained"
+            startIcon={<Plus size={14} strokeWidth={2.5} />}
+            onClick={() => openEdit()}
+            sx={{
+              mt: 1.5,
+              background: `linear-gradient(135deg, ${T.brand}, ${T.brandDark})`,
+              borderRadius: '11px', textTransform: 'none', fontWeight: 800,
+              fontSize: '0.82rem', height: 38, px: 2.5, boxShadow: T.shadowBrand,
+              '&:hover': { boxShadow: T.shadowBrandHover, transform: 'translateY(-2px)' },
+              transition: 'all 0.18s',
+            }}
+          >
+            Add Pricing
+          </Button>
         </Box>
       )}
 
-      {/* ── Customer cards ── */}
-      {!loading && (
-        <Stack spacing={2}>
-          {customersWithPricing.map((customer, customerIdx) => {
-            const avatarStyle = getAvatarStyle(customerIdx);
+      {/* ── Customer groups ── */}
+      {!loading && customersWithPricing.length > 0 && (
+        <Stack spacing={2} sx={{
+          '& > *': { animation: 'fadeSlideUp 0.4s cubic-bezier(0.22,1,0.36,1) both' },
+          '@keyframes fadeSlideUp': { from: { opacity: 0, transform: 'translateY(10px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
+        }}>
+          {customersWithPricing.map((customer, gi) => {
+            const pricing = customer.pricings[0];
+            const items   = pricing?.line_items ?? [];
+            const avg = items.length ? items.reduce((s, i) => s + i.rate, 0) / items.length : 0;
+            const min = items.length ? Math.min(...items.map((i) => i.rate)) : 0;
+            const max = items.length ? Math.max(...items.map((i) => i.rate)) : 0;
+            const { bg, fg } = colorFromString(customer.name);
 
             return (
-              <Paper
+              <Box
                 key={customer.id}
-                variant="outlined"
-                sx={{ borderRadius: 3, overflow: 'hidden', border: '0.5px solid', borderColor: 'divider' }}
+                sx={{
+                  borderRadius: '16px', overflow: 'hidden',
+                  border: `1.5px solid ${T.border}`,
+                  boxShadow: T.shadowSm,
+                  animationDelay: `${gi * 60}ms`,
+                }}
               >
-                {/* Customer header */}
-                <Box
-                  sx={{
-                    px: 2.5,
-                    py: 1.75,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5,
-                    borderBottom: '0.5px solid',
-                    borderColor: 'divider',
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: '50%',
-                      bgcolor: avatarStyle.bg,
-                      color: avatarStyle.color,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 13,
-                      fontWeight: 500,
-                      flexShrink: 0,
-                    }}
-                  >
+                {/* Group header */}
+                <Box sx={{
+                  px: 2.5, py: 1.5,
+                  display: 'flex', alignItems: 'center', gap: 1.5,
+                  borderBottom: `1.5px solid ${T.border}`,
+                  background: 'linear-gradient(180deg, #F8F9FF, #F4F5F9)',
+                }}>
+                  <Avatar sx={{
+                    width: 36, height: 36, borderRadius: '10px',
+                    background: bg, color: fg,
+                    fontSize: '0.72rem', fontWeight: 800,
+                    fontFamily: "'DM Mono', monospace",
+                    border: `1.5px solid ${fg}30`,
+                    flexShrink: 0,
+                  }}>
                     {getInitials(customer.name)}
+                  </Avatar>
+
+                  <Box>
+                    <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: T.text, lineHeight: 1.2 }}>
+                      {customer.name}
+                    </Typography>
+                    <Stack direction="row" alignItems="center" spacing={0.75} mt={0.25}>
+                      <Box sx={{ display: 'inline-flex', alignItems: 'center', px: 0.75, py: 0.1, borderRadius: '5px', background: T.subtleBg, border: `1px solid ${T.border}` }}>
+                        <Typography sx={{ fontFamily: "'DM Mono', monospace", fontSize: '0.65rem', color: T.textLight, fontWeight: 600 }}>
+                          ID: {customer.id}
+                        </Typography>
+                      </Box>
+                      <Typography sx={{ fontSize: '0.7rem', color: T.textLight }}>
+                        · {items.length} {items.length === 1 ? 'rule' : 'rules'}
+                      </Typography>
+                    </Stack>
                   </Box>
-                  <Typography sx={{ fontSize: 15, fontWeight: 500 }}>{customer.name}</Typography>
-                  <Box
-                    sx={{
-                      ml: 'auto',
-                      px: 1.25,
-                      py: '2px',
-                      bgcolor: '#E6F1FB',
-                      color: '#185FA5',
-                      borderRadius: 10,
-                      fontSize: 11,
-                      fontWeight: 500,
-                    }}
-                  >
-                    ID: {customer.id}
-                  </Box>
+
+                  <Stack direction="row" spacing={0.75} sx={{ ml: 'auto' }}>
+                    <Tooltip title="View" placement="top" arrow>
+                      <IconButton size="small" onClick={() => pricing && openView(pricing)} sx={{
+                        color: T.textLight, background: T.cardBg, borderRadius: '9px', width: 32, height: 32,
+                        border: `1.5px solid ${T.border}`,
+                        '&:hover': { color: T.brand, background: T.brandSoft, borderColor: T.brandMid },
+                        transition: 'all 0.15s',
+                      }}>
+                        <Eye size={14} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Edit" placement="top" arrow>
+                      <IconButton size="small" onClick={() => pricing && openEdit(pricing)} sx={{
+                        color: T.brand, background: T.brandSoft, borderRadius: '9px', width: 32, height: 32,
+                        border: `1.5px solid ${T.brandMid}`,
+                        '&:hover': { background: '#E0E7FF', transform: 'scale(1.08)', boxShadow: T.shadowBrand },
+                        transition: 'all 0.15s',
+                      }}>
+                        <PencilLine size={14} />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
                 </Box>
 
-                {/* Pricing sections */}
-                {customer.pricings.length === 0 ? (
-                  <Typography color="text.secondary" sx={{ p: 3, fontSize: 14 }}>
-                    No pricing configured for this customer
+                {items.length === 0 ? (
+                  <Typography sx={{ p: 3, fontSize: '0.85rem', color: T.textLight, fontStyle: 'italic' }}>
+                    No pricing rules configured for this customer.
                   </Typography>
                 ) : (
-                  customer.pricings.map((pricing) => {
-                    const items = pricing.line_items ?? [];
-                    const avg = items.length
-                      ? items.reduce((s, i) => s + i.rate, 0) / items.length
-                      : 0;
-                    const min = items.length ? Math.min(...items.map((i) => i.rate)) : 0;
-                    const max = items.length ? Math.max(...items.map((i) => i.rate)) : 0;
+                  <>
+                    {/* Line items table */}
+                    <TableContainer>
+                      <Table size="small" sx={{ tableLayout: 'fixed' }}>
+                        <TableHead>
+                          <TableRow>
+                            {['Product', 'Rate', 'Account', 'Active', 'Date Range', 'Description', ''].map((h, i) => (
+                              <TableCell key={h + i} align={i === 6 ? 'center' : 'left'} sx={{
+                                fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.07em',
+                                color: T.textLight, textTransform: 'uppercase',
+                                borderBottom: `2px solid ${T.border}`,
+                                background: 'linear-gradient(180deg, #F8F9FF, #F4F5F9)',
+                                py: 1.25, px: 2,
+                                width: ['18%','12%','14%','8%','16%','22%','7%'][i] ?? 'auto',
+                              }}>
+                                {h}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {items.map((item) => (
+                            <TableRow key={item.id} hover sx={{
+                              '&:last-child td': { borderBottom: 0 },
+                              transition: 'background 0.12s',
+                              '&:hover': { background: `${T.brandXSoft}60` },
+                            }}>
+                              <TableCell sx={{ fontSize: '0.82rem', color: T.text, fontWeight: 600, borderBottom: `1px solid ${T.border}`, py: 1.5, px: 2 }}>
+                                {item.product_name || '—'}
+                              </TableCell>
+                              <TableCell sx={{ borderBottom: `1px solid ${T.border}`, py: 1.5, px: 2 }}>
+                                <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 800, color: T.text, fontSize: '0.82rem', letterSpacing: '-0.02em' }}>
+                                  {fmt(item.rate)}
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{ fontSize: '0.78rem', color: T.textLight, borderBottom: `1px solid ${T.border}`, py: 1.5, px: 2 }}>
+                                <Box sx={{ display: 'inline-flex', alignItems: 'center', px: 1, py: 0.3, borderRadius: '6px', background: T.subtleBg, border: `1px solid ${T.border}` }}>
+                                  {item.account}
+                                </Box>
+                              </TableCell>
+                              <TableCell sx={{ borderBottom: `1px solid ${T.border}`, py: 1.5, px: 2 }}>
+                                <Box sx={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 0.5,
+                                  px: 1, py: 0.3, borderRadius: '99px',
+                                  background: item.is_active ? T.successSoft : T.subtleBg,
+                                  border: `1px solid ${item.is_active ? T.successMid : T.border}`,
+                                }}>
+                                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', background: item.is_active ? T.success : T.textXLight }} />
+                                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: item.is_active ? T.success : T.textLight }}>
+                                    {item.is_active ? 'Active' : 'Off'}
+                                  </Typography>
+                                </Box>
+                              </TableCell>
+                              <TableCell sx={{ fontSize: '0.75rem', color: T.textLight, borderBottom: `1px solid ${T.border}`, py: 1.5, px: 2, fontFamily: "'DM Mono', monospace" }}>
+                                {item.effective_from || item.effective_to
+                                  ? `${item.effective_from ? new Date(item.effective_from).toLocaleDateString() : 'Start'} – ${item.effective_to ? new Date(item.effective_to).toLocaleDateString() : 'End'}`
+                                  : '—'}
+                              </TableCell>
+                              <TableCell sx={{ fontSize: '0.78rem', color: T.textLight, borderBottom: `1px solid ${T.border}`, py: 1.5, px: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {item.description || '—'}
+                              </TableCell>
+                              <TableCell align="center" sx={{ borderBottom: `1px solid ${T.border}`, py: 1, px: 1 }}>
+                                <Tooltip title="Delete" placement="top" arrow>
+                                  <IconButton size="small" onClick={() => handleDeletePricing(item.id ?? '')} sx={{
+                                    color: T.danger, background: T.dangerSoft, borderRadius: '8px', width: 28, height: 28,
+                                    border: `1.5px solid ${T.dangerMid}`,
+                                    '&:hover': { background: '#FEE2E2', transform: 'scale(1.08)' },
+                                    transition: 'all 0.15s',
+                                  }}>
+                                    <Trash2 size={13} />
+                                  </IconButton>
+                                </Tooltip>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
 
-                    return (
-                      <Box key={pricing.id}>
-                        {/* Section toolbar */}
-                        <Box
-                          sx={{
-                            px: 2.5,
-                            py: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            bgcolor: '#F7F8FA',
-                            borderBottom: '0.5px solid',
-                            borderColor: 'divider',
-                          }}
-                        >
-                          <Typography sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}>
-                            {items.length} {items.length === 1 ? 'record' : 'records'}
-                          </Typography>
-                          <Stack direction="row" spacing={0.75}>
-                            <Button
-                              size="small"
-                              startIcon={<VisibilityIcon sx={{ fontSize: '14px !important' }} />}
-                              onClick={() => openView(pricing)}
-                              sx={smBtnSx}
-                            >
-                              View
-                            </Button>
-                            <Button
-                              size="small"
-                              startIcon={<EditIcon sx={{ fontSize: '14px !important' }} />}
-                              onClick={() => openEdit(pricing)}
-                              sx={smBtnSx}
-                            >
-                              Edit
-                            </Button>
-                          </Stack>
-                        </Box>
-
-                        {/* Line items table */}
-                        <TableContainer>
-                          <Table size="small" sx={{ tableLayout: 'fixed' }}>
-                            <TableHead>
-                              <TableRow sx={{ bgcolor: '#F7F8FA' }}>
-                                {[
-                                  'Product',
-                                  'Rate',
-                                  'Account',
-                                  'Active',
-                                  'Date Range',
-                                  'Description',
-                                  '',
-                                ].map((h, i) => (
-                                  <TableCell
-                                    key={h + i}
-                                    align={i === 6 ? 'center' : 'left'}
-                                    sx={{
-                                      fontSize: 11,
-                                      fontWeight: 500,
-                                      color: 'text.secondary',
-                                      borderBottom: '0.5px solid',
-                                      borderColor: 'divider',
-                                      py: 1,
-                                      width:
-                                        ['18%', '12%', '12%', '8%', '18%', '15%', '7%'][i],
-                                    }}
-                                  >
-                                    {h}
-                                  </TableCell>
-                                ))}
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {items.map((item) => (
-                                <TableRow
-                                  key={item.id}
-                                  hover
-                                  sx={{ '&:last-child td': { borderBottom: 0 } }}
-                                >
-                                  <TableCell sx={tdSx()}>
-                                    {item.product_name || '—'}
-                                  </TableCell>
-                                  <TableCell sx={{ ...tdSx('#0F6E56'), fontWeight: 500 }}>
-                                    {fmt(item.rate)}
-                                  </TableCell>
-                                  <TableCell sx={tdSx()}>{item.account}</TableCell>
-                                  <TableCell sx={tdSx()}>
-                                    <span
-                                      style={{
-                                        display: 'inline-block',
-                                        width: '8px',
-                                        height: '8px',
-                                        borderRadius: '50%',
-                                        backgroundColor: item.is_active ? '#15803d' : '#6b6860',
-                                      }}
-                                      title={item.is_active ? 'Active' : 'Inactive'}
-                                    />
-                                  </TableCell>
-                                  <TableCell sx={tdSx('text.secondary')}>
-                                    {item.effective_from || item.effective_to
-                                      ? `${item.effective_from ? new Date(item.effective_from).toLocaleDateString() : 'Start'} - ${item.effective_to ? new Date(item.effective_to).toLocaleDateString() : 'End'}`
-                                      : '—'}
-                                  </TableCell>
-                                  <TableCell sx={tdSx('text.secondary')}>
-                                    {item.description || '—'}
-                                  </TableCell>
-                                  <TableCell align="center" sx={{ py: 0.75 }}>
-                                    <Button
-                                      size="small"
-                                      onClick={() =>
-                                        handleDeletePricing(item.id ?? '')
-                                      }
-                                      sx={{
-                                        minWidth: 0,
-                                        p: '4px 6px',
-                                        color: '#A32D2D',
-                                        border: '0.5px solid #F7C1C1',
-                                        borderRadius: 1.5,
-                                        '&:hover': { bgcolor: '#FCEBEB' },
-                                      }}
-                                    >
-                                      <DeleteIcon sx={{ fontSize: 15 }} />
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-
-                        {/* Metric strip */}
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            gap: 1.25,
-                            px: 2.5,
-                            py: 1.75,
-                            bgcolor: '#F7F8FA',
-                            borderTop: '0.5px solid',
-                            borderColor: 'divider',
-                          }}
-                        >
-                          <MetricCard label="Total manufacturers" value={String(items.length)} />
-                          <MetricCard label="Average rate" value={fmt(avg)} accent />
-                          <MetricCard label="Lowest rate" value={fmt(min)} />
-                          <MetricCard label="Highest rate" value={fmt(max)} />
-                        </Box>
-                      </Box>
-                    );
-                  })
+                    {/* Metric strip */}
+                    <Box sx={{
+                      display: 'flex', gap: 1.5, px: 2.5, py: 1.75,
+                      borderTop: `1.5px solid ${T.border}`,
+                      background: 'linear-gradient(180deg, #FAFBFD, #F7F8FC)',
+                    }}>
+                      <StatCard label="Rate rules"    value={String(items.length)} icon={Layers}   accent={T.brand} />
+                      <StatCard label="Avg rate"      value={fmt(avg)}             icon={BarChart3} accent="#7C3AED" />
+                      <StatCard label="Lowest rate"   value={fmt(min)}             icon={TrendingDown} accent={T.success} />
+                      <StatCard label="Highest rate"  value={fmt(max)}             icon={TrendingUp}   accent={T.warning} />
+                    </Box>
+                  </>
                 )}
-              </Paper>
+              </Box>
             );
           })}
         </Stack>
       )}
 
       {/* ── Form dialog ── */}
-      <Dialog open={isFormOpen} onClose={handleFormClose} maxWidth="md" fullWidth>
+      <Dialog open={isFormOpen} onClose={handleFormClose} maxWidth="md" fullWidth
+        PaperProps={{ sx: { borderRadius: '20px', overflow: 'hidden', border: `1.5px solid ${T.border}`, boxShadow: '0 24px 60px rgba(15,23,42,0.18)' } }}
+      >
         <CustomerPricingForm
           open={isFormOpen}
           onClose={handleFormClose}
@@ -604,28 +539,3 @@ export default function CustomerPricingScreen({
     </Box>
   );
 }
-
-// ─── Style helpers (avoids repetition inside JSX) ─────────────────────────────
-
-const smBtnSx = {
-  fontSize: 12,
-  textTransform: 'none',
-  fontWeight: 400,
-  color: 'text.secondary',
-  border: '0.5px solid',
-  borderColor: 'divider',
-  borderRadius: 1.5,
-  px: 1.25,
-  py: '3px',
-  minWidth: 0,
-  '&:hover': { bgcolor: 'background.default', color: 'text.primary' },
-} as const;
-
-const tdSx = (color?: string) =>
-  ({
-    fontSize: 13,
-    color: color ?? 'text.primary',
-    borderBottom: '0.5px solid',
-    borderColor: 'divider',
-    py: 1.1,
-  } as const);

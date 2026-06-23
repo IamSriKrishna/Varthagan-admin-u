@@ -1,10 +1,7 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import "react-quill/dist/quill.snow.css";
+import BBRichTextEditorBase from "@/lib/BBRichTextEditor/BBRichTextEditorBase";
 
-const RichTextEditorWrapper = dynamic(() => import("@/lib/BBRichTextEditor/BBRichTextEditorBase"), {
-  ssr: false,
-});
+const RichTextEditorWrapper = BBRichTextEditorBase;
 
 export default RichTextEditorWrapper;

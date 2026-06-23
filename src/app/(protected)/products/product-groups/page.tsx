@@ -279,16 +279,7 @@ function GroupCard({
                 style: { color: T.inkLight, bg: T.surfaceMid, border: T.border, hoverBg: T.blueSoft, hoverColor: T.blue, hoverBorder: "#A8C4E8" },
                 action: onView,
               },
-              {
-                icon: Repeat, title: "Reorder",
-                style: { color: T.green, bg: T.greenSoft, border: "#A8DFC0", hoverBg: "#D4EFE0", hoverColor: T.green, hoverBorder: T.greenMid },
-                action: onReorder,
-              },
-              {
-                icon: Edit, title: "Edit",
-                style: { color: T.accent, bg: T.accentXSoft, border: "#F5C4AE", hoverBg: T.accentSoft, hoverColor: T.accent, hoverBorder: T.accentMid },
-                action: onEdit,
-              },
+             
               {
                 icon: Trash2, title: "Delete",
                 style: { color: "#C4335A", bg: "#FDE8EF", border: "#F0A8BC", hoverBg: "#FDD0DE", hoverColor: "#C4335A", hoverBorder: "#E0748C" },
@@ -494,7 +485,7 @@ export default function ProductGroupsPage() {
       const response = await deleteProductGroup(undefined, `/product-groups/${selectedId}`);
       if (response?.success || response?.message) {
         setProductGroups(productGroups.filter((pg) => pg.id !== selectedId));
-        showToastMessage("Product group deleted successfully", "success");
+        showToastMessage("Item Group deleted successfully", "success");
         setOpenDeleteDialog(false);
         setSelectedId(null);
       }
@@ -502,7 +493,7 @@ export default function ProductGroupsPage() {
       const errorMessage =
         typeof error === "object" && error !== null && "message" in error
           ? (error.message as string)
-          : "Failed to delete product group";
+          : "Failed to delete Item Group";
       showToastMessage(errorMessage, "error");
     } finally {
       setDeleteLoading(false);
@@ -578,7 +569,7 @@ export default function ProductGroupsPage() {
                     lineHeight: 1,
                   }}
                 >
-                  Product Groups
+                  Item Groups
                 </Typography>
                 {/* Count badge */}
                 <Box
@@ -652,7 +643,7 @@ export default function ProductGroupsPage() {
               />
             </Box>
             <Typography sx={{ color: T.inkLight, fontSize: "0.85rem", fontWeight: 600, fontFamily: "'Instrument Sans', sans-serif" }}>
-              Loading product groups…
+              Loading Item Groups…
             </Typography>
           </Box>
         )}
@@ -712,7 +703,7 @@ export default function ProductGroupsPage() {
                 fontSize: "1.1rem", letterSpacing: "-0.03em",
               }}
             >
-              No product groups yet
+              No Item Groups yet
             </Typography>
             <Typography
               sx={{
@@ -721,7 +712,7 @@ export default function ProductGroupsPage() {
                 fontFamily: "'Instrument Sans', sans-serif",
               }}
             >
-              Create your first product group to start organising your catalogue
+              Create your first Item Group to start organising your catalogue
             </Typography>
             <Button
               variant="contained"
@@ -751,9 +742,9 @@ export default function ProductGroupsPage() {
                 key={group.id}
                 group={group}
                 index={i}
-                onView={() => group.id ? router.push(`/products/product-groups/${group.id}`) : showToastMessage("Invalid product group ID", "error")}
-                onEdit={() => group.id ? router.push(`/products/product-groups/${group.id}/edit`) : showToastMessage("Invalid product group ID", "error")}
-                onReorder={() => group.id ? router.push(`/products/product-groups/${group.id}/reorder`) : showToastMessage("Invalid product group ID", "error")}
+                onView={() => group.id ? router.push(`/products/product-groups/${group.id}`) : showToastMessage("Invalid Item Group ID", "error")}
+                onEdit={() => group.id ? router.push(`/products/product-groups/${group.id}/edit`) : showToastMessage("Invalid Item Group ID", "error")}
+                onReorder={() => group.id ? router.push(`/products/product-groups/${group.id}/reorder`) : showToastMessage("Invalid Item Group ID", "error")}
                 onDelete={() => { setSelectedId(group.id); setOpenDeleteDialog(true); }}
               />
             ))}
@@ -794,7 +785,7 @@ export default function ProductGroupsPage() {
                 fontSize: "1.05rem", letterSpacing: "-0.02em",
               }}
             >
-              Delete Product Group
+              Delete Item Group
             </Typography>
           </Stack>
         </DialogTitle>
@@ -814,7 +805,7 @@ export default function ProductGroupsPage() {
             </Typography>
           </Box>
           <Typography sx={{ color: T.inkMid, lineHeight: 1.8, fontSize: "0.875rem", fontFamily: "'Instrument Sans', sans-serif" }}>
-            The product group and all associated component links will be permanently removed. Products themselves will not be affected.
+            The Item Group and all associated component links will be permanently removed. Products themselves will not be affected.
           </Typography>
         </DialogContent>
 

@@ -29,10 +29,28 @@ export interface IConversionRuleForm {
   notes?: string;
 }
 
+// Bag Usage Input
+export interface IRawMaterialBagInput {
+  bag_id: string;
+  finished_quantity: number;
+}
+
+// Bag Usage Output
+export interface IConversionRecordBagUsage {
+  id: string;
+  bag_id: string;
+  bag_number: number;
+  product_id: string;
+  product_name: string;
+  quantity_used_kg: number;
+  created_at: string;
+}
+
 // Conversion Execution Request
 export interface IConversionExecutionRequest {
   conversion_id: string;
-  raw_quantity_used: number;
+  raw_quantity_used?: number;
+  raw_material_bags?: IRawMaterialBagInput[];
   conversion_date?: string;
   notes?: string;
   execute_conversion: boolean;
@@ -49,6 +67,7 @@ export interface IConversionExecutionResponse {
   finished_quantity_produced: number;
   loss_quantity: number;
   message: string;
+  bags_used?: IConversionRecordBagUsage[];
 }
 
 // Conversion Record
@@ -64,6 +83,7 @@ export interface IConversionRecord {
   loss_quantity: number;
   conversion_date: string;
   status: "COMPLETED" | "FAILED" | "PENDING";
+  bags_used?: IConversionRecordBagUsage[];
   created_by_user_name: string;
   created_at: string;
 }

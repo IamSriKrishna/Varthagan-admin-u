@@ -17,17 +17,27 @@ export class FetchError extends Error {
 let inflightRefresh: Promise<LoginResponse | null> | null = null;
 function getStoredAuth(): LoginResponse | null {
   const persistedRoot = localStorage.getItem(localStorageAuthKey) ?? null;
-  if (!persistedRoot) return null;
+  if (!persistedRoot) {
+    console.warn("[getStoredAuth] localStorage key not found:", localStorageAuthKey);
+    return null;
+  }
 
   try {
     const rootData = JSON.parse(persistedRoot);
-    if (!rootData.auth) return null;
+    if (!rootData.auth) {
+      console.warn("[getStoredAuth] rootData.auth is missing");
+      return null;
+    }
 
     const authData = JSON.parse(rootData.auth) as LoginResponse;
-    // console.log("Stored Auth Data:", authData);
+    if (authData.access_token) {
+      console.log("[getStoredAuth] ✅ Found token in localStorage");
+    } else {
+      console.warn("[getStoredAuth] ❌ Token exists but access_token is empty");
+    }
     return authData;
   } catch (e) {
-    console.error("Failed to parse persisted auth:", e);
+    console.error("[getStoredAuth] Failed to parse persisted auth:", e);
     return null;
   }
 }
@@ -40,14 +50,21 @@ async function performRefresh(stored: LoginResponse | null): Promise<LoginRespon
   const refreshToken = stored?.refresh_token;
   if (!refreshToken) throw new Error("no-refresh-token");
 
-  const refreshUrl = "/auth/refresh-token";
+  const baseUrl = process.env.NEXT_PUBLIC_LOGIN_DOMAIN || "http://127.0.0.1:8088";
+  const refreshUrl = `${baseUrl}/auth/refresh-token`;
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+
+  // Only add Authorization header if we have an access token
+  if (stored?.access_token) {
+    headers["Authorization"] = `Bearer ${stored.access_token}`;
+  }
 
   const r = await fetch(refreshUrl, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${stored?.access_token || ""}`,
-    },
+    headers,
     body: JSON.stringify({ refresh_token: refreshToken }),
   });
 
@@ -136,19 +153,27 @@ async function getFetchHeaders(input: RequestInfo, init?: RequestInit, skipAuth?
     return init?.headers ? { ...(init.headers as Record<string, string>) } : {};
   }
 
-  const store = await getStore();
-  const state = store.getState();
-  const token = state?.auth?.access_token || "";
+  let token = "";
 
-  // Debug logging for token issues
-  if (!token) {
-    const stored = getStoredAuth();
-    if (stored?.access_token) {
-      console.warn("Token not in Redux but exists in localStorage. Re-initializing...");
-      store.dispatch(setAuthData(stored));
-    } else {
-      console.warn("No authentication token available");
+  // First, try to get from localStorage (most reliable after login)
+  const stored = getStoredAuth();
+  if (stored?.access_token) {
+    token = stored.access_token;
+    console.log("[getFetchHeaders] Token from localStorage:", token.substring(0, 20) + "...");
+  } else {
+    // Fallback to Redux
+    const store = await getStore();
+    const state = store.getState();
+    token = state?.auth?.access_token || "";
+    if (token) {
+      console.log("[getFetchHeaders] Token from Redux:", token.substring(0, 20) + "...");
     }
+  }
+
+  if (!token) {
+    console.warn("[getFetchHeaders] ❌ No authentication token available");
+  } else {
+    console.log("[getFetchHeaders] ✅ Token found, adding to headers");
   }
 
   const originalHeaders = init?.headers;

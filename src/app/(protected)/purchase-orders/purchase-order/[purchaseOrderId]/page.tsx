@@ -10,123 +10,143 @@ interface PurchaseOrderDetailPageProps {
 function LoadingFallback() {
   return (
     <>
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          @keyframes pulse {
-            0%, 100% {
-              opacity: 1;
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes pulse {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0.5; }
             }
-            50% {
-              opacity: 0.5;
+
+            .skeleton-pulse {
+              animation: pulse 1.5s ease-in-out infinite;
             }
-          }
-          .skeleton-pulse {
-            animation: pulse 1.5s ease-in-out infinite;
-          }
-        `
-      }} />
-      <div style={{ 
-        maxWidth: '1200px', 
-        margin: '0 auto', 
-        padding: '32px 16px' 
-      }}>
-        {/* Header Skeleton */}
-        <div style={{ marginBottom: '32px' }}>
-          <div 
-            className="skeleton-pulse"
-            style={{ 
-              width: '400px', 
-              height: '48px', 
-              backgroundColor: '#e0e0e0', 
-              borderRadius: '4px',
-              marginBottom: '8px'
-            }} 
-          />
-          <div 
-            className="skeleton-pulse"
-            style={{ 
-              width: '300px', 
-              height: '24px', 
-              backgroundColor: '#e0e0e0', 
-              borderRadius: '4px'
-            }} 
-          />
-        </div>
+          `,
+        }}
+      />
 
-        {/* Stepper Skeleton */}
-        <div style={{ 
-          marginBottom: '32px',
-          padding: '24px',
-          backgroundColor: '#fff',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-        }}>
-          <div 
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 'none',
+          margin: 0,
+          padding: '16px',
+          minHeight: '100vh',
+          backgroundColor: '#f8fafc',
+          boxSizing: 'border-box',
+        }}
+      >
+        <div style={{ marginBottom: '20px' }}>
+          <div
             className="skeleton-pulse"
-            style={{ 
-              width: '100%', 
-              height: '80px', 
-              backgroundColor: '#e0e0e0', 
-              borderRadius: '8px'
-            }} 
-          />
-        </div>
-
-        {/* Form Skeleton */}
-        <div style={{ 
-          padding: '24px',
-          backgroundColor: '#fff',
-          borderRadius: '12px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <div 
-            className="skeleton-pulse"
-            style={{ 
-              width: '100%', 
-              height: '64px', 
-              backgroundColor: '#e0e0e0', 
+            style={{
+              width: '320px',
+              height: '38px',
+              backgroundColor: '#e2e8f0',
               borderRadius: '8px',
-              marginBottom: '24px'
-            }} 
+              marginBottom: '8px',
+            }}
           />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '16px' }}>
-            <div 
+
+          <div
+            className="skeleton-pulse"
+            style={{
+              width: '260px',
+              height: '18px',
+              backgroundColor: '#e2e8f0',
+              borderRadius: '8px',
+            }}
+          />
+        </div>
+
+        <div
+          style={{
+            marginBottom: '16px',
+            padding: '16px',
+            backgroundColor: '#ffffff',
+            borderRadius: '14px',
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 4px 14px rgba(15,23,42,0.04)',
+          }}
+        >
+          <div
+            className="skeleton-pulse"
+            style={{
+              width: '100%',
+              height: '62px',
+              backgroundColor: '#e2e8f0',
+              borderRadius: '10px',
+            }}
+          />
+        </div>
+
+        <div
+          style={{
+            padding: '16px',
+            backgroundColor: '#ffffff',
+            borderRadius: '14px',
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 4px 14px rgba(15,23,42,0.04)',
+          }}
+        >
+          <div
+            className="skeleton-pulse"
+            style={{
+              width: '100%',
+              height: '50px',
+              backgroundColor: '#e2e8f0',
+              borderRadius: '10px',
+              marginBottom: '16px',
+            }}
+          />
+
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+            }}
+          >
+            <div
               className="skeleton-pulse"
-              style={{ 
-                width: '100%', 
-                height: '56px', 
-                backgroundColor: '#e0e0e0', 
-                borderRadius: '8px'
-              }} 
+              style={{
+                width: '100%',
+                height: '48px',
+                backgroundColor: '#e2e8f0',
+                borderRadius: '10px',
+              }}
             />
-            <div 
+
+            <div
               className="skeleton-pulse"
-              style={{ 
-                width: '100%', 
-                height: '56px', 
-                backgroundColor: '#e0e0e0', 
-                borderRadius: '8px'
-              }} 
+              style={{
+                width: '100%',
+                height: '48px',
+                backgroundColor: '#e2e8f0',
+                borderRadius: '10px',
+              }}
             />
-            <div 
+
+            <div
               className="skeleton-pulse"
-              style={{ 
-                width: '100%', 
-                height: '120px', 
-                backgroundColor: '#e0e0e0', 
-                borderRadius: '8px'
-              }} 
+              style={{
+                width: '100%',
+                height: '90px',
+                backgroundColor: '#e2e8f0',
+                borderRadius: '10px',
+              }}
             />
           </div>
-          <div 
+
+          <div
             className="skeleton-pulse"
-            style={{ 
-              width: '100%', 
-              height: '60px', 
-              backgroundColor: '#e0e0e0', 
-              borderRadius: '8px',
-              marginTop: '24px'
-            }} 
+            style={{
+              width: '100%',
+              height: '52px',
+              backgroundColor: '#e2e8f0',
+              borderRadius: '10px',
+              marginTop: '16px',
+            }}
           />
         </div>
       </div>
@@ -140,8 +160,20 @@ export default async function PurchaseOrderDetailPage({
   const { purchaseOrderId } = await params;
 
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <PurchaseOrderForm purchaseOrderId={purchaseOrderId} />
-    </Suspense>
+    <div
+      style={{
+        width: '100%',
+        maxWidth: 'none',
+        minHeight: '100vh',
+        margin: 0,
+        padding: 0,
+        backgroundColor: '#f8fafc',
+        boxSizing: 'border-box',
+      }}
+    >
+      <Suspense fallback={<LoadingFallback />}>
+        <PurchaseOrderForm purchaseOrderId={purchaseOrderId} />
+      </Suspense>
+    </div>
   );
 }

@@ -156,9 +156,9 @@ const pageTransitionStyles = `
     animation: dotBounce 1.2s ease-in-out infinite;
   }
 
-  .loader-dots span:nth-child(1) { animation-delay: 0s;    }
-  .loader-dots span:nth-child(2) { animation-delay: 0.18s; }
-  .loader-dots span:nth-child(3) { animation-delay: 0.36s; }
+  .loader-dots span:nth-of-type(1) { animation-delay: 0s;    }
+  .loader-dots span:nth-of-type(2) { animation-delay: 0.18s; }
+  .loader-dots span:nth-of-type(3) { animation-delay: 0.36s; }
 
   /* ── Shimmer progress bar ── */
   .loader-progress {

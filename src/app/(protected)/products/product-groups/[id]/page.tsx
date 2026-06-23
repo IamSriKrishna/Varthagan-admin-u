@@ -460,9 +460,9 @@ export default function ProductGroupDetailsPage() {
             spacing={2.5}
             sx={{
               "& > *": { animation: "fadeSlideUp 0.45s cubic-bezier(0.22,1,0.36,1) both" },
-              "& > *:nth-child(1)": { animationDelay: "0ms" },
-              "& > *:nth-child(2)": { animationDelay: "80ms" },
-              "& > *:nth-child(3)": { animationDelay: "140ms" },
+              "& > *:nth-of-type(1)": { animationDelay: "0ms" },
+              "& > *:nth-of-type(2)": { animationDelay: "80ms" },
+              "& > *:nth-of-type(3)": { animationDelay: "140ms" },
               "@keyframes fadeSlideUp": {
                 from: { opacity: 0, transform: "translateY(14px)" },
                 to: { opacity: 1, transform: "translateY(0)" },

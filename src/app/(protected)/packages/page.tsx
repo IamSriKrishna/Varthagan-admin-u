@@ -181,12 +181,12 @@ export default function PackagesPage() {
         .pkg-card {
           animation: fadeSlideUp 0.3s ease both;
         }
-        .pkg-card:nth-child(1) { animation-delay: 0.05s; }
-        .pkg-card:nth-child(2) { animation-delay: 0.1s; }
-        .pkg-card:nth-child(3) { animation-delay: 0.15s; }
-        .pkg-card:nth-child(4) { animation-delay: 0.2s; }
-        .pkg-card:nth-child(5) { animation-delay: 0.25s; }
-        .pkg-card:nth-child(6) { animation-delay: 0.3s; }
+        .pkg-card:nth-of-type(1) { animation-delay: 0.05s; }
+        .pkg-card:nth-of-type(2) { animation-delay: 0.1s; }
+        .pkg-card:nth-of-type(3) { animation-delay: 0.15s; }
+        .pkg-card:nth-of-type(4) { animation-delay: 0.2s; }
+        .pkg-card:nth-of-type(5) { animation-delay: 0.25s; }
+        .pkg-card:nth-of-type(6) { animation-delay: 0.3s; }
 
         .package-row {
           position: relative;

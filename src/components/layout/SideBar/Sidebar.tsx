@@ -101,10 +101,10 @@ const baseMenuItems: Array<{
   {
     key: "products",
     icon: Package,
-    label: "Products",
+    label: "Items",
     children: [
-      { key: "productList", icon: Package, label: "Products", path: "/products" },
-      { key: "productGroups", icon: Boxes, label: "Product Groups", path: "/products/product-groups" },
+      { key: "productList", icon: Package, label: "Items", path: "/products" },
+      { key: "productGroups", icon: Boxes, label: "Item Groups", path: "/products/product-groups" },
     ],
   },
   {
