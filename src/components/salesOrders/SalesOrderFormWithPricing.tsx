@@ -75,7 +75,9 @@ export function SalesOrderFormWithCustomerPricing({
         // Extract unique manufacturers
         const manufacturerSet = new Set<string>();
         pricingResponse.data.pricings[0].line_items.forEach((item) => {
-          manufacturerSet.add(item.manufacturer_id);
+          if (item.manufacturer_id) {
+            manufacturerSet.add(item.manufacturer_id);
+          }
         });
       }
     } catch (err) {
