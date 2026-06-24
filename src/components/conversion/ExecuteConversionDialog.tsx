@@ -264,7 +264,7 @@ export default function ExecuteConversionDialog({
                 />
 
                 {/* Calculation Result */}
-                {rawQuantity > 0 && (
+                {rawQuantity != null && rawQuantity > 0 && (
                   <Box sx={{ bgcolor: '#f0fdf4', border: '1px solid #bbf7d0', p: 2, borderRadius: '6px', mb: 2 }}>
                     <Typography sx={{ fontSize: '0.75rem', color: '#047857', fontWeight: 600 }}>
                       Expected Result:

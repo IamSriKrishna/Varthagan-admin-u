@@ -157,12 +157,7 @@ const baseMenuItems: Array<{
       { key: "stock", icon: Boxes, label: "Stock Management", path: "/stock" },
     ],
   },
-  {
-    key: "Manufacturing",
-    icon: Factory,
-    label: "Manufacturing",
-    children: [{ key: "production", icon: Factory, label: "Production Orders", path: "/production-orders" }],
-  },
+ 
   {
     key: "settings",
     icon: Settings,
