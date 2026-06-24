@@ -38,6 +38,7 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 interface SalesOrderBasicInfoProps {
   formik: FormikProps<SalesOrder>;
   isEditMode?: boolean;
+  isViewMode?: boolean;
   onOpenCreateSalesperson?: () => void;
   salespersonRefreshTrigger?: number;
 }
@@ -152,9 +153,10 @@ interface ReferenceFieldProps {
   onBlur: () => void;
   error?: boolean;
   helperText?: string | false;
+  isViewMode?: boolean;
 }
 
-function ReferenceNumberField({ value, onChange, onBlur, error, helperText }: ReferenceFieldProps) {
+function ReferenceNumberField({ value, onChange, onBlur, error, helperText, isViewMode }: ReferenceFieldProps) {
   const [isAuto, setIsAuto] = useState(!value || value === ''); // start auto if no existing value
 
   const handleRegenerate = useCallback(() => {
@@ -186,47 +188,48 @@ function ReferenceNumberField({ value, onChange, onBlur, error, helperText }: Re
         <FieldLabel label="Reference Number *" />
 
         {/* Auto / Manual pill toggle */}
-        <Stack direction="row" spacing={0.5}>
-          <Tooltip title="Auto-generate reference number" placement="top">
-            <Chip
-              size="small"
-              icon={<AutorenewIcon sx={{ fontSize: '13px !important' }} />}
-              label="Auto"
-              onClick={switchToAuto}
-              variant={isAuto ? 'filled' : 'outlined'}
-              sx={{
-                height: 22,
-                fontSize: '0.7rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                borderRadius: 1.5,
-                ...(isAuto
-                  ? {
-                      bgcolor: '#0f172a',
-                      color: '#fff',
-                      border: '1px solid #0f172a',
-                      '& .MuiChip-icon': { color: '#94a3b8' },
-                      '&:hover': { bgcolor: '#1e293b' },
-                    }
-                  : {
-                      bgcolor: 'transparent',
-                      color: '#94a3b8',
-                      border: '1px solid #e2e8f0',
-                      '& .MuiChip-icon': { color: '#cbd5e1' },
-                      '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' },
-                    }),
-              }}
-            />
-          </Tooltip>
-          <Tooltip title="Enter reference number manually" placement="top">
-            <Chip
-              size="small"
-              icon={<EditOutlinedIcon sx={{ fontSize: '13px !important' }} />}
-              label="Manual"
-              onClick={switchToManual}
-              variant={!isAuto ? 'filled' : 'outlined'}
-              sx={{
-                height: 22,
+        {!isViewMode && (
+          <Stack direction="row" spacing={0.5}>
+            <Tooltip title="Auto-generate reference number" placement="top">
+              <Chip
+                size="small"
+                icon={<AutorenewIcon sx={{ fontSize: '13px !important' }} />}
+                label="Auto"
+                onClick={switchToAuto}
+                variant={isAuto ? 'filled' : 'outlined'}
+                sx={{
+                  height: 22,
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  borderRadius: 1.5,
+                  ...(isAuto
+                    ? {
+                        bgcolor: '#0f172a',
+                        color: '#fff',
+                        border: '1px solid #0f172a',
+                        '& .MuiChip-icon': { color: '#94a3b8' },
+                        '&:hover': { bgcolor: '#1e293b' },
+                      }
+                    : {
+                        bgcolor: 'transparent',
+                        color: '#94a3b8',
+                        border: '1px solid #e2e8f0',
+                        '& .MuiChip-icon': { color: '#cbd5e1' },
+                        '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' },
+                      }),
+                }}
+              />
+            </Tooltip>
+            <Tooltip title="Enter reference number manually" placement="top">
+              <Chip
+                size="small"
+                icon={<EditOutlinedIcon sx={{ fontSize: '13px !important' }} />}
+                label="Manual"
+                onClick={switchToManual}
+                variant={!isAuto ? 'filled' : 'outlined'}
+                sx={{
+                  height: 22,
                 fontSize: '0.7rem',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -250,6 +253,7 @@ function ReferenceNumberField({ value, onChange, onBlur, error, helperText }: Re
             />
           </Tooltip>
         </Stack>
+        )}
       </Stack>
 
       {/* Input */}
@@ -260,14 +264,15 @@ function ReferenceNumberField({ value, onChange, onBlur, error, helperText }: Re
         onBlur={onBlur}
         placeholder={isAuto ? '' : 'e.g. SO-2024-001'}
         fullWidth
-        inputProps={{ readOnly: isAuto }}
+        disabled={isViewMode}
+        inputProps={{ readOnly: isAuto || isViewMode }}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
               <BadgeOutlinedIcon sx={{ fontSize: 17, color: '#94a3b8' }} />
             </InputAdornment>
           ),
-          endAdornment: isAuto ? (
+          endAdornment: isAuto && !isViewMode ? (
             <InputAdornment position="end">
               <Tooltip title="Generate a new reference number" placement="top">
                 <IconButton
@@ -294,9 +299,7 @@ function ReferenceNumberField({ value, onChange, onBlur, error, helperText }: Re
         helperText={
           helperText || (
             <Box component="span" sx={{ color: '#94a3b8', fontSize: '0.72rem' }}>
-              {isAuto
-                ? 'Auto-generated — click ↺ to regenerate'
-                : 'Type your own reference number'}
+              {isViewMode ? 'Read-only' : isAuto ? 'Auto-generated — click ↺ to regenerate' : 'Type your own reference number'}
             </Box>
           )
         }
@@ -310,11 +313,13 @@ function ReferenceNumberField({ value, onChange, onBlur, error, helperText }: Re
 export default function SalesOrderBasicInfo({
   formik,
   isEditMode,
+  isViewMode,
   onOpenCreateSalesperson,
   salespersonRefreshTrigger,
 }: SalesOrderBasicInfoProps) {
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [salespersons, setSalespersons] = useState<SalespersonOption[]>([]);
+  const [selectedSalesperson, setSelectedSalesperson] = useState<SalespersonOption | null>(null);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [loadingSalespersons, setLoadingSalespersons] = useState(true);
 
@@ -347,8 +352,52 @@ export default function SalesOrderBasicInfo({
       .catch(() => setLoadingSalespersons(false));
   }, [salespersonRefreshTrigger]);
 
-  const currentCustomer = customers.find((c) => c.id === formik.values.customer_id) || null;
-  const currentSalesperson = salespersons.find((s) => s.id === formik.values.salesperson_id) || null;
+  // If the order has a salesperson_id but the list doesn't contain it,
+  // fetch the single salesperson and cache it locally so the Autocomplete can show it.
+  useEffect(() => {
+    const spId = formik.values.salesperson_id;
+    if (!spId) return;
+
+    const exists = salespersons.some((s) => s.id === spId);
+    if (exists) {
+      setSelectedSalesperson(null);
+      return;
+    }
+
+    const apiDomain = config.apiDomain || '';
+    const fetchSingle = async () => {
+      try {
+        const res = await appFetch(`${apiDomain}${salespersonsEndpoint.getSalespersonById(String(spId))}`, {
+          method: 'GET',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const sp = data.data || data;
+          setSelectedSalesperson(sp);
+          // Ensure the salesperson appears in the local list so Autocomplete can match it
+          setSalespersons((prev) => {
+            if (!prev.some((p) => p.id === sp.id)) return [sp, ...prev];
+            return prev;
+          });
+          // Populate the formik salesperson object so other code can use it
+          try {
+            formik.setFieldValue('salesperson', sp);
+          } catch (e) {
+            // ignore if formik not ready
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    fetchSingle();
+  }, [formik.values.salesperson_id, salespersons]);
+
+  const currentCustomer =
+    customers.find((c) => String(c.id) === String(formik.values.customer_id)) || null;
+  const currentSalesperson =
+    salespersons.find((s) => String(s.id) === String(formik.values.salesperson_id)) || selectedSalesperson || null;
 
   return (
     <Stack spacing={3}>
@@ -385,7 +434,7 @@ export default function SalesOrderBasicInfo({
                 }}
                 isOptionEqualToValue={(o, v) => o.id === v?.id}
                 loading={loadingCustomers}
-                disabled={isEditMode && !!formik.values.id}
+                disabled={isViewMode || (isEditMode && !!formik.values.id)}
                 renderOption={(props, option) => (
                   <Box component="li" {...props} sx={{ gap: 1.5, py: '10px !important' }}>
                     <Avatar
@@ -439,7 +488,7 @@ export default function SalesOrderBasicInfo({
                 >
                   Salesperson
                 </Typography>
-                {onOpenCreateSalesperson && (
+                {onOpenCreateSalesperson && !isViewMode && (
                   <Button
                     size="small"
                     startIcon={<AddIcon sx={{ fontSize: '14px !important' }} />}
@@ -471,6 +520,7 @@ export default function SalesOrderBasicInfo({
                 }}
                 isOptionEqualToValue={(o, v) => o.id === v?.id}
                 loading={loadingSalespersons}
+                disabled={isViewMode}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -503,6 +553,7 @@ export default function SalesOrderBasicInfo({
                 onBlur={() => formik.setFieldTouched('reference_no', true)}
                 error={formik.touched.reference_no && Boolean(formik.errors.reference_no)}
                 helperText={formik.touched.reference_no && formik.errors.reference_no}
+                isViewMode={isViewMode}
               />
             </Grid>
 
@@ -515,6 +566,7 @@ export default function SalesOrderBasicInfo({
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 fullWidth
+                disabled={isViewMode}
                 InputLabelProps={{ shrink: true }}
                 InputProps={{
                   startAdornment: (
@@ -538,6 +590,7 @@ export default function SalesOrderBasicInfo({
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 fullWidth
+                disabled={isViewMode}
                 InputLabelProps={{ shrink: true }}
                 InputProps={{
                   startAdornment: (
@@ -566,6 +619,7 @@ export default function SalesOrderBasicInfo({
                 onBlur={formik.handleBlur}
                 placeholder="e.g., Net 15"
                 fullWidth
+                disabled={isViewMode}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -588,6 +642,7 @@ export default function SalesOrderBasicInfo({
                 onBlur={formik.handleBlur}
                 placeholder="e.g., Courier"
                 fullWidth
+                disabled={isViewMode}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -623,6 +678,7 @@ export default function SalesOrderBasicInfo({
                 fullWidth
                 multiline
                 rows={3}
+                disabled={isViewMode}
                 placeholder="Add any special instructions or notes for this customer…"
                 sx={fieldSx}
               />
@@ -637,6 +693,7 @@ export default function SalesOrderBasicInfo({
                 fullWidth
                 multiline
                 rows={3}
+                disabled={isViewMode}
                 placeholder="Add payment and delivery terms…"
                 sx={fieldSx}
               />

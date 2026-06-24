@@ -106,6 +106,7 @@ export interface Product {
   is_raw?: boolean;
   consumption_per_unit?: number;
   // Optional unit conversion fields for kg-based products
+  required_gram_per_unit?: number;
   base_unit?: string;
   purchase_unit?: string;
   conversion_factor?: number;

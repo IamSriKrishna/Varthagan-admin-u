@@ -24,7 +24,7 @@ import PaymentOutlinedIcon from '@mui/icons-material/PaymentOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { SalesOrder } from '@/models/salesOrder.model';
 import { salesOrderValidationSchema } from './salesOrderForm.validation';
-import { initialSalesOrderValues, transformSOToPayload } from './salesOrderForm.utils';
+import { initialSalesOrderValues, transformSOToPayload, transformAPIResponseToFormValues } from './salesOrderForm.utils';
 import { useSalesOrder } from '@/hooks/useSalesOrder';
 import SalesOrderBasicInfo from './SalesOrderBasicInfo';
 import SalesOrderLineItems from './SalesOrderLineItems';
@@ -34,6 +34,7 @@ import { showToastMessage } from '@/utils/toastUtil';
 
 interface SalesOrderFormProps {
   salesOrderId?: string;
+  mode?: 'view' | 'edit';
 }
 
 const STEPS = [
@@ -42,7 +43,10 @@ const STEPS = [
   { label: 'Billing', icon: PaymentOutlinedIcon, description: 'Tax, shipping & totals' },
 ];
 
-const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId }) => {
+const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId, mode = 'edit' }) => {
+  // Debug logs to verify props and mode during navigation
+  // eslint-disable-next-line no-console
+  console.log('SalesOrderForm props:', { salesOrderId, mode });
   const router = useRouter();
   const { getSalesOrder, createSalesOrder, updateSalesOrder, loading } = useSalesOrder();
   const [activeStep, setActiveStep] = useState(0);
@@ -55,14 +59,23 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId }) => {
   const [retryCount, setRetryCount] = useState(0);
 
   const isEditMode = !!(salesOrderId && salesOrderId !== 'new');
+  const isViewMode = mode === 'view' && isEditMode;
 
   useEffect(() => {
-    if (isEditMode) {
+    if (isEditMode && salesOrderId) {
       getSalesOrder(salesOrderId)
-        .then(setInitialValues)
-        .catch(() => setPageError('Failed to load sales order'));
+        .then((data) => {
+          console.log('Loaded sales order:', data);
+          const transformedData = transformAPIResponseToFormValues(data);
+          console.log('Transformed data:', transformedData);
+          setInitialValues(transformedData);
+        })
+        .catch((error) => {
+          console.error('Failed to load sales order:', error);
+          setPageError('Failed to load sales order');
+        });
     }
-  }, [salesOrderId]);
+  }, [salesOrderId, getSalesOrder]);
 
   const formik = useFormik<SalesOrder>({
     enableReinitialize: true,
@@ -126,6 +139,21 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId }) => {
     },
   });
 
+  // Ensure Formik gets the latest initialValues (explicit set for reliability)
+  useEffect(() => {
+    if (!initialValues) return;
+    try {
+      // eslint-disable-next-line no-console
+      console.log('Applying initialValues to Formik:', initialValues);
+      formik.setValues(initialValues as any);
+      if ((initialValues as any).customer) formik.setFieldValue('customer', (initialValues as any).customer);
+      if ((initialValues as any).salesperson) formik.setFieldValue('salesperson', (initialValues as any).salesperson);
+      if ((initialValues as any).line_items) formik.setFieldValue('line_items', (initialValues as any).line_items);
+    } catch (e) {
+      // ignore
+    }
+  }, [initialValues]);
+
   const handleSalespersonCreated = (sp: any) => {
     formik.setFieldValue('salesperson_id', sp.id);
     formik.setFieldValue('salesperson', sp);
@@ -181,13 +209,19 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId }) => {
             >
               Back
             </Button>
+            {/* Debug: show route params for verification */}
+            <Chip
+              label={`id:${salesOrderId || 'none'} mode:${mode}`}
+              size="small"
+              sx={{ ml: 1, bgcolor: '#f1f5f9', color: '#475569' }}
+            />
             <Box sx={{ width: 1, height: 24, bgcolor: '#e2e8f0' }} />
             <Box>
               <Stack direction="row" alignItems="center" spacing={1.5}>
                 <Typography
                   sx={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em' }}
                 >
-                  {isEditMode ? 'Edit Sales Order' : 'New Sales Order'}
+                  {isViewMode ? 'View Sales Order' : isEditMode ? 'Edit Sales Order' : 'New Sales Order'}
                 </Typography>
                 {isEditMode && formik.values.sales_order_no && (
                   <Chip
@@ -205,7 +239,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId }) => {
                 )}
               </Stack>
               <Typography sx={{ fontSize: '0.85rem', color: '#94a3b8', mt: 0.25 }}>
-                {isEditMode ? 'Update order details below' : 'Fill in the details to create a new order'}
+                {isViewMode ? 'Review order details below' : isEditMode ? 'Update order details below' : 'Fill in the details to create a new order'}
               </Typography>
             </Box>
           </Stack>
@@ -214,7 +248,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId }) => {
             variant="contained"
             startIcon={loading || isSubmitting ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : <SaveIcon />}
             onClick={() => formik.handleSubmit()}
-            disabled={loading || isSubmitting}
+            disabled={loading || isSubmitting || isViewMode}
             sx={{
               bgcolor: '#0f172a',
               borderRadius: 2.5,
@@ -227,6 +261,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId }) => {
               '&:hover': { bgcolor: '#1e293b', transform: 'translateY(-1px)', boxShadow: '0 6px 20px rgba(15,23,42,0.35)' },
               '&:disabled': { bgcolor: '#cbd5e1', boxShadow: 'none' },
               transition: 'all 0.2s ease',
+              display: isViewMode ? 'none' : 'inline-flex',
             }}
           >
             {isEditMode ? 'Update Order' : 'Create Order'}
@@ -351,73 +386,76 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId }) => {
               <SalesOrderBasicInfo
                 formik={formik}
                 isEditMode={isEditMode}
+                isViewMode={isViewMode}
                 onOpenCreateSalesperson={() => setOpenCreateSalesperson(true)}
                 salespersonRefreshTrigger={salespersonRefreshTrigger}
               />
             )}
-            {activeStep === 1 && <SalesOrderLineItems formik={formik} customerId={formik.values.customer_id} />}
-            {activeStep === 2 && <SalesOrderBilling formik={formik} />}
+            {activeStep === 1 && <SalesOrderLineItems formik={formik} isViewMode={isViewMode} customerId={formik.values.customer_id} />}
+            {activeStep === 2 && <SalesOrderBilling formik={formik} isViewMode={isViewMode} />}
 
             {/* ── Step Navigation ── */}
-            <Stack direction="row" justifyContent="space-between" alignItems="center" mt={3}>
-              <Button
-                onClick={handleBack}
-                disabled={activeStep === 0}
-                sx={{
-                  borderRadius: 2,
-                  px: 2.5,
-                  py: 0.875,
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  color: '#64748b',
-                  bgcolor: '#f1f5f9',
-                  '&:hover': { bgcolor: '#e2e8f0' },
-                  '&:disabled': { opacity: 0.4 },
-                }}
-              >
-                ← Previous
-              </Button>
+            {!isViewMode && (
+              <Stack direction="row" justifyContent="space-between" alignItems="center" mt={3}>
+                <Button
+                  onClick={handleBack}
+                  disabled={activeStep === 0}
+                  sx={{
+                    borderRadius: 2,
+                    px: 2.5,
+                    py: 0.875,
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    color: '#64748b',
+                    bgcolor: '#f1f5f9',
+                    '&:hover': { bgcolor: '#e2e8f0' },
+                    '&:disabled': { opacity: 0.4 },
+                  }}
+                >
+                  ← Previous
+                </Button>
 
-              {activeStep < STEPS.length - 1 ? (
-                <Button
-                  onClick={handleNext}
-                  sx={{
-                    borderRadius: 2,
-                    px: 2.5,
-                    py: 0.875,
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    color: '#fff',
-                    bgcolor: '#0f172a',
-                    '&:hover': { bgcolor: '#1e293b' },
-                  }}
-                >
-                  Next →
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => formik.handleSubmit()}
-                  disabled={loading}
-                  startIcon={<SaveIcon sx={{ fontSize: '17px !important' }} />}
-                  sx={{
-                    borderRadius: 2,
-                    px: 2.5,
-                    py: 0.875,
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    color: '#fff',
-                    bgcolor: '#0f172a',
-                    '&:hover': { bgcolor: '#1e293b' },
-                    '&:disabled': { bgcolor: '#cbd5e1' },
-                  }}
-                >
-                  {isEditMode ? 'Update Order' : 'Create Order'}
-                </Button>
-              )}
-            </Stack>
+                {activeStep < STEPS.length - 1 ? (
+                  <Button
+                    onClick={handleNext}
+                    sx={{
+                      borderRadius: 2,
+                      px: 2.5,
+                      py: 0.875,
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      color: '#fff',
+                      bgcolor: '#0f172a',
+                      '&:hover': { bgcolor: '#1e293b' },
+                    }}
+                  >
+                    Next →
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => formik.handleSubmit()}
+                    disabled={loading}
+                    startIcon={<SaveIcon sx={{ fontSize: '17px !important' }} />}
+                    sx={{
+                      borderRadius: 2,
+                      px: 2.5,
+                      py: 0.875,
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      color: '#fff',
+                      bgcolor: '#0f172a',
+                      '&:hover': { bgcolor: '#1e293b' },
+                      '&:disabled': { bgcolor: '#cbd5e1' },
+                    }}
+                  >
+                    {isEditMode ? 'Update Order' : 'Create Order'}
+                  </Button>
+                )}
+              </Stack>
+            )}
           </Box>
         </Stack>
       </Container>

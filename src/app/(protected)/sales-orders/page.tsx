@@ -718,9 +718,12 @@ export default function SalesOrdersPage() {
                             <Tooltip title="View" arrow>
                               <IconButton
                                 size="small"
-                                onClick={() =>
-                                  router.push(`/sales-orders/sales-order/${order.id}`)
-                                }
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  router.push(`/sales-orders/sales-order/${encodeURIComponent(
+                                    order.id
+                                  )}?mode=view`);
+                                }}
                                 sx={{
                                   borderRadius: 1.5,
                                   color: '#475569',
@@ -733,11 +736,12 @@ export default function SalesOrdersPage() {
                             <Tooltip title="Edit" arrow>
                               <IconButton
                                 size="small"
-                                onClick={() =>
-                                  router.push(
-                                    `/sales-orders/sales-order/${order.id}?mode=edit`
-                                  )
-                                }
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  router.push(`/sales-orders/sales-order/${encodeURIComponent(
+                                    order.id
+                                  )}?mode=edit`);
+                                }}
                                 sx={{
                                   borderRadius: 1.5,
                                   color: '#475569',

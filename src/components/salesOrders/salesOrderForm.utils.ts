@@ -291,6 +291,52 @@ export const formatStatus = (status: string): string => {
 };
 
 /**
+ * Transform API response to form initial values
+ * Handles field mappings and date conversions
+ */
+export const transformAPIResponseToFormValues = (apiData: any): SalesOrder => {
+  if (!apiData) return initialSalesOrderValues as SalesOrder;
+
+  // Some API responses wrap the object in a `data` field (or double-wrap).
+  // Unwrap common shapes so the form gets the actual sales order object.
+  let payload = apiData;
+  if (payload && payload.data && (payload.data.id || payload.data.sales_order_no || payload.data.line_items)) {
+    payload = payload.data;
+  }
+
+  // Convert date string to YYYY-MM-DD format if needed
+  const formatDateForInput = (dateStr: string | undefined): string => {
+    if (!dateStr) return new Date().toISOString().split('T')[0];
+    // If it's already in YYYY-MM-DD format, return as is
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    // Otherwise, parse and format
+    const date = new Date(dateStr);
+    return date.toISOString().split('T')[0];
+  };
+
+  return {
+    ...payload,
+    // Map 'date' to 'sales_order_date' if not already present
+    sales_order_date: apiData.sales_order_date || formatDateForInput(apiData.date),
+    // Ensure customer_id and salesperson_id are present (handle nested objects)
+    customer_id: payload.customer_id ?? (payload.customer && payload.customer.id) ?? 0,
+    salesperson_id: payload.salesperson_id ?? (payload.salesperson && payload.salesperson.id) ?? undefined,
+    expected_shipment_date: formatDateForInput(payload.expected_shipment_date),
+    // Ensure line_items is an array
+    line_items: Array.isArray(payload.line_items) ? payload.line_items : [],
+    // Ensure shipping_charges is a number
+    shipping_charges: payload.shipping_charges ?? 0,
+    // Ensure adjustment is a number
+    adjustment: payload.adjustment ?? 0,
+    // Ensure optional fields exist
+    customer_notes: payload.customer_notes || '',
+    terms_and_conditions: payload.terms_and_conditions || '',
+    payment_terms: payload.payment_terms || 'Net 15',
+    delivery_method: payload.delivery_method || 'Courier',
+  };
+};
+
+/**
  * Generate sales order reference number
  */
 export const generateSOReference = (prefix: string = 'SO'): string => {
@@ -303,6 +349,7 @@ export default {
   initialSalesOrderValues,
   createBlankLineItem,
   transformSOToPayload,
+  transformAPIResponseToFormValues,
   validateLineItem,
   isVariantLineItem,
   getVariantDisplay,

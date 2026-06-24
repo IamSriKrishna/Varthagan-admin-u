@@ -25,6 +25,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
 interface SalesOrderBillingProps {
   formik: FormikProps<SalesOrder>;
+  isViewMode?: boolean;
 }
 
 interface TaxOption {
@@ -98,7 +99,7 @@ function SummaryRow({
   );
 }
 
-export default function SalesOrderBilling({ formik }: SalesOrderBillingProps) {
+export default function SalesOrderBilling({ formik, isViewMode }: SalesOrderBillingProps) {
   const { taxes, loading: loadingTaxes } = useTax();
   const [taxOptions, setTaxOptions] = useState<TaxOption[]>([]);
 
@@ -169,6 +170,7 @@ export default function SalesOrderBilling({ formik }: SalesOrderBillingProps) {
                 onBlur={() => formik.setFieldTouched('tax_id', true)}
                 isOptionEqualToValue={(o, v) => o.id === v?.id}
                 loading={loadingTaxes}
+                disabled={isViewMode}
                 renderOption={(props, option) => (
                   <Box component="li" {...props} sx={{ py: '10px !important', gap: 1.5 }}>
                     <Box
@@ -216,6 +218,7 @@ export default function SalesOrderBilling({ formik }: SalesOrderBillingProps) {
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 fullWidth
+                disabled={isViewMode}
                 inputProps={{ min: 0, step: 0.01 }}
                 InputProps={{
                   startAdornment: (
@@ -240,6 +243,7 @@ export default function SalesOrderBilling({ formik }: SalesOrderBillingProps) {
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 fullWidth
+                disabled={isViewMode}
                 inputProps={{ min: 0, step: 0.01 }}
                 InputProps={{
                   startAdornment: (

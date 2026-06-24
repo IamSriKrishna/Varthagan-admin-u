@@ -35,6 +35,7 @@ import { BBButton, BBLoader } from '@/lib';
 import { showToastMessage } from '@/utils/toastUtil';
 import { conversionService } from '@/services/conversionService';
 import { rawMaterialService } from '@/lib/api/rawMaterialService';
+import { productService, Product } from '@/lib/api/productService';
 import {
   IConversionExecutionRequest,
   IConversionExecutionResponse,
@@ -71,7 +72,7 @@ const inputSx = {
 
 const formatGram = (grams: number) => {
   if (!grams || grams <= 0) return '0 g';
-  if (grams >= 1000) return `${(grams / 1000).toFixed(2)} kg`;
+  if (grams >= 1000) return `${(grams / 1000).toFixed(3)} kg`;
   return `${grams.toFixed(2)} g`;
 };
 
@@ -124,6 +125,7 @@ export default function ExecuteConversionPage() {
   const [result, setResult] = useState<IConversionExecutionResponse | null>(null);
   const [executeLoading, setExecuteLoading] = useState(false);
   const [conversionRule, setConversionRule] = useState<IConversionRule | null>(null);
+  const [rawProduct, setRawProduct] = useState<Product | null>(null);
   const [bags, setBags] = useState<RawMaterialBag[]>([]);
   const [selectedBags, setSelectedBags] = useState<RawMaterialBag[]>([]);
   const [bagsLoading, setBagsLoading] = useState(false);
@@ -139,6 +141,10 @@ export default function ExecuteConversionPage() {
     },
   });
 
+  const gramsPerFinishedProduct =
+    Number(rawProduct?.required_gram_per_unit || 0) ||
+    Number(conversionRule?.conversion_ratio || 0);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -148,7 +154,12 @@ export default function ExecuteConversionPage() {
         setConversionRule(rule);
 
         if (rule.raw_product_id) {
-          await fetchBags(rule.raw_product_id);
+          const [product] = await Promise.all([
+            productService.getProduct(rule.raw_product_id),
+            fetchBags(rule.raw_product_id),
+          ]);
+
+          setRawProduct(product);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -167,7 +178,7 @@ export default function ExecuteConversionPage() {
       const response = await rawMaterialService.getBagsByProduct(productId);
 
       if (response.success && response.data) {
-        setBags(response.data.filter((bag) => bag.remaining_kg > 0));
+        setBags(response.data.filter((bag) => Number(bag.remaining_kg) > 0));
       }
     } catch (error) {
       console.error('Error fetching bags:', error);
@@ -178,8 +189,12 @@ export default function ExecuteConversionPage() {
   };
 
   const getRequiredGrams = (finishedQty: number) => {
-    const ratio = Number(conversionRule?.conversion_ratio || 0);
-    return finishedQty * ratio;
+    return Number(finishedQty || 0) * gramsPerFinishedProduct;
+  };
+
+  const getPossibleFinishedQty = (remainingKg: number) => {
+    if (!gramsPerFinishedProduct) return 0;
+    return Math.floor((Number(remainingKg || 0) * 1000) / gramsPerFinishedProduct);
   };
 
   const totalFinishedQty = selectedBags.reduce(
@@ -189,6 +204,11 @@ export default function ExecuteConversionPage() {
 
   const totalRawGrams = getRequiredGrams(totalFinishedQty);
 
+  const totalAvailableGrams = selectedBags.reduce(
+    (sum, bag) => sum + Number(bag.remaining_kg || 0) * 1000,
+    0
+  );
+
   const onSubmit = async (data: IConversionExecutionRequest) => {
     try {
       if (selectedBags.length === 0) {
@@ -196,10 +216,15 @@ export default function ExecuteConversionPage() {
         return;
       }
 
+      if (!gramsPerFinishedProduct) {
+        showToastMessage('Required gram per finished product is missing', 'error');
+        return;
+      }
+
       for (const bag of selectedBags) {
         const qty = finishedQuantities[bag.id] || 0;
         const gramsNeeded = getRequiredGrams(qty);
-        const availableGrams = bag.remaining_kg * 1000;
+        const availableGrams = Number(bag.remaining_kg || 0) * 1000;
 
         if (qty <= 0) {
           showToastMessage(`Please enter finished quantity for Bag ${bag.bag_number}`, 'error');
@@ -242,28 +267,14 @@ export default function ExecuteConversionPage() {
     return (
       <Box sx={pageSx}>
         <Container maxWidth={false} disableGutters sx={containerSx}>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            justifyContent="space-between"
-            alignItems={{ xs: 'flex-start', sm: 'center' }}
-            spacing={1.5}
-            mb={2}
-          >
+          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
             <Stack direction="row" spacing={1.5} alignItems="center">
-              <Tooltip title="Back">
-                <IconButton
-                  onClick={() => router.push('/conversion')}
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    bgcolor: '#ffffff',
-                    border: '1px solid #e5e7eb',
-                    color: '#374151',
-                  }}
-                >
-                  <ArrowLeft size={20} />
-                </IconButton>
-              </Tooltip>
+              <IconButton
+                onClick={() => router.push('/conversion')}
+                sx={{ bgcolor: '#fff', border: '1px solid #e5e7eb' }}
+              >
+                <ArrowLeft size={20} />
+              </IconButton>
 
               <Box>
                 <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
@@ -275,14 +286,9 @@ export default function ExecuteConversionPage() {
               </Box>
             </Stack>
 
-            <Stack direction="row" spacing={1}>
-              <BBButton variant="outlined" onClick={() => router.push('/conversion')}>
-                Back
-              </BBButton>
-              <BBButton variant="contained" onClick={() => router.push(`/conversion/${id}`)}>
-                View Details
-              </BBButton>
-            </Stack>
+            <BBButton variant="contained" onClick={() => router.push(`/conversion/${id}`)}>
+              View Details
+            </BBButton>
           </Stack>
 
           <Alert severity="success" sx={{ mb: 2, borderRadius: '12px' }}>
@@ -290,39 +296,32 @@ export default function ExecuteConversionPage() {
           </Alert>
 
           <Card sx={cardSx}>
-            <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
-              <Stack spacing={2}>
-                <Chip
-                  icon={<CheckCircle2 size={14} />}
-                  label="Completed"
-                  size="small"
-                  sx={{
-                    width: 'fit-content',
-                    bgcolor: '#ecfdf5',
-                    color: '#047857',
-                    fontWeight: 700,
-                  }}
-                />
+            <CardContent>
+              <Chip
+                icon={<CheckCircle2 size={14} />}
+                label="Completed"
+                size="small"
+                sx={{ bgcolor: '#ecfdf5', color: '#047857', fontWeight: 700, mb: 2 }}
+              />
 
-                <Typography sx={{ fontSize: 14, color: '#6b7280', fontFamily: 'monospace' }}>
-                  Record ID: {result.record_id}
-                </Typography>
+              <Typography sx={{ fontSize: 14, color: '#6b7280', fontFamily: 'monospace', mb: 2 }}>
+                Record ID: {result.record_id}
+              </Typography>
 
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                  <Box sx={{ flex: 1, p: 2, borderRadius: '14px', bgcolor: '#fff7ed' }}>
-                    <Typography sx={{ fontWeight: 800 }}>{result.raw_product_name}</Typography>
-                    <Typography sx={{ fontSize: 24, fontWeight: 850, color: '#dc2626' }}>
-                      {result.raw_quantity_used.toLocaleString()} used
-                    </Typography>
-                  </Box>
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                <Box sx={{ flex: 1, p: 2, borderRadius: '14px', bgcolor: '#fff7ed' }}>
+                  <Typography sx={{ fontWeight: 800 }}>{result.raw_product_name}</Typography>
+                  <Typography sx={{ fontSize: 24, fontWeight: 850, color: '#dc2626' }}>
+                    {result.raw_quantity_used.toLocaleString()} used
+                  </Typography>
+                </Box>
 
-                  <Box sx={{ flex: 1, p: 2, borderRadius: '14px', bgcolor: '#ecfdf5' }}>
-                    <Typography sx={{ fontWeight: 800 }}>{result.finished_product_name}</Typography>
-                    <Typography sx={{ fontSize: 24, fontWeight: 850, color: '#059669' }}>
-                      {result.finished_quantity_produced.toLocaleString()} produced
-                    </Typography>
-                  </Box>
-                </Stack>
+                <Box sx={{ flex: 1, p: 2, borderRadius: '14px', bgcolor: '#ecfdf5' }}>
+                  <Typography sx={{ fontWeight: 800 }}>{result.finished_product_name}</Typography>
+                  <Typography sx={{ fontSize: 24, fontWeight: 850, color: '#059669' }}>
+                    {result.finished_quantity_produced.toLocaleString()} produced
+                  </Typography>
+                </Box>
               </Stack>
             </CardContent>
           </Card>
@@ -408,7 +407,7 @@ export default function ExecuteConversionPage() {
 
                     <Box
                       sx={{
-                        minWidth: { xs: '100%', md: 240 },
+                        minWidth: { xs: '100%', md: 280 },
                         p: 2,
                         borderRadius: '14px',
                         bgcolor: '#f9fafb',
@@ -416,10 +415,15 @@ export default function ExecuteConversionPage() {
                       }}
                     >
                       <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
-                        Usage Formula
+                        Exact Usage Formula
                       </Typography>
+
                       <Typography sx={{ fontSize: 24, color: '#111827', fontWeight: 850 }}>
-                        1 Qty = {conversionRule.conversion_ratio} g
+                        1 Qty = {gramsPerFinishedProduct || 0} g
+                      </Typography>
+
+                      <Typography sx={{ fontSize: 12, color: '#6b7280', mt: 0.5 }}>
+                        From product required_gram_per_unit
                       </Typography>
 
                       <Divider sx={{ my: 1.4 }} />
@@ -427,6 +431,7 @@ export default function ExecuteConversionPage() {
                       <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
                         Finished SKU
                       </Typography>
+
                       <Typography
                         sx={{
                           fontSize: 14,
@@ -445,7 +450,8 @@ export default function ExecuteConversionPage() {
             )}
 
             <Alert severity="info" sx={{ mb: 2, borderRadius: '12px' }}>
-              Enter finished quantity. The system will show how many grams or kg of raw material will be used.
+              Enter finished quantity. Example: if 1 bottle needs {gramsPerFinishedProduct || 0} g,
+              then 100 bottles will use {formatGram(100 * gramsPerFinishedProduct)}.
             </Alert>
 
             <Card sx={{ ...cardSx, mb: 2 }}>
@@ -460,7 +466,7 @@ export default function ExecuteConversionPage() {
                   value={selectedBags}
                   loading={bagsLoading}
                   getOptionLabel={(option) =>
-                    `Bag ${option.bag_number} - ${option.remaining_kg.toFixed(2)} KG remaining`
+                    `Bag ${option.bag_number} - ${option.remaining_kg.toFixed(3)} KG remaining`
                   }
                   onChange={(_, newValue) => {
                     setSelectedBags(newValue);
@@ -502,7 +508,7 @@ export default function ExecuteConversionPage() {
                   renderTags={(value, getTagProps) =>
                     value.map((option, index) => (
                       <Chip
-                        label={`Bag ${option.bag_number} (${option.remaining_kg.toFixed(2)} KG)`}
+                        label={`Bag ${option.bag_number} (${option.remaining_kg.toFixed(3)} KG)`}
                         {...getTagProps({ index })}
                         size="small"
                         sx={{
@@ -524,7 +530,7 @@ export default function ExecuteConversionPage() {
                 <Box
                   sx={{
                     display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' },
                     gap: 2,
                     mb: 2,
                   }}
@@ -538,16 +544,23 @@ export default function ExecuteConversionPage() {
 
                   <SummaryCard
                     icon={<Scale size={20} />}
-                    label="Raw Material Needed"
+                    label="Raw Needed"
                     value={formatGram(totalRawGrams)}
                     color="#dc2626"
                   />
 
                   <SummaryCard
                     icon={<Package size={20} />}
-                    label="Selected Bags"
-                    value={selectedBags.length}
+                    label="Available Selected"
+                    value={formatGram(totalAvailableGrams)}
                     color="#059669"
+                  />
+
+                  <SummaryCard
+                    icon={<Calculator size={20} />}
+                    label="Per Finished Qty"
+                    value={`${gramsPerFinishedProduct || 0} g`}
+                    color="#7c3aed"
                   />
                 </Box>
 
@@ -561,15 +574,16 @@ export default function ExecuteConversionPage() {
                       {selectedBags.map((bag) => {
                         const qty = finishedQuantities[bag.id] || 0;
                         const gramsNeeded = getRequiredGrams(qty);
-                        const availableGrams = bag.remaining_kg * 1000;
+                        const availableGrams = Number(bag.remaining_kg || 0) * 1000;
                         const exceedsAvailable = gramsNeeded > availableGrams;
+                        const possibleQty = getPossibleFinishedQty(bag.remaining_kg);
 
                         return (
                           <Box
                             key={bag.id}
                             sx={{
                               display: 'grid',
-                              gridTemplateColumns: { xs: '1fr', md: '1.2fr 220px 220px' },
+                              gridTemplateColumns: { xs: '1fr', md: '1.2fr 260px 240px' },
                               gap: 2,
                               alignItems: 'center',
                               bgcolor: '#ffffff',
@@ -595,8 +609,13 @@ export default function ExecuteConversionPage() {
                                 <Typography sx={{ fontSize: 15, color: '#111827', fontWeight: 850 }}>
                                   Bag {bag.bag_number}
                                 </Typography>
+
                                 <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>
-                                  Available: {bag.remaining_kg.toFixed(2)} kg
+                                  Available: {bag.remaining_kg.toFixed(3)} kg
+                                </Typography>
+
+                                <Typography sx={{ fontSize: 12, color: '#059669', fontWeight: 700 }}>
+                                  Can make approx {possibleQty.toLocaleString()} qty
                                 </Typography>
                               </Box>
                             </Stack>
@@ -618,7 +637,9 @@ export default function ExecuteConversionPage() {
                               helperText={
                                 exceedsAvailable
                                   ? `Only ${formatGram(availableGrams)} available`
-                                  : `${formatGram(gramsNeeded)} raw material will be used`
+                                  : `${qty || 0} qty × ${gramsPerFinishedProduct || 0} g = ${formatGram(
+                                      gramsNeeded
+                                    )}`
                               }
                               sx={inputSx}
                             />
