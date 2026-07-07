@@ -1,3 +1,6 @@
+// ViewConversionPage_REBUILT_UI.tsx
+// Generated from uploaded source.
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -39,7 +42,7 @@ import dayjs from 'dayjs';
 
 const cardSx = {
   borderRadius: '12px',
-  border: '1px solid #e5e7eb',
+  border: '1px solid #eeeff5',
   background: '#ffffff',
   boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)',
 };
@@ -72,10 +75,10 @@ function InfoTile({
           </Avatar>
 
           <Box>
-            <Typography sx={{ fontSize: 11, color: '#6b7280', fontWeight: 700 }}>
+            <Typography sx={{ fontSize: 11, color: '#9ca3af', fontWeight: 700 }}>
               {label}
             </Typography>
-            <Typography sx={{ fontSize: 17, color: '#111827', fontWeight: 800 }}>
+            <Typography sx={{ fontSize: 17, color: '#1a1d2e', fontWeight: 800 }}>
               {value}
             </Typography>
           </Box>
@@ -117,10 +120,10 @@ function ProductCard({
           </Avatar>
 
           <Box>
-            <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
+            <Typography sx={{ fontSize: 12, color: '#9ca3af', fontWeight: 700 }}>
               {title}
             </Typography>
-            <Typography sx={{ fontSize: 19, color: '#111827', fontWeight: 800 }}>
+            <Typography sx={{ fontSize: 19, color: '#1a1d2e', fontWeight: 800 }}>
               {name}
             </Typography>
           </Box>
@@ -134,13 +137,13 @@ function ProductCard({
               py: 1,
               borderRadius: '10px',
               bgcolor: '#f9fafb',
-              border: '1px solid #e5e7eb',
+              border: '1px solid #eeeff5',
             }}
           >
-            <Typography sx={{ fontSize: 11, color: '#6b7280', fontWeight: 700 }}>
+            <Typography sx={{ fontSize: 11, color: '#9ca3af', fontWeight: 700 }}>
               Specification
             </Typography>
-            <Typography sx={{ fontSize: 13, color: '#111827', fontWeight: 600 }}>
+            <Typography sx={{ fontSize: 13, color: '#1a1d2e', fontWeight: 600 }}>
               {spec}
             </Typography>
           </Box>
@@ -152,17 +155,17 @@ function ProductCard({
             py: 1,
             borderRadius: '10px',
             bgcolor: '#f9fafb',
-            border: '1px solid #e5e7eb',
+            border: '1px solid #eeeff5',
           }}
         >
-          <Typography sx={{ fontSize: 11, color: '#6b7280', fontWeight: 700 }}>
+          <Typography sx={{ fontSize: 11, color: '#9ca3af', fontWeight: 700 }}>
             Product ID
           </Typography>
           <Typography
             sx={{
               fontSize: 13,
-              color: '#111827',
-              fontFamily: 'monospace',
+              color: '#1a1d2e',
+              fontFamily: "'DM Mono', monospace",
               fontWeight: 700,
               wordBreak: 'break-word',
             }}
@@ -269,7 +272,7 @@ export default function ViewConversionPage() {
                   height: 40,
                   bgcolor: '#f9fafb',
                   color: '#374151',
-                  border: '1px solid #e5e7eb',
+                  border: '1px solid #eeeff5',
                   '&:hover': { bgcolor: '#f3f4f6' },
                 }}
               >
@@ -278,10 +281,10 @@ export default function ViewConversionPage() {
             </Tooltip>
 
             <Box>
-              <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
+              <Typography sx={{ fontSize: 12, color: '#9ca3af', fontWeight: 700 }}>
                 Conversion Rule
               </Typography>
-              <Typography sx={{ fontSize: { xs: 22, md: 28 }, fontWeight: 800, color: '#111827' }}>
+              <Typography sx={{ fontSize: { xs: 22, md: 28 }, fontWeight: 800, color: '#1a1d2e' }}>
                 Conversion Details
               </Typography>
             </Box>
@@ -328,7 +331,7 @@ export default function ViewConversionPage() {
                     label={conversionRule.is_active ? 'Active' : 'Inactive'}
                     sx={{
                       bgcolor: conversionRule.is_active ? '#ecfdf5' : '#f3f4f6',
-                      color: conversionRule.is_active ? '#047857' : '#6b7280',
+                      color: conversionRule.is_active ? '#047857' : '#9ca3af',
                       fontWeight: 700,
                     }}
                   />
@@ -351,13 +354,13 @@ export default function ViewConversionPage() {
                   alignItems={{ xs: 'flex-start', sm: 'center' }}
                   spacing={1.5}
                 >
-                  <Typography sx={{ fontSize: { xs: 22, md: 30 }, fontWeight: 850, color: '#111827' }}>
+                  <Typography sx={{ fontSize: { xs: 22, md: 30 }, fontWeight: 850, color: '#1a1d2e' }}>
                     {conversionRule.raw_product_name}
                   </Typography>
 
                   <ArrowRight size={26} color="#2563eb" />
 
-                  <Typography sx={{ fontSize: { xs: 22, md: 30 }, fontWeight: 850, color: '#111827' }}>
+                  <Typography sx={{ fontSize: { xs: 22, md: 30 }, fontWeight: 850, color: '#1a1d2e' }}>
                     {conversionRule.finished_product_name}
                   </Typography>
                 </Stack>
@@ -369,19 +372,19 @@ export default function ViewConversionPage() {
                   p: 2,
                   borderRadius: '12px',
                   bgcolor: '#f9fafb',
-                  border: '1px solid #e5e7eb',
+                  border: '1px solid #eeeff5',
                 }}
               >
-                <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
+                <Typography sx={{ fontSize: 12, color: '#9ca3af', fontWeight: 700 }}>
                   Conversion Ratio
                 </Typography>
-                <Typography sx={{ fontSize: 30, color: '#111827', fontWeight: 850 }}>
+                <Typography sx={{ fontSize: 30, color: '#1a1d2e', fontWeight: 850 }}>
                   {conversionRule.conversion_ratio}:1
                 </Typography>
 
                 <Divider sx={{ my: 1.3 }} />
 
-                <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
+                <Typography sx={{ fontSize: 12, color: '#9ca3af', fontWeight: 700 }}>
                   Efficiency
                 </Typography>
                 <Typography sx={{ fontSize: 21, color: '#047857', fontWeight: 850 }}>
@@ -411,7 +414,7 @@ export default function ViewConversionPage() {
             icon={<CheckCircle2 size={20} />}
             label="Status"
             value={conversionRule.is_active ? 'Active' : 'Inactive'}
-            color={conversionRule.is_active ? '#16a34a' : '#6b7280'}
+            color={conversionRule.is_active ? '#16a34a' : '#9ca3af'}
           />
         </Box>
 
@@ -464,7 +467,7 @@ export default function ViewConversionPage() {
         >
           <Card sx={cardSx}>
             <CardContent sx={{ p: 2 }}>
-              <Typography sx={{ fontSize: 17, fontWeight: 800, color: '#111827', mb: 1.5 }}>
+              <Typography sx={{ fontSize: 17, fontWeight: 800, color: '#1a1d2e', mb: 1.5 }}>
                 Timeline
               </Typography>
 
@@ -474,10 +477,10 @@ export default function ViewConversionPage() {
                     <User size={18} />
                   </Avatar>
                   <Box>
-                    <Typography sx={{ fontSize: 11, color: '#6b7280', fontWeight: 700 }}>
+                    <Typography sx={{ fontSize: 11, color: '#9ca3af', fontWeight: 700 }}>
                       Created By
                     </Typography>
-                    <Typography sx={{ color: '#111827', fontWeight: 700, fontSize: 14 }}>
+                    <Typography sx={{ color: '#1a1d2e', fontWeight: 700, fontSize: 14 }}>
                       {conversionRule.created_by_user_name}
                     </Typography>
                   </Box>
@@ -488,10 +491,10 @@ export default function ViewConversionPage() {
                     <CalendarDays size={18} />
                   </Avatar>
                   <Box>
-                    <Typography sx={{ fontSize: 11, color: '#6b7280', fontWeight: 700 }}>
+                    <Typography sx={{ fontSize: 11, color: '#9ca3af', fontWeight: 700 }}>
                       Created At
                     </Typography>
-                    <Typography sx={{ color: '#111827', fontWeight: 700, fontSize: 14 }}>
+                    <Typography sx={{ color: '#1a1d2e', fontWeight: 700, fontSize: 14 }}>
                       {dayjs(conversionRule.created_at).format('DD MMM YYYY, hh:mm A')}
                     </Typography>
                   </Box>
@@ -502,10 +505,10 @@ export default function ViewConversionPage() {
                     <Activity size={18} />
                   </Avatar>
                   <Box>
-                    <Typography sx={{ fontSize: 11, color: '#6b7280', fontWeight: 700 }}>
+                    <Typography sx={{ fontSize: 11, color: '#9ca3af', fontWeight: 700 }}>
                       Last Updated
                     </Typography>
-                    <Typography sx={{ color: '#111827', fontWeight: 700, fontSize: 14 }}>
+                    <Typography sx={{ color: '#1a1d2e', fontWeight: 700, fontSize: 14 }}>
                       {dayjs(conversionRule.updated_at).format('DD MMM YYYY, hh:mm A')}
                     </Typography>
                   </Box>
@@ -522,7 +525,7 @@ export default function ViewConversionPage() {
                     <FileText size={19} />
                   </Avatar>
 
-                  <Typography sx={{ fontSize: 17, fontWeight: 800, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 17, fontWeight: 800, color: '#1a1d2e' }}>
                     Notes
                   </Typography>
                 </Stack>

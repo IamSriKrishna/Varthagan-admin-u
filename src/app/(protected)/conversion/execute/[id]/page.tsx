@@ -1,3 +1,5 @@
+
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -47,7 +49,7 @@ import dayjs from 'dayjs';
 const pageSx = {
   minHeight: '100vh',
   width: '100%',
-  bgcolor: '#f9fafb',
+  bgcolor: '#f8f9fc',
   py: 2,
 };
 
@@ -58,7 +60,7 @@ const containerSx = {
 
 const cardSx = {
   borderRadius: '16px',
-  border: '1px solid #e5e7eb',
+  border: '1px solid #eeeff5',
   background: '#ffffff',
   boxShadow: '0 1px 3px rgba(15, 23, 42, 0.08)',
 };
@@ -104,10 +106,10 @@ function SummaryCard({
           </Avatar>
 
           <Box>
-            <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
+            <Typography sx={{ fontSize: 12, color: '#9ca3af', fontWeight: 700 }}>
               {label}
             </Typography>
-            <Typography sx={{ fontSize: 20, color: '#111827', fontWeight: 850 }}>
+            <Typography sx={{ fontSize: 20, color: '#1a1d2e', fontWeight: 850 }}>
               {value}
             </Typography>
           </Box>
@@ -271,13 +273,13 @@ export default function ExecuteConversionPage() {
             <Stack direction="row" spacing={1.5} alignItems="center">
               <IconButton
                 onClick={() => router.push('/conversion')}
-                sx={{ bgcolor: '#fff', border: '1px solid #e5e7eb' }}
+                sx={{ bgcolor: '#fff', border: '1px solid #eeeff5' }}
               >
                 <ArrowLeft size={20} />
               </IconButton>
 
               <Box>
-                <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
+                <Typography sx={{ fontSize: 12, color: '#9ca3af', fontWeight: 700 }}>
                   Conversion
                 </Typography>
                 <Typography sx={{ fontSize: { xs: 22, md: 28 }, fontWeight: 850 }}>
@@ -304,7 +306,7 @@ export default function ExecuteConversionPage() {
                 sx={{ bgcolor: '#ecfdf5', color: '#047857', fontWeight: 700, mb: 2 }}
               />
 
-              <Typography sx={{ fontSize: 14, color: '#6b7280', fontFamily: 'monospace', mb: 2 }}>
+              <Typography sx={{ fontSize: 14, color: '#9ca3af', fontFamily: "'DM Mono', monospace", mb: 2 }}>
                 Record ID: {result.record_id}
               </Typography>
 
@@ -342,7 +344,7 @@ export default function ExecuteConversionPage() {
                 height: 40,
                 bgcolor: '#ffffff',
                 color: '#374151',
-                border: '1px solid #e5e7eb',
+                border: '1px solid #eeeff5',
                 '&:hover': { bgcolor: '#f3f4f6' },
               }}
             >
@@ -351,10 +353,10 @@ export default function ExecuteConversionPage() {
           </Tooltip>
 
           <Box>
-            <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
+            <Typography sx={{ fontSize: 12, color: '#9ca3af', fontWeight: 700 }}>
               Conversion
             </Typography>
-            <Typography sx={{ fontSize: { xs: 22, md: 28 }, fontWeight: 850, color: '#111827' }}>
+            <Typography sx={{ fontSize: { xs: 22, md: 28 }, fontWeight: 850, color: '#1a1d2e' }}>
               Execute Conversion
             </Typography>
           </Box>
@@ -410,34 +412,34 @@ export default function ExecuteConversionPage() {
                         minWidth: { xs: '100%', md: 280 },
                         p: 2,
                         borderRadius: '14px',
-                        bgcolor: '#f9fafb',
-                        border: '1px solid #e5e7eb',
+                        bgcolor: '#f8f9fc',
+                        border: '1px solid #eeeff5',
                       }}
                     >
-                      <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
+                      <Typography sx={{ fontSize: 12, color: '#9ca3af', fontWeight: 700 }}>
                         Exact Usage Formula
                       </Typography>
 
-                      <Typography sx={{ fontSize: 24, color: '#111827', fontWeight: 850 }}>
+                      <Typography sx={{ fontSize: 24, color: '#1a1d2e', fontWeight: 850 }}>
                         1 Qty = {gramsPerFinishedProduct || 0} g
                       </Typography>
 
-                      <Typography sx={{ fontSize: 12, color: '#6b7280', mt: 0.5 }}>
+                      <Typography sx={{ fontSize: 12, color: '#9ca3af', mt: 0.5 }}>
                         From product required_gram_per_unit
                       </Typography>
 
                       <Divider sx={{ my: 1.4 }} />
 
-                      <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 700 }}>
+                      <Typography sx={{ fontSize: 12, color: '#9ca3af', fontWeight: 700 }}>
                         Finished SKU
                       </Typography>
 
                       <Typography
                         sx={{
                           fontSize: 14,
-                          color: '#111827',
+                          color: '#1a1d2e',
                           fontWeight: 700,
-                          fontFamily: 'monospace',
+                          fontFamily: "'DM Mono', monospace",
                           wordBreak: 'break-word',
                         }}
                       >
@@ -456,7 +458,7 @@ export default function ExecuteConversionPage() {
 
             <Card sx={{ ...cardSx, mb: 2 }}>
               <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
-                <Typography sx={{ fontSize: 18, fontWeight: 850, color: '#111827', mb: 1.5 }}>
+                <Typography sx={{ fontSize: 18, fontWeight: 850, color: '#1a1d2e', mb: 1.5 }}>
                   Select Raw Material Bags
                 </Typography>
 
@@ -566,7 +568,7 @@ export default function ExecuteConversionPage() {
 
                 <Card sx={{ ...cardSx, mb: 2 }}>
                   <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
-                    <Typography sx={{ fontSize: 18, fontWeight: 850, color: '#111827', mb: 2 }}>
+                    <Typography sx={{ fontSize: 18, fontWeight: 850, color: '#1a1d2e', mb: 2 }}>
                       Finished Quantity per Bag
                     </Typography>
 
@@ -587,7 +589,7 @@ export default function ExecuteConversionPage() {
                               gap: 2,
                               alignItems: 'center',
                               bgcolor: '#ffffff',
-                              border: `1px solid ${exceedsAvailable ? '#fecaca' : '#e5e7eb'}`,
+                              border: `1px solid ${exceedsAvailable ? '#fecaca' : '#eeeff5'}`,
                               p: 2,
                               borderRadius: '14px',
                             }}
@@ -606,11 +608,11 @@ export default function ExecuteConversionPage() {
                               </Avatar>
 
                               <Box>
-                                <Typography sx={{ fontSize: 15, color: '#111827', fontWeight: 850 }}>
+                                <Typography sx={{ fontSize: 15, color: '#1a1d2e', fontWeight: 850 }}>
                                   Bag {bag.bag_number}
                                 </Typography>
 
-                                <Typography sx={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>
+                                <Typography sx={{ fontSize: 12, color: '#9ca3af', fontWeight: 600 }}>
                                   Available: {bag.remaining_kg.toFixed(3)} kg
                                 </Typography>
 
@@ -649,8 +651,8 @@ export default function ExecuteConversionPage() {
                                 px: 1.5,
                                 py: 1.2,
                                 borderRadius: '12px',
-                                bgcolor: exceedsAvailable ? '#fef2f2' : '#f9fafb',
-                                border: `1px solid ${exceedsAvailable ? '#fecaca' : '#e5e7eb'}`,
+                                bgcolor: exceedsAvailable ? '#fef2f2' : '#f8f9fc',
+                                border: `1px solid ${exceedsAvailable ? '#fecaca' : '#eeeff5'}`,
                               }}
                             >
                               <Stack direction="row" spacing={1.2} alignItems="center">
@@ -661,13 +663,13 @@ export default function ExecuteConversionPage() {
                                 )}
 
                                 <Box>
-                                  <Typography sx={{ fontSize: 11, color: '#6b7280', fontWeight: 700 }}>
+                                  <Typography sx={{ fontSize: 11, color: '#9ca3af', fontWeight: 700 }}>
                                     Raw Usage
                                   </Typography>
                                   <Typography
                                     sx={{
                                       fontSize: 16,
-                                      color: exceedsAvailable ? '#dc2626' : '#111827',
+                                      color: exceedsAvailable ? '#dc2626' : '#1a1d2e',
                                       fontWeight: 850,
                                     }}
                                   >
