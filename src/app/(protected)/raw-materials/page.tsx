@@ -1,9 +1,19 @@
-"use client";
-import { BBButton, BBDialog, BBInputBase, BBLoader, BBTable, BBTitle } from "@/lib";
-import { ITableColumn } from "@/lib/BBTable/BBTable";
-import HighlightedCell from "@/lib/BBTable/HighlightedCell";
-import { RawMaterialBag, RawMaterialListResponse } from "@/models/rawMaterial.model";
-import { showToastMessage } from "@/utils/toastUtil";
+'use client';
+
+import {
+  BBButton,
+  BBDialog,
+  BBInputBase,
+  BBLoader,
+  BBTable,
+} from '@/lib';
+import { ITableColumn } from '@/lib/BBTable/BBTable';
+import HighlightedCell from '@/lib/BBTable/HighlightedCell';
+import {
+  RawMaterialBag,
+  RawMaterialListResponse,
+} from '@/models/rawMaterial.model';
+import { showToastMessage } from '@/utils/toastUtil';
 import {
   Box,
   Chip,
@@ -12,48 +22,50 @@ import {
   Stack,
   Tooltip,
   Typography,
-} from "@mui/material";
-import dayjs from "dayjs";
-import { PencilLine, Plus, Search, Trash2, ChevronDown, CheckCircle2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { useDebounce } from "@/hooks/useDebounce";
-import { rawMaterialService } from "@/lib/api/rawMaterialService";
-import { RAW_MATERIAL_STATUS_COLORS } from "@/constants/rawMaterial.constants";
-import RawMaterialDialog from "@/components/rawMaterial/RawMaterialDialog";
-
-// ── Status Config for Timeline ─────────────────────────────────────────────
+} from '@mui/material';
+import dayjs from 'dayjs';
+import {
+  CheckCircle2,
+  ChevronDown,
+  PackageOpen,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { rawMaterialService } from '@/lib/api/rawMaterialService';
+import { RAW_MATERIAL_STATUS_COLORS } from '@/constants/rawMaterial.constants';
+import RawMaterialDialog from '@/components/rawMaterial/RawMaterialDialog';
 
 const MATERIAL_STATUS_CONFIG = {
   available: {
-    label: "Available",
-    bg: "#ECFDF5",
-    color: "#059669",
-    dot: "#10B981",
+    label: 'Available',
+    bg: '#f0fdf6',
+    color: '#15803d',
+    dot: '#16a34a',
     icon: <CheckCircle2 size={11} strokeWidth={2.5} />,
   },
   partial: {
-    label: "Partial",
-    bg: "#FFFBEB",
-    color: "#D97706",
-    dot: "#F59E0B",
+    label: 'Partial',
+    bg: '#fff8eb',
+    color: '#b45309',
+    dot: '#f59e0b',
     icon: <CheckCircle2 size={11} strokeWidth={2.5} />,
   },
   consumed: {
-    label: "Consumed",
-    bg: "#FEE2E2",
-    color: "#DC2626",
-    dot: "#EF4444",
+    label: 'Consumed',
+    bg: '#fff5f5',
+    color: '#ef4444',
+    dot: '#ef4444',
     icon: <CheckCircle2 size={11} strokeWidth={2.5} />,
   },
 };
 
-// ── Page ───────────────────────────────────────────────────────────────────────
-
 export default function RawMaterialsPage() {
-  const [filters, setFilters] = useState({ search: "" });
+  const [filters, setFilters] = useState({ search: '' });
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [open, setOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [bags, setBags] = useState<RawMaterialBag[]>([]);
@@ -71,14 +83,15 @@ export default function RawMaterialsPage() {
         rowsPerPage,
         page * rowsPerPage
       );
+
       if (response.success) {
         setBags(response.data?.bags || []);
         setTotalCount(response.data?.total || 0);
       } else {
-        showToastMessage("Failed to fetch raw materials", "error");
+        showToastMessage('Failed to fetch raw materials', 'error');
       }
     } catch (error: any) {
-      showToastMessage(error.message || "Failed to fetch raw materials", "error");
+      showToastMessage(error.message || 'Failed to fetch raw materials', 'error');
     } finally {
       setLoading(false);
     }
@@ -93,27 +106,20 @@ export default function RawMaterialsPage() {
     setPage(0);
   };
 
-  // Group bags by purchase order
-  const groupBagsByPO = (): { [key: string]: RawMaterialBag[] } => {
-    const grouped: { [key: string]: RawMaterialBag[] } = {};
-    bags.forEach((bag) => {
-      const poId = bag.purchase_order_id;
-      if (!grouped[poId]) grouped[poId] = [];
-      grouped[poId].push(bag);
-    });
-    return grouped;
-  };
+  const groupedBags: { [key: string]: RawMaterialBag[] } = {};
+  bags.forEach((bag) => {
+    const poId = bag.purchase_order_id;
+    if (!groupedBags[poId]) groupedBags[poId] = [];
+    groupedBags[poId].push(bag);
+  });
 
-  const groupedBags = groupBagsByPO();
-  const groupedBagKeys = Object.keys(groupedBags);
-
-  // Get the first bag for each group to display in the main row
-  const displayBags = groupedBagKeys.map((poId) => {
+  const displayBags = Object.keys(groupedBags).map((poId) => {
     const poBags = groupedBags[poId].sort((a, b) => {
       const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
       const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
       return bTime - aTime;
     });
+
     return {
       ...poBags[0],
       _groupSize: poBags.length,
@@ -121,12 +127,10 @@ export default function RawMaterialsPage() {
     };
   });
 
-  // ── Column definitions ─────────────────────────────────────────────────────
-
   const columns: ITableColumn<any>[] = [
     {
-      key: "action" as any,
-      label: "",
+      key: 'action' as any,
+      label: '',
       render: (row: any) =>
         row._groupSize > 1 ? (
           <IconButton
@@ -134,19 +138,24 @@ export default function RawMaterialsPage() {
             onClick={() => {
               const poId = row.purchase_order_id;
               const newExpanded = new Set(expandedPOs);
-              if (newExpanded.has(poId)) {
-                newExpanded.delete(poId);
-              } else {
-                newExpanded.add(poId);
-              }
+              newExpanded.has(poId)
+                ? newExpanded.delete(poId)
+                : newExpanded.add(poId);
               setExpandedPOs(newExpanded);
             }}
             sx={{
-              color: "#4F46E5",
               width: 30,
               height: 30,
-              transition: "transform 0.2s",
-              transform: expandedPOs.has(row.purchase_order_id) ? "rotate(90deg)" : "rotate(0deg)",
+              borderRadius: '8px',
+              color: '#4f63d2',
+              bgcolor: '#f0f4ff',
+              transform: expandedPOs.has(row.purchase_order_id)
+                ? 'rotate(90deg)'
+                : 'rotate(0deg)',
+              transition: 'all 0.2s',
+              '&:hover': {
+                bgcolor: '#e0e7ff',
+              },
             }}
           >
             <ChevronDown size={16} />
@@ -154,27 +163,28 @@ export default function RawMaterialsPage() {
         ) : null,
     },
     {
-      key: "product_name" as keyof RawMaterialBag,
-      label: "Product Name",
+      key: 'product_name' as keyof RawMaterialBag,
+      label: 'Product Name',
       render: (row) => (
         <Box>
           <Typography
             sx={{
-              fontSize: "0.8125rem",
-              fontWeight: 600,
-              color: "#1a1d2e",
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              color: '#1a1d2e',
               fontFamily: "'DM Sans', sans-serif",
               lineHeight: 1.3,
             }}
           >
             <HighlightedCell value={row.product_name} search={filters.search} />
           </Typography>
+
           <Typography
             sx={{
-              fontSize: "0.7rem",
-              color: "#9ca3af",
+              fontSize: '0.7rem',
+              color: '#9ca3af',
               fontFamily: "'DM Mono', monospace",
-              letterSpacing: "0.02em",
+              letterSpacing: '0.02em',
             }}
           >
             {row.product_id}
@@ -183,14 +193,15 @@ export default function RawMaterialsPage() {
       ),
     },
     {
-      key: "vendor_name" as keyof RawMaterialBag,
-      label: "Vendor",
+      key: 'vendor_name' as keyof RawMaterialBag,
+      label: 'Vendor',
       render: (row) => (
         <Typography
           sx={{
-            fontSize: "0.8rem",
-            color: "#4f63d2",
+            fontSize: '0.8rem',
+            color: '#4f63d2',
             fontFamily: "'DM Sans', sans-serif",
+            fontWeight: 600,
           }}
         >
           <HighlightedCell value={row.vendor_name} search={filters.search} />
@@ -198,15 +209,15 @@ export default function RawMaterialsPage() {
       ),
     },
     {
-      key: "purchase_order_no" as keyof RawMaterialBag,
-      label: "PO No",
+      key: 'purchase_order_no' as keyof RawMaterialBag,
+      label: 'PO No',
       render: (row) => (
         <Typography
           sx={{
-            fontSize: "0.8rem",
+            fontSize: '0.8rem',
             fontFamily: "'DM Mono', monospace",
-            color: "#374151",
-            letterSpacing: "0.02em",
+            color: '#6b7280',
+            letterSpacing: '0.02em',
           }}
         >
           {row.purchase_order_no}
@@ -214,137 +225,193 @@ export default function RawMaterialsPage() {
       ),
     },
     {
-      key: "bag_number" as keyof RawMaterialBag,
-      label: "Bag #",
-      render: (row) => (
-        <Typography
-          sx={{
-            fontSize: "0.8rem",
-            fontFamily: "'DM Mono', monospace",
-            color: "#374151",
-            fontWeight: 500,
-          }}
-        >
-          Bag {row.bag_number}
-        </Typography>
-      ),
-    },
-    {
-      key: "expected_kg" as keyof RawMaterialBag,
-      label: "Expected (KG)",
-      render: (row) => (
-        <Typography
-          sx={{
-            fontSize: "0.8rem",
-            fontFamily: "'DM Mono', monospace",
-            color: "#374151",
-          }}
-        >
-          {row.expected_kg.toFixed(2)}
-        </Typography>
-      ),
-    },
-    {
-      key: "actual_kg" as keyof RawMaterialBag,
-      label: "Actual (KG)",
-      render: (row) => (
-        <Typography
-          sx={{
-            fontSize: "0.8rem",
-            fontFamily: "'DM Mono', monospace",
-            color: "#374151",
-            fontWeight: 600,
-          }}
-        >
-          {row.actual_kg.toFixed(2)}
-        </Typography>
-      ),
-    },
-    {
-      key: "remaining_kg" as keyof RawMaterialBag,
-      label: "Remaining (KG)",
-      render: (row) => (
-        <Typography
-          sx={{
-            fontSize: "0.8rem",
-            fontFamily: "'DM Mono', monospace",
-            color: "#374151",
-            fontWeight: 600,
-          }}
-        >
-          {(row.expected_kg - row.actual_kg).toFixed(2)}
-        </Typography>
-      ),
-    },
-    {
-      key: "status" as keyof RawMaterialBag,
-      label: "Status",
+      key: 'bag_number' as keyof RawMaterialBag,
+      label: 'Bag #',
       render: (row) => (
         <Chip
-          label={row.status.charAt(0).toUpperCase() + row.status.slice(1)}
+          label={`Bag ${row.bag_number}`}
           size="small"
           sx={{
-            fontSize: "0.7rem",
-            fontWeight: 600,
-            fontFamily: "'DM Sans', sans-serif",
-            bgcolor:
-              RAW_MATERIAL_STATUS_COLORS[row.status as keyof typeof RAW_MATERIAL_STATUS_COLORS] +
-              "20",
-            color:
-              RAW_MATERIAL_STATUS_COLORS[row.status as keyof typeof RAW_MATERIAL_STATUS_COLORS],
-            border: `1px solid ${RAW_MATERIAL_STATUS_COLORS[row.status as keyof typeof RAW_MATERIAL_STATUS_COLORS]}`,
-            borderRadius: "6px",
-            height: 22,
+            height: 24,
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            fontFamily: "'DM Mono', monospace",
+            bgcolor: '#f0f4ff',
+            color: '#4f63d2',
+            border: '1px solid #c7d2fe',
+            borderRadius: '7px',
           }}
         />
       ),
     },
     {
-      key: "created_at" as keyof RawMaterialBag,
-      label: "Created",
+      key: 'expected_kg' as keyof RawMaterialBag,
+      label: 'Expected KG',
+      render: (row) => (
+        <Typography sx={monoTextSx}>{row.expected_kg.toFixed(2)}</Typography>
+      ),
+    },
+    {
+      key: 'actual_kg' as keyof RawMaterialBag,
+      label: 'Actual KG',
+      render: (row) => (
+        <Typography sx={{ ...monoTextSx, fontWeight: 700 }}>
+          {row.actual_kg.toFixed(2)}
+        </Typography>
+      ),
+    },
+    {
+      key: 'remaining_kg' as keyof RawMaterialBag,
+      label: 'Remaining KG',
+      render: (row) => {
+        const remaining = row.expected_kg - row.actual_kg;
+
+        return (
+          <Typography
+            sx={{
+              ...monoTextSx,
+              fontWeight: 800,
+              color: remaining > 0 ? '#ef4444' : '#15803d',
+            }}
+          >
+            {remaining.toFixed(2)}
+          </Typography>
+        );
+      },
+    },
+    {
+      key: 'status' as keyof RawMaterialBag,
+      label: 'Status',
+      render: (row) => (
+        <Chip
+          label={row.status.charAt(0).toUpperCase() + row.status.slice(1)}
+          size="small"
+          sx={{
+            height: 22,
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            fontFamily: "'DM Sans', sans-serif",
+            bgcolor:
+              RAW_MATERIAL_STATUS_COLORS[
+                row.status as keyof typeof RAW_MATERIAL_STATUS_COLORS
+              ] + '20',
+            color:
+              RAW_MATERIAL_STATUS_COLORS[
+                row.status as keyof typeof RAW_MATERIAL_STATUS_COLORS
+              ],
+            border: `1px solid ${
+              RAW_MATERIAL_STATUS_COLORS[
+                row.status as keyof typeof RAW_MATERIAL_STATUS_COLORS
+              ]
+            }`,
+            borderRadius: '6px',
+          }}
+        />
+      ),
+    },
+    {
+      key: 'created_at' as keyof RawMaterialBag,
+      label: 'Created',
       render: (row) => (
         <Typography
           sx={{
-            fontSize: "0.8rem",
+            fontSize: '0.8rem',
             fontFamily: "'DM Mono', monospace",
-            color: "#6b7280",
-            letterSpacing: "0.01em",
+            color: '#6b7280',
+            letterSpacing: '0.01em',
           }}
         >
-          {dayjs(row.created_at).format("DD MMM YYYY")}
+          {dayjs(row.created_at).format('DD MMM YYYY')}
         </Typography>
       ),
     },
   ];
 
   return (
-    <Paper
+    <Box
       sx={{
-        width: "100%",
-        overflow: "hidden",
-        borderRadius: "16px",
-        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-        border: "1px solid #e5e7eb",
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        bgcolor: '#f8f9fc',
       }}
     >
-      <Box sx={{ p: 3, borderBottom: "1px solid #e5e7eb" }}>
+      {/* Header */}
+      <Box
+        sx={{
+          px: 3,
+          pt: 3,
+          pb: 2.5,
+          bgcolor: '#ffffff',
+          borderBottom: '1px solid #f0f0f5',
+        }}
+      >
         <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Box>
-            <BBTitle title="Raw Materials" />
-            <Typography sx={{ fontSize: "0.875rem", color: "#6b7280", mt: 0.5 }}>
-              Manage raw material bags received from purchase orders
-            </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+              sx={{
+                width: 46,
+                height: 46,
+                borderRadius: '13px',
+                background:
+                  'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 6px 20px rgba(14, 165, 233, 0.3)',
+                flexShrink: 0,
+              }}
+            >
+              <PackageOpen size={22} color="white" />
+            </Box>
+
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: '1.5rem',
+                  fontWeight: 800,
+                  color: '#1a1d2e',
+                  fontFamily: "'DM Sans', sans-serif",
+                  letterSpacing: '-0.4px',
+                  lineHeight: 1.15,
+                }}
+              >
+                Raw Materials
+              </Typography>
+
+              <Typography
+                sx={{
+                  fontSize: '0.8rem',
+                  color: '#9ca3af',
+                  fontFamily: "'DM Sans', sans-serif",
+                  mt: 0.25,
+                }}
+              >
+                Manage raw material bags received from purchase orders
+              </Typography>
+            </Box>
           </Box>
+
           <BBButton
             variant="contained"
             onClick={() => setDialogOpen(true)}
             startIcon={<Plus size={16} />}
             sx={{
-              textTransform: "none",
-              borderRadius: "8px",
-              padding: "8px 16px",
-              fontSize: "0.875rem",
-              fontWeight: 600,
+              px: 2.5,
+              py: 1.1,
+              borderRadius: '11px',
+              background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+              boxShadow: '0 4px 14px rgba(14, 165, 233, 0.35)',
+              fontFamily: "'DM Sans', sans-serif",
+              fontWeight: 700,
+              fontSize: '0.875rem',
+              textTransform: 'none',
+              '&:hover': {
+                background:
+                  'linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)',
+                boxShadow: '0 6px 20px rgba(14, 165, 233, 0.45)',
+                transform: 'translateY(-1px)',
+              },
             }}
           >
             Receive Materials
@@ -352,154 +419,307 @@ export default function RawMaterialsPage() {
         </Stack>
       </Box>
 
-      <Box sx={{ p: 2, borderBottom: "1px solid #e5e7eb" }}>
-        <Stack direction="row" alignItems="center" sx={{ gap: 1, px: 1 }}>
-          <Search size={16} color="#94A3B8" />
+      {/* Toolbar */}
+      <Box
+        component={Paper}
+        elevation={0}
+        sx={{
+          mx: 3,
+          mt: 2.5,
+          borderRadius: '14px 14px 0 0',
+          border: '1px solid #eeeff5',
+          borderBottom: 'none',
+          bgcolor: '#ffffff',
+          px: 2.5,
+          py: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+        }}
+      >
+        <Box sx={{ position: 'relative', flexGrow: 1, maxWidth: 420 }}>
+          <Box
+            sx={{
+              position: 'absolute',
+              left: 12,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#9ca3af',
+              display: 'flex',
+              alignItems: 'center',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          >
+            <Search size={15} />
+          </Box>
+
           <BBInputBase
             name="search"
             label=""
             placeholder="Search by product, vendor, or PO..."
             value={filters.search}
-            onChange={(e) => handleTypeChange("search", e.target.value)}
+            onChange={(e) => handleTypeChange('search', e.target.value)}
+            sx={{ pl: 4.5 }}
           />
-        </Stack>
+        </Box>
+
+        {filters.search && (
+          <Chip
+            label="Filtered"
+            size="small"
+            sx={{
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              fontFamily: "'DM Sans', sans-serif",
+              bgcolor: '#e0f2fe',
+              color: '#0369a1',
+              border: '1px solid #bae6fd',
+              borderRadius: '8px',
+            }}
+          />
+        )}
       </Box>
 
-      {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-          <BBLoader />
-        </Box>
-      ) : (
-        <>
-          <BBTable
-            data={displayBags}
-            columns={columns}
-            pagination
-            page={page}
-            rowsPerPage={rowsPerPage}
-            totalCount={totalCount}
-            onPageChange={setPage}
-            onRowsPerPageChange={setRowsPerPage}
-          />
+      {/* Table */}
+      <Box
+        sx={{
+          mx: 3,
+          mb: 3,
+          borderRadius: '0 0 14px 14px',
+          border: '1px solid #eeeff5',
+          borderTop: 'none',
+          bgcolor: '#ffffff',
+          overflow: 'hidden',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
+        }}
+      >
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
+            <BBLoader />
+          </Box>
+        ) : (
+          <>
+            <BBTable
+              data={displayBags}
+              columns={columns}
+              pagination
+              page={page}
+              rowsPerPage={rowsPerPage}
+              totalCount={totalCount}
+              onPageChange={setPage}
+              onRowsPerPageChange={setRowsPerPage}
+              sx={{
+                '& .MuiTableHead-root .MuiTableCell-root': {
+                  bgcolor: '#f8fbff',
+                  color: '#6b7280',
+                  fontWeight: 600,
+                  fontSize: '0.7rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  fontFamily: "'DM Sans', sans-serif",
+                  borderBottom: '1px solid #eeeff5',
+                  py: 1.5,
+                },
+                '& .MuiTableBody-root .MuiTableRow-root': {
+                  cursor: 'pointer',
+                  transition: 'background 0.12s ease',
+                  '&:hover': { bgcolor: '#f8fbff' },
+                },
+                '& .MuiTableBody-root .MuiTableCell-root': {
+                  borderBottom: '1px solid #f5f5fa',
+                  py: 1.5,
+                  fontFamily: "'DM Sans', sans-serif",
+                },
+              }}
+            />
 
-          {/* ── Material Timeline (Expanded rows) ─────────────────────────────────── */}
-          {Array.from(expandedPOs).map((poId) => {
-            const poBags = groupedBags[poId] || [];
-            if (poBags.length <= 1) return null;
-            
-            const sortedBags = poBags.sort((a, b) => {
-              const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
-              const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
-              return bTime - aTime;
-            });
+            {Array.from(expandedPOs).map((poId) => {
+              const poBags = groupedBags[poId] || [];
+              if (poBags.length <= 1) return null;
 
-            return (
-              <Box
-                key={`timeline-${poId}`}
-                sx={{
-                  backgroundColor: "#F8FAFC",
-                  borderTop: "2px solid #F1F5F9",
-                  p: 3,
-                }}
-              >
-                <Typography sx={{ fontSize: "14px", fontWeight: 700, color: "#0F172A", mb: 2.5 }}>
-                  Material Timeline for {poBags[0].purchase_order_no || "PO"}
-                </Typography>
+              const sortedBags = poBags.sort((a, b) => {
+                const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+                const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+                return bTime - aTime;
+              });
 
-                <Stack spacing={0}>
-                  {sortedBags.map((bag, idx) => {
-                    const cfg = MATERIAL_STATUS_CONFIG[bag.status as keyof typeof MATERIAL_STATUS_CONFIG] || MATERIAL_STATUS_CONFIG.available;
-                    const isLast = idx === sortedBags.length - 1;
+              return (
+                <Box
+                  key={`timeline-${poId}`}
+                  sx={{
+                    bgcolor: '#f8fbff',
+                    borderTop: '1px solid #eeeff5',
+                    p: 3,
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: '0.875rem',
+                      fontWeight: 800,
+                      color: '#1a1d2e',
+                      mb: 2.5,
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}
+                  >
+                    Material Timeline for {poBags[0].purchase_order_no || 'PO'}
+                  </Typography>
 
-                    return (
-                      <Stack key={bag.id} direction="row" spacing={2}>
-                        {/* Timeline dot and line */}
-                        <Stack sx={{ alignItems: "center", mt: 0.5 }}>
-                          <Box
-                            sx={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: "50%",
-                              backgroundColor: cfg.bg,
-                              border: `2px solid ${cfg.dot}`,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              flexShrink: 0,
-                            }}
-                          >
-                            <Box sx={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: cfg.dot }} />
-                          </Box>
-                          {!isLast && (
+                  <Stack spacing={0}>
+                    {sortedBags.map((bag, idx) => {
+                      const cfg =
+                        MATERIAL_STATUS_CONFIG[
+                          bag.status as keyof typeof MATERIAL_STATUS_CONFIG
+                        ] || MATERIAL_STATUS_CONFIG.available;
+
+                      const isLast = idx === sortedBags.length - 1;
+
+                      return (
+                        <Stack key={bag.id} direction="row" spacing={2}>
+                          <Stack sx={{ alignItems: 'center', mt: 0.5 }}>
                             <Box
                               sx={{
-                                width: 2,
-                                height: 60,
-                                backgroundColor: "#CBD5E1",
-                                mt: -1,
+                                width: 32,
+                                height: 32,
+                                borderRadius: '50%',
+                                bgcolor: cfg.bg,
+                                border: `2px solid ${cfg.dot}`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
                               }}
-                            />
-                          )}
-                        </Stack>
-
-                        {/* Bag details */}
-                        <Stack sx={{ flex: 1, pb: 2 }}>
-                          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                            <Box>
-                              <Typography sx={{ fontSize: "13px", fontWeight: 700, color: "#0F172A" }}>
-                                Bag {bag.bag_number}
-                              </Typography>
-                              <Typography sx={{ fontSize: "12px", color: "#64748B", mt: 0.25 }}>
-                                {dayjs(bag.created_at).format("DD MMM YYYY, hh:mm A")}
-                              </Typography>
+                            >
+                              <Box
+                                sx={{
+                                  width: 8,
+                                  height: 8,
+                                  borderRadius: '50%',
+                                  bgcolor: cfg.dot,
+                                }}
+                              />
                             </Box>
-                            <Chip
-                              label={cfg.label}
-                              size="small"
+
+                            {!isLast && (
+                              <Box
+                                sx={{
+                                  width: 2,
+                                  height: 60,
+                                  bgcolor: '#d1d5db',
+                                  mt: -1,
+                                }}
+                              />
+                            )}
+                          </Stack>
+
+                          <Stack sx={{ flex: 1, pb: 2 }}>
+                            <Stack
+                              direction="row"
+                              justifyContent="space-between"
+                              alignItems="flex-start"
+                            >
+                              <Box>
+                                <Typography
+                                  sx={{
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 800,
+                                    color: '#1a1d2e',
+                                    fontFamily: "'DM Sans', sans-serif",
+                                  }}
+                                >
+                                  Bag {bag.bag_number}
+                                </Typography>
+
+                                <Typography
+                                  sx={{
+                                    fontSize: '0.75rem',
+                                    color: '#9ca3af',
+                                    mt: 0.25,
+                                    fontFamily: "'DM Mono', monospace",
+                                  }}
+                                >
+                                  {dayjs(bag.created_at).format(
+                                    'DD MMM YYYY, hh:mm A'
+                                  )}
+                                </Typography>
+                              </Box>
+
+                              <Chip
+                                label={cfg.label}
+                                size="small"
+                                sx={{
+                                  height: 22,
+                                  bgcolor: cfg.bg,
+                                  color: cfg.color,
+                                  border: `1px solid ${cfg.dot}33`,
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  fontFamily: "'DM Sans', sans-serif",
+                                  borderRadius: '6px',
+                                }}
+                              />
+                            </Stack>
+
+                            <Stack
+                              direction="row"
+                              spacing={3}
                               sx={{
-                                backgroundColor: cfg.bg,
-                                color: cfg.color,
-                                border: `1px solid ${cfg.dot}33`,
-                                fontSize: "11px",
-                                fontWeight: 600,
+                                mt: 1.5,
+                                p: 1.5,
+                                bgcolor: '#ffffff',
+                                borderRadius: '10px',
+                                border: '1px solid #eeeff5',
                               }}
-                            />
-                          </Stack>
+                            >
+                              {[
+                                ['Expected KG', bag.expected_kg.toFixed(2), '#1a1d2e'],
+                                ['Actual KG', bag.actual_kg.toFixed(2), '#1a1d2e'],
+                                [
+                                  'Remaining KG',
+                                  (bag.expected_kg - bag.actual_kg).toFixed(2),
+                                  bag.expected_kg - bag.actual_kg > 0
+                                    ? '#ef4444'
+                                    : '#15803d',
+                                ],
+                              ].map(([label, value, color]) => (
+                                <Box key={label}>
+                                  <Typography
+                                    sx={{
+                                      fontSize: '0.68rem',
+                                      color: '#9ca3af',
+                                      fontWeight: 700,
+                                      fontFamily: "'DM Sans', sans-serif",
+                                      textTransform: 'uppercase',
+                                      letterSpacing: '0.05em',
+                                    }}
+                                  >
+                                    {label}
+                                  </Typography>
 
-                          <Stack
-                            direction="row"
-                            spacing={3}
-                            sx={{ mt: 1.5, p: 1.5, backgroundColor: "#FFFFFF", borderRadius: "10px", border: "1px solid #F1F5F9" }}
-                          >
-                            <Box>
-                              <Typography sx={{ fontSize: "11px", color: "#94A3B8", fontWeight: 600 }}>Expected KG</Typography>
-                              <Typography sx={{ fontSize: "14px", fontWeight: 700, color: "#0F172A", fontFamily: "'DM Mono', monospace" }}>
-                                {bag.expected_kg.toFixed(2)}
-                              </Typography>
-                            </Box>
-                            <Box>
-                              <Typography sx={{ fontSize: "11px", color: "#94A3B8", fontWeight: 600 }}>Actual KG</Typography>
-                              <Typography sx={{ fontSize: "14px", fontWeight: 700, color: "#0F172A", fontFamily: "'DM Mono', monospace" }}>
-                                {bag.actual_kg.toFixed(2)}
-                              </Typography>
-                            </Box>
-                            <Box>
-                              <Typography sx={{ fontSize: "11px", color: "#94A3B8", fontWeight: 600 }}>Remaining KG</Typography>
-                              <Typography sx={{ fontSize: "14px", fontWeight: 700, color: (bag.expected_kg - bag.actual_kg) > 0 ? "#DC2626" : "#15803D", fontFamily: "'DM Mono', monospace" }}>
-                                {(bag.expected_kg - bag.actual_kg).toFixed(2)}
-                              </Typography>
-                            </Box>
+                                  <Typography
+                                    sx={{
+                                      fontSize: '0.875rem',
+                                      fontWeight: 800,
+                                      color,
+                                      fontFamily: "'DM Mono', monospace",
+                                    }}
+                                  >
+                                    {value}
+                                  </Typography>
+                                </Box>
+                              ))}
+                            </Stack>
                           </Stack>
                         </Stack>
-                      </Stack>
-                    );
-                  })}
-                </Stack>
-              </Box>
-            );
-          })}
-        </>
-      )}
+                      );
+                    })}
+                  </Stack>
+                </Box>
+              );
+            })}
+          </>
+        )}
+      </Box>
 
       <RawMaterialDialog
         open={dialogOpen}
@@ -515,12 +735,17 @@ export default function RawMaterialsPage() {
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={() => {
-          // Handle delete if needed
           setDeleteDialogOpen(false);
         }}
         confirmText="Delete"
         cancelText="Cancel"
       />
-    </Paper>
+    </Box>
   );
 }
+
+const monoTextSx = {
+  fontSize: '0.8rem',
+  fontFamily: "'DM Mono', monospace",
+  color: '#374151',
+};

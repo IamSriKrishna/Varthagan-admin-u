@@ -18,7 +18,6 @@ import {
   Card,
   CardContent,
   InputAdornment,
-  Avatar,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -26,20 +25,30 @@ import {
   Chip,
   FormControl,
   SelectChangeEvent,
+  Paper,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import React, { useState, useMemo } from "react";
 import { InvoiceTable } from "@/components/invoices/InvoiceTable";
 import { useDebounce } from "@/hooks/useDebounce";
-import AddIcon from "@mui/icons-material/Add";
-import SearchIcon from "@mui/icons-material/Search";
-import ReceiptOutlinedIcon from "@mui/icons-material/ReceiptOutlined";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import PendingActionsOutlinedIcon from "@mui/icons-material/PendingActionsOutlined";
-import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
-import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
+import {
+  Plus,
+  Search,
+  ReceiptText,
+  CheckCircle2,
+  Clock3,
+  AlertTriangle,
+  TrendingUp,
+} from "lucide-react";
 
-type InvoiceStatus = "draft" | "issued" | "sent" | "partial" | "paid" | "overdue" | "void";
+type InvoiceStatus =
+  | "draft"
+  | "issued"
+  | "sent"
+  | "partial"
+  | "paid"
+  | "overdue"
+  | "void";
 
 function StatCard({
   label,
@@ -58,9 +67,11 @@ function StatCard({
     <Card
       elevation={0}
       sx={{
-        border: "1px solid #f1f5f9",
-        borderRadius: 3,
+        border: "1px solid #eeeff5",
+        borderRadius: "14px",
+        bgcolor: "#ffffff",
         transition: "all 0.2s ease",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.03)",
         "&:hover": {
           borderColor: color,
           transform: "translateY(-2px)",
@@ -73,38 +84,43 @@ function StatCard({
           <Box>
             <Typography
               sx={{
-                fontSize: "0.72rem",
-                fontWeight: 600,
-                color: "#94a3b8",
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                color: "#9ca3af",
                 textTransform: "uppercase",
                 letterSpacing: "0.06em",
                 mb: 0.75,
+                fontFamily: "'DM Sans', sans-serif",
               }}
             >
               {label}
             </Typography>
+
             <Typography
               sx={{
-                fontSize: "1.6rem",
-                fontWeight: 700,
-                color: "#0f172a",
+                fontSize: "1.55rem",
+                fontWeight: 800,
+                color: "#1a1d2e",
                 lineHeight: 1,
                 fontVariantNumeric: "tabular-nums",
+                fontFamily: "'DM Sans', sans-serif",
               }}
             >
               {value}
             </Typography>
           </Box>
+
           <Box
             sx={{
               width: 46,
               height: 46,
-              borderRadius: 2.5,
+              borderRadius: "13px",
               bgcolor: bg,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color,
+              border: `1px solid ${color}22`,
             }}
           >
             {icon}
@@ -115,20 +131,30 @@ function StatCard({
   );
 }
 
-const STATUS_OPTIONS = [
-  { value: "", label: "All Status" },
-  { value: "draft", label: "Draft" },
-  { value: "sent", label: "Sent" },
-  { value: "partial", label: "Partial" },
-  { value: "paid", label: "Paid" },
-  { value: "overdue", label: "Overdue" },
-  { value: "void", label: "Void" },
+const STATUS_TABS = [
+  "All",
+  "Draft",
+  "Sent",
+  "Partial",
+  "Paid",
+  "Overdue",
+  "Void",
+  "Issued",
 ];
 
-const STATUS_TABS = ["All", "Draft", "Sent", "Partial", "Paid", "Overdue", "Void","Issued"];
+const STATUS_LABELS: Record<InvoiceStatus, string> = {
+  draft: "Draft",
+  issued: "Issued",
+  sent: "Sent",
+  partial: "Partial",
+  paid: "Paid",
+  overdue: "Overdue",
+  void: "Void",
+};
 
 export default function InvoicesPage() {
   const router = useRouter();
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
@@ -137,18 +163,26 @@ export default function InvoicesPage() {
   const [selectedInvoice, setSelectedInvoice] = useState<IInvoice | null>(null);
   const [newStatus, setNewStatus] = useState<InvoiceStatus>("sent");
   const [updatingStatus, setUpdatingStatus] = useState(false);
+
   const debouncedSearch = useDebounce(searchQuery, 500);
 
   const queryParams = useMemo(() => {
     const params = new URLSearchParams();
+
     params.append("page", String(page + 1));
     params.append("limit", String(rowsPerPage));
+
     if (debouncedSearch) params.append("search", debouncedSearch);
     if (activeTab !== "All") params.append("status", activeTab.toLowerCase());
+
     return params.toString();
   }, [page, rowsPerPage, debouncedSearch, activeTab]);
 
-  const { data: result, refetch, loading } = useFetch<IInvoiceListResponse>({
+  const {
+    data: result,
+    refetch,
+    loading,
+  } = useFetch<IInvoiceListResponse>({
     url: `${invoices.getInvoices}?${queryParams}`,
     baseUrl: config.apiDomain || config.customerDomain,
   });
@@ -161,16 +195,24 @@ export default function InvoicesPage() {
   const draftCount = allInvoices.filter((i) => i.status === "draft").length;
   const totalAmount = allInvoices.reduce((s, i) => s + (i.total || 0), 0);
 
-  const handleEdit = (invoice: IInvoice) => router.push(`/invoices/${invoice.id}/edit`);
+  const handleEdit = (invoice: IInvoice) =>
+    router.push(`/invoices/${invoice.id}/edit`);
 
   const handleDelete = async (invoice: IInvoice) => {
     if (!window.confirm(`Delete invoice ${invoice.invoice_number}?`)) return;
+
     try {
       const apiDomain = config.apiDomain || config.customerDomain || "";
-      const res = await appFetch(`${apiDomain}${invoices.deleteInvoice(invoice.id || "")}`, {
-        method: "DELETE",
-      });
+
+      const res = await appFetch(
+        `${apiDomain}${invoices.deleteInvoice(invoice.id || "")}`,
+        {
+          method: "DELETE",
+        }
+      );
+
       const data = await res.json();
+
       if (res.ok && data.success) {
         showToastMessage("Invoice deleted successfully", "success");
         await refetch();
@@ -186,82 +228,123 @@ export default function InvoicesPage() {
     if (!selectedInvoice?.id) return;
 
     setUpdatingStatus(true);
+
     try {
-      const url = `/api/invoices/${selectedInvoice.id}/status`;
-      
-      const res = await appFetch(url, {
+      const res = await appFetch(`/api/invoices/${selectedInvoice.id}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ status: newStatus }),
       });
-      
+
       const data = await res.json();
+
       if (res.ok && (data.success || data.data || data.status)) {
         showToastMessage("Invoice status updated successfully", "success");
         setOpenStatusDialog(false);
         setSelectedInvoice(null);
         await refetch();
       } else {
-        showToastMessage(data.message || "Failed to update invoice status", "error");
+        showToastMessage(
+          data.message || "Failed to update invoice status",
+          "error"
+        );
       }
     } catch (err: any) {
-      console.error("Error updating invoice status:", err);
-      showToastMessage(err?.message || "Failed to update invoice status", "error");
+      showToastMessage(
+        err?.message || "Failed to update invoice status",
+        "error"
+      );
     } finally {
       setUpdatingStatus(false);
     }
   };
 
-  const STATUS_LABELS: Record<InvoiceStatus, string> = {
-    draft: "Draft",
-    issued: "Issued",
-    sent: "Sent",
-    partial: "Partial",
-    paid: "Paid",
-    overdue: "Overdue",
-    void: "Void",
-  };
-
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#f8fafc" }}>
-      <Box sx={{ maxWidth: 1280, mx: "auto", px: { xs: 2, md: 4 }, py: 4 }}>
-        {/* ── Header ── */}
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={4}>
-          <Box>
-            <Typography
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100vh",
+        bgcolor: "#f8f9fc",
+      }}
+    >
+      {/* Header */}
+      <Box
+        sx={{
+          px: 3,
+          pt: 3,
+          pb: 2.5,
+          bgcolor: "#ffffff",
+          borderBottom: "1px solid #f0f0f5",
+        }}
+      >
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box
               sx={{
-                fontSize: "1.6rem",
-                fontWeight: 800,
-                color: "#0f172a",
-                letterSpacing: "-0.03em",
-                lineHeight: 1.2,
+                width: 46,
+                height: 46,
+                borderRadius: "13px",
+                background:
+                  "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 6px 20px rgba(14, 165, 233, 0.3)",
+                flexShrink: 0,
               }}
             >
-              Invoices
-            </Typography>
-            <Typography sx={{ fontSize: "0.875rem", color: "#64748b", mt: 0.5 }}>
-              {total} invoice{total !== 1 ? "s" : ""} · last updated just now
-            </Typography>
+              <ReceiptText size={22} color="white" />
+            </Box>
+
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: "1.5rem",
+                  fontWeight: 800,
+                  color: "#1a1d2e",
+                  fontFamily: "'DM Sans', sans-serif",
+                  letterSpacing: "-0.4px",
+                  lineHeight: 1.15,
+                }}
+              >
+                Invoices
+              </Typography>
+
+              <Typography
+                sx={{
+                  fontSize: "0.8rem",
+                  color: "#9ca3af",
+                  fontFamily: "'DM Sans', sans-serif",
+                  mt: 0.25,
+                }}
+              >
+                {total} invoice{total !== 1 ? "s" : ""} registered
+              </Typography>
+            </Box>
           </Box>
+
           <Button
             variant="contained"
-            startIcon={<AddIcon />}
+            startIcon={<Plus size={16} />}
             onClick={() => router.push("/invoices/new")}
             sx={{
-              bgcolor: "#0f172a",
-              borderRadius: 2.5,
-              px: 3,
-              py: 1.25,
+              px: 2.5,
+              py: 1.1,
+              borderRadius: "11px",
+              background:
+                "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
+              boxShadow: "0 4px 14px rgba(14, 165, 233, 0.35)",
+              fontFamily: "'DM Sans', sans-serif",
+              fontWeight: 700,
               fontSize: "0.875rem",
-              fontWeight: 600,
               textTransform: "none",
-              letterSpacing: 0,
-              boxShadow: "0 4px 14px rgba(15,23,42,0.25)",
               "&:hover": {
-                bgcolor: "#1e293b",
-                boxShadow: "0 6px 20px rgba(15,23,42,0.35)",
+                background:
+                  "linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)",
+                boxShadow: "0 6px 20px rgba(14, 165, 233, 0.45)",
                 transform: "translateY(-1px)",
               },
               transition: "all 0.2s ease",
@@ -270,181 +353,359 @@ export default function InvoicesPage() {
             New Invoice
           </Button>
         </Stack>
+      </Box>
 
-        {/* ── Stat Cards ── */}
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" },
-            gap: 2,
-            mb: 4,
-          }}
-        >
-          <StatCard
-            label="Total Invoices"
-            value={total}
-            icon={<ReceiptOutlinedIcon sx={{ fontSize: 22 }} />}
-            color="#6366f1"
-            bg="#eef2ff"
-          />
-          <StatCard
-            label="Paid"
-            value={paidCount}
-            icon={<CheckCircleOutlineIcon sx={{ fontSize: 22 }} />}
-            color="#16a34a"
-            bg="#f0fdf4"
-          />
-          <StatCard
-            label="Overdue"
-            value={overdueCount}
-            icon={<WarningAmberOutlinedIcon sx={{ fontSize: 22 }} />}
-            color="#dc2626"
-            bg="#fef2f2"
-          />
-          <StatCard
-            label="Total Revenue"
-            value={`₹${(totalAmount / 100000).toFixed(1)}L`}
-            icon={<TrendingUpOutlinedIcon sx={{ fontSize: 22 }} />}
-            color="#0ea5e9"
-            bg="#f0f9ff"
+      {/* Stats */}
+      <Box
+        sx={{
+          mx: 3,
+          mt: 2.5,
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" },
+          gap: 2,
+        }}
+      >
+        <StatCard
+          label="Total Invoices"
+          value={total}
+          icon={<ReceiptText size={22} />}
+          color="#4f63d2"
+          bg="#f0f4ff"
+        />
+
+        <StatCard
+          label="Paid"
+          value={paidCount}
+          icon={<CheckCircle2 size={22} />}
+          color="#15803d"
+          bg="#f0fdf6"
+        />
+
+        <StatCard
+          label="Overdue"
+          value={overdueCount}
+          icon={<AlertTriangle size={22} />}
+          color="#ef4444"
+          bg="#fef2f2"
+        />
+
+        <StatCard
+          label="Revenue"
+          value={`₹${(totalAmount / 100000).toFixed(1)}L`}
+          icon={<TrendingUp size={22} />}
+          color="#0ea5e9"
+          bg="#e0f2fe"
+        />
+      </Box>
+
+      {/* Toolbar */}
+      <Box
+        component={Paper}
+        elevation={0}
+        sx={{
+          mx: 3,
+          mt: 2.5,
+          borderRadius: "14px 14px 0 0",
+          border: "1px solid #eeeff5",
+          borderBottom: "none",
+          bgcolor: "#ffffff",
+          px: 2.5,
+          py: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 2,
+          flexWrap: "wrap",
+        }}
+      >
+        <Stack direction="row" spacing={0.75} flexWrap="wrap">
+          {STATUS_TABS.map((tab) => (
+            <Button
+              key={tab}
+              size="small"
+              onClick={() => {
+                setActiveTab(tab);
+                setPage(0);
+              }}
+              sx={{
+                borderRadius: "9px",
+                px: 1.75,
+                py: 0.65,
+                fontSize: "0.8rem",
+                fontWeight: activeTab === tab ? 700 : 600,
+                fontFamily: "'DM Sans', sans-serif",
+                textTransform: "none",
+                color: activeTab === tab ? "#4f63d2" : "#9ca3af",
+                bgcolor: activeTab === tab ? "#f0f4ff" : "transparent",
+                border:
+                  activeTab === tab
+                    ? "1px solid #c7d2fe"
+                    : "1px solid transparent",
+                "&:hover": {
+                  bgcolor: activeTab === tab ? "#e0e7ff" : "#f8fbff",
+                },
+                transition: "all 0.15s ease",
+              }}
+            >
+              {tab}
+            </Button>
+          ))}
+        </Stack>
+
+        <Box sx={{ position: "relative", flexGrow: 1, maxWidth: 380 }}>
+          <TextField
+            placeholder="Search invoices…"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(0);
+            }}
+            size="small"
+            fullWidth
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={15} color="#9ca3af" />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                height: 38,
+                borderRadius: "10px",
+                bgcolor: "#f8f9fc",
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "0.8125rem",
+                "& fieldset": {
+                  borderColor: "#e8eaf0",
+                },
+                "&:hover fieldset": {
+                  borderColor: "#c7d2fe",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#6366f1",
+                },
+              },
+            }}
           />
         </Box>
 
-        {/* ── Main Table Card ── */}
-        <Card elevation={0} sx={{ border: "1px solid #f1f5f9", borderRadius: 3, overflow: "hidden" }}>
-          {/* Toolbar */}
-          <Box sx={{ px: 3, py: 2.5, borderBottom: "1px solid #f1f5f9", bgcolor: "#fff" }}>
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              justifyContent="space-between"
-              alignItems={{ xs: "stretch", sm: "center" }}
-              gap={2}
-            >
-              {/* Status Tabs */}
-              <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                {STATUS_TABS.map((tab) => (
-                  <Button
-                    key={tab}
-                    variant="text"
-                    size="small"
-                    onClick={() => { setActiveTab(tab); setPage(0); }}
-                    sx={{
-                      borderRadius: 2,
-                      px: 1.75,
-                      py: 0.6,
-                      fontSize: "0.8rem",
-                      fontWeight: activeTab === tab ? 700 : 500,
-                      textTransform: "none",
-                      color: activeTab === tab ? "#fff" : "#64748b",
-                      bgcolor: activeTab === tab ? "#0f172a" : "transparent",
-                      "&:hover": {
-                        bgcolor: activeTab === tab ? "#1e293b" : "#f1f5f9",
-                      },
-                      transition: "all 0.15s ease",
-                    }}
-                  >
-                    {tab}
-                  </Button>
-                ))}
-              </Stack>
+        {searchQuery && (
+          <Chip
+            label="Filtered"
+            size="small"
+            sx={{
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              fontFamily: "'DM Sans', sans-serif",
+              bgcolor: "#e0f2fe",
+              color: "#0369a1",
+              border: "1px solid #bae6fd",
+              borderRadius: "8px",
+            }}
+          />
+        )}
+      </Box>
 
-              {/* Search */}
-              <TextField
-                placeholder="Search invoices…"
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
-                size="small"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon sx={{ fontSize: 18, color: "#94a3b8" }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  width: { xs: "100%", sm: 260 },
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 2.5,
-                    fontSize: "0.875rem",
-                    bgcolor: "#f8fafc",
-                    "& fieldset": { borderColor: "#e2e8f0" },
-                    "&:hover fieldset": { borderColor: "#cbd5e1" },
-                    "&.Mui-focused fieldset": { borderColor: "#0f172a", borderWidth: 1.5 },
-                  },
-                }}
-              />
-            </Stack>
+      {/* Table */}
+      <Box
+        sx={{
+          mx: 3,
+          mb: 3,
+          borderRadius: "0 0 14px 14px",
+          border: "1px solid #eeeff5",
+          borderTop: "none",
+          bgcolor: "#ffffff",
+          overflow: "hidden",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.04)",
+        }}
+      >
+        {loading ? (
+          <Box sx={{ py: 8, display: "flex", justifyContent: "center" }}>
+            <BBLoader />
+          </Box>
+        ) : (
+          <InvoiceTable
+            data={allInvoices}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalCount={total}
+            onPageChange={setPage}
+            onRowsPerPageChange={(n) => {
+              setRowsPerPage(n);
+              setPage(0);
+            }}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onStatusUpdate={(invoice) => {
+              setSelectedInvoice(invoice);
+              setNewStatus((invoice.status as InvoiceStatus) || "sent");
+              setOpenStatusDialog(true);
+            }}
+          />
+        )}
+      </Box>
+
+      {/* Status Dialog */}
+      <Dialog
+        open={openStatusDialog}
+        onClose={() => setOpenStatusDialog(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            border: "1px solid #e8eaf0",
+            boxShadow: "0 20px 60px rgba(79,99,210,0.15)",
+          },
+        }}
+      >
+        <Box
+          sx={{
+            height: 4,
+            background: "linear-gradient(90deg, #0ea5e9, #6366f1)",
+            borderRadius: "16px 16px 0 0",
+          }}
+        />
+
+        <DialogTitle
+          sx={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontWeight: 800,
+            fontSize: "1rem",
+            color: "#1a1d2e",
+          }}
+        >
+          Update Invoice Status
+        </DialogTitle>
+
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Typography
+              sx={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "0.75rem",
+                color: "#9ca3af",
+                mb: 0.5,
+              }}
+            >
+              Invoice
+            </Typography>
+
+            <Typography
+              sx={{
+                fontFamily: "'DM Mono', monospace",
+                fontWeight: 700,
+                fontSize: "0.8125rem",
+                color: "#4f63d2",
+              }}
+            >
+              {selectedInvoice?.invoice_number}
+            </Typography>
           </Box>
 
-          {/* Table */}
-          {loading ? (
-            <Box sx={{ py: 8, display: "flex", justifyContent: "center" }}>
-              <BBLoader />
-            </Box>
-          ) : (
-            <InvoiceTable
-              data={allInvoices}
-              page={page}
-              rowsPerPage={rowsPerPage}
-              totalCount={total}
-              onPageChange={setPage}
-              onRowsPerPageChange={(n) => { setRowsPerPage(n); setPage(0); }}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onStatusUpdate={(invoice) => {
-                setSelectedInvoice(invoice);
-                setNewStatus((invoice.status as InvoiceStatus) || "sent");
-                setOpenStatusDialog(true);
+          <Box sx={{ mb: 2 }}>
+            <Typography
+              sx={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "0.75rem",
+                color: "#9ca3af",
+                mb: 0.75,
+              }}
+            >
+              Current Status
+            </Typography>
+
+            <Chip
+              label={
+                STATUS_LABELS[selectedInvoice?.status as InvoiceStatus] ||
+                "Unknown"
+              }
+              size="small"
+              sx={{
+                height: 22,
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                fontFamily: "'DM Sans', sans-serif",
+                bgcolor: "#f0f4ff",
+                color: "#4f63d2",
+                border: "1px solid #c7d2fe",
+                borderRadius: "6px",
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
               }}
             />
-          )}
-        </Card>
+          </Box>
 
-        {/* Status Update Dialog */}
-        <Dialog open={openStatusDialog} onClose={() => setOpenStatusDialog(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Update Invoice Status</DialogTitle>
-          <DialogContent sx={{ pt: 2 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Invoice: <strong>{selectedInvoice?.invoice_number}</strong>
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Current Status: <Chip label={STATUS_LABELS[selectedInvoice?.status as InvoiceStatus] || "Unknown"} size="small" />
-            </Typography>
-            <FormControl fullWidth>
-              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                New Status
-              </Typography>
-              <Select
-                value={newStatus}
-                onChange={(e: SelectChangeEvent<InvoiceStatus>) => setNewStatus(e.target.value as InvoiceStatus)}
-                sx={{ borderRadius: 1 }}
-                disabled={updatingStatus}
-              >
-                <MenuItem value="draft">Draft</MenuItem>
-                <MenuItem value="issued">Issued</MenuItem>
-                <MenuItem value="sent">Sent</MenuItem>
-                <MenuItem value="partial">Partial</MenuItem>
-                <MenuItem value="paid">Paid</MenuItem>
-                <MenuItem value="overdue">Overdue</MenuItem>
-                <MenuItem value="void">Void</MenuItem>
-              </Select>
-            </FormControl>
-          </DialogContent>
-          <DialogActions>
-            <Button variant="text" onClick={() => setOpenStatusDialog(false)} disabled={updatingStatus}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleStatusUpdate}
-              color="primary"
-              variant="contained"
-              disabled={updatingStatus}
+          <FormControl fullWidth>
+            <Typography
+              sx={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: "0.75rem",
+                color: "#6b7280",
+                mb: 0.75,
+                fontWeight: 700,
+              }}
             >
-              {updatingStatus ? "Updating..." : "Update Status"}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
+              New Status
+            </Typography>
+
+            <Select
+              value={newStatus}
+              onChange={(e: SelectChangeEvent<InvoiceStatus>) =>
+                setNewStatus(e.target.value as InvoiceStatus)
+              }
+              size="small"
+              disabled={updatingStatus}
+              sx={{
+                fontFamily: "'DM Sans', sans-serif",
+                borderRadius: "8px",
+                fontSize: "0.8125rem",
+              }}
+            >
+              <MenuItem value="draft">Draft</MenuItem>
+              <MenuItem value="issued">Issued</MenuItem>
+              <MenuItem value="sent">Sent</MenuItem>
+              <MenuItem value="partial">Partial</MenuItem>
+              <MenuItem value="paid">Paid</MenuItem>
+              <MenuItem value="overdue">Overdue</MenuItem>
+              <MenuItem value="void">Void</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+          <Button
+            onClick={() => setOpenStatusDialog(false)}
+            disabled={updatingStatus}
+            sx={{
+              fontFamily: "'DM Sans', sans-serif",
+              textTransform: "none",
+              borderRadius: "8px",
+              color: "#6b7280",
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={handleStatusUpdate}
+            variant="contained"
+            disabled={updatingStatus}
+            sx={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontWeight: 700,
+              textTransform: "none",
+              borderRadius: "8px",
+              px: 2.5,
+              background: "linear-gradient(135deg, #0ea5e9, #6366f1)",
+              boxShadow: "0 4px 12px rgba(14,165,233,0.3)",
+            }}
+          >
+            {updatingStatus ? "Updating…" : "Update Status"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

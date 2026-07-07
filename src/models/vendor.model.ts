@@ -21,6 +21,7 @@ export interface Address {
   address_line1?: string;
   pin_code?: string;
   fax_number?: string;
+  same_as_billing?: boolean;
   created_at?: string;
   updated_at?: string;
 }

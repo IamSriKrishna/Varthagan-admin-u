@@ -54,7 +54,7 @@ import { PurchaseOrder } from '@/models/purchaseOrder.model';
 // ── Avatar Palette ─────────────────────────────────────────────────────────────
 
 const AVATAR_PALETTE = [
-  { bg: '#EEF2FF', color: '#4F46E5' },
+  { bg: '#f0f4ff', color: '#4f63d2' },
   { bg: '#FDF2F8', color: '#C026D3' },
   { bg: '#ECFDF5', color: '#059669' },
   { bg: '#FFFBEB', color: '#D97706' },
@@ -126,7 +126,7 @@ function StatCard({ label, value, sub, icon, iconBg, iconColor, trend }: StatCar
       elevation={0}
       sx={{
         p: '20px 24px',
-        border: '1px solid #F1F5F9',
+        border: '1px solid #eeeff5',
         borderRadius: '16px',
         backgroundColor: '#FFFFFF',
         flex: 1,
@@ -144,7 +144,7 @@ function StatCard({ label, value, sub, icon, iconBg, iconColor, trend }: StatCar
             sx={{
               fontSize: '12px',
               fontWeight: 500,
-              color: '#94A3B8',
+              color: '#9ca3af',
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
               mb: 0.75,
@@ -157,7 +157,7 @@ function StatCard({ label, value, sub, icon, iconBg, iconColor, trend }: StatCar
             sx={{
               fontSize: '26px',
               fontWeight: 700,
-              color: '#0F172A',
+              color: '#1a1d2e',
               lineHeight: 1.1,
               fontFamily: "'DM Sans', sans-serif",
             }}
@@ -170,7 +170,7 @@ function StatCard({ label, value, sub, icon, iconBg, iconColor, trend }: StatCar
             ) : trend === 'down' ? (
               <TrendingDown size={12} color="#EF4444" />
             ) : null}
-            <Typography sx={{ fontSize: '12px', color: '#64748B' }}>{sub}</Typography>
+            <Typography sx={{ fontSize: '12px', color: '#6b7280' }}>{sub}</Typography>
           </Stack>
         </Box>
         <Box
@@ -328,7 +328,7 @@ export default function VendorPaymentsPage() {
               setExpandedPOs(newExpanded);
             }}
             sx={{
-              color: '#4F46E5',
+              color: '#4f63d2',
               width: 30,
               height: 30,
               transition: 'transform 0.2s',
@@ -349,7 +349,7 @@ export default function VendorPaymentsPage() {
             sx={{
               fontSize: '13px',
               fontWeight: 600,
-              color: '#4F46E5',
+              color: '#4f63d2',
               fontFamily: "'DM Mono', monospace",
               letterSpacing: '0.02em',
             }}
@@ -363,9 +363,9 @@ export default function VendorPaymentsPage() {
               sx={{
                 fontSize: '10px',
                 fontWeight: 700,
-                backgroundColor: '#EEF2FF',
-                color: '#4F46E5',
-                border: '1px solid #C7D2FE',
+                backgroundColor: '#f0f4ff',
+                color: '#4f63d2',
+                border: '1px solid #c7d2fe',
                 height: 18,
               }}
             />
@@ -396,10 +396,10 @@ export default function VendorPaymentsPage() {
               {getInitials(name)}
             </Avatar>
             <Box>
-              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#1a1d2e' }}>
                 {name}
               </Typography>
-              <Typography sx={{ fontSize: '11px', color: '#94A3B8' }}>
+              <Typography sx={{ fontSize: '11px', color: '#9ca3af' }}>
                 {row.purchase_order?.purchase_order_no || '—'}
               </Typography>
             </Box>
@@ -411,7 +411,7 @@ export default function VendorPaymentsPage() {
       key: 'amount',
       label: 'Total Amount',
       render: (row) => (
-        <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', fontFamily: "'DM Mono', monospace" }}>
+        <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#1a1d2e', fontFamily: "'DM Mono', monospace" }}>
           ₹{row.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}
         </Typography>
       ),
@@ -427,7 +427,7 @@ export default function VendorPaymentsPage() {
               <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#15803D', fontFamily: "'DM Mono', monospace" }}>
                 ₹{row.paid_amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}
               </Typography>
-              <Typography sx={{ fontSize: '11px', color: '#94A3B8' }}>{pct}%</Typography>
+              <Typography sx={{ fontSize: '11px', color: '#9ca3af' }}>{pct}%</Typography>
             </Stack>
             <LinearProgress
               variant="determinate"
@@ -435,10 +435,10 @@ export default function VendorPaymentsPage() {
               sx={{
                 height: 4,
                 borderRadius: 2,
-                backgroundColor: '#F1F5F9',
+                backgroundColor: '#eeeff5',
                 '& .MuiLinearProgress-bar': {
                   borderRadius: 2,
-                  background: pct === 100 ? '#22C55E' : 'linear-gradient(90deg, #4F46E5, #818CF8)',
+                  background: pct === 100 ? '#22C55E' : 'linear-gradient(90deg, #0ea5e9, #6366f1)',
                 },
               }}
             />
@@ -498,7 +498,7 @@ export default function VendorPaymentsPage() {
           <Typography sx={{ fontSize: '13px', color: '#334155', fontWeight: 500 }}>
             {dayjs(row.payment_date).format('DD MMM YYYY')}
           </Typography>
-          <Typography sx={{ fontSize: '11px', color: '#94A3B8' }}>
+          <Typography sx={{ fontSize: '11px', color: '#9ca3af' }}>
             {dayjs(row.payment_date).format('ddd')}
           </Typography>
         </Box>
@@ -514,12 +514,12 @@ export default function VendorPaymentsPage() {
               size="small"
               onClick={() => router.push(`/vendor-payments/${row.id}`)}
               sx={{
-                color: '#64748B',
-                border: '1px solid #E2E8F0',
+                color: '#6b7280',
+                border: '1px solid #eeeff5',
                 borderRadius: '8px',
                 width: 30,
                 height: 30,
-                '&:hover': { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1', color: '#0F172A' },
+                '&:hover': { backgroundColor: '#f8f9fc', borderColor: '#CBD5E1', color: '#1a1d2e' },
               }}
             >
               <Eye size={14} />
@@ -552,71 +552,103 @@ export default function VendorPaymentsPage() {
   return (
     <Box
       sx={{
-        p: { xs: 2, md: 4 },
+        display: 'flex',
+        flexDirection: 'column',
         minHeight: '100vh',
-        backgroundColor: '#F8FAFC',
+        bgcolor: '#f8f9fc',
         fontFamily: "'DM Sans', sans-serif",
       }}
     >
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        justifyContent="space-between"
-        alignItems={{ xs: 'flex-start', sm: 'center' }}
-        sx={{ mb: 4 }}
-        spacing={2}
+      {/* Header */}
+      <Box
+        sx={{
+          px: 3,
+          pt: 3,
+          pb: 2.5,
+          bgcolor: '#ffffff',
+          borderBottom: '1px solid #f0f0f5',
+        }}
       >
-        <Box>
-          <Typography
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+              sx={{
+                width: 46,
+                height: 46,
+                borderRadius: '13px',
+                background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 6px 20px rgba(14, 165, 233, 0.3)',
+                flexShrink: 0,
+              }}
+            >
+              <Wallet size={22} color="white" />
+            </Box>
+
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: '1.5rem',
+                  fontWeight: 800,
+                  color: '#1a1d2e',
+                  fontFamily: "'DM Sans', sans-serif",
+                  letterSpacing: '-0.4px',
+                  lineHeight: 1.15,
+                }}
+              >
+                Vendor Payments
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: '0.8rem',
+                  color: '#9ca3af',
+                  fontFamily: "'DM Sans', sans-serif",
+                  mt: 0.25,
+                }}
+              >
+                Track and manage all vendor payment records
+              </Typography>
+            </Box>
+          </Box>
+
+          <Button
+            onClick={() => setOpenCreateDialog(true)}
+            startIcon={<Plus size={16} strokeWidth={2.5} />}
             sx={{
-              fontSize: '26px',
-              fontWeight: 800,
-              color: '#0F172A',
+              px: 2.5,
+              py: 1.1,
+              borderRadius: '11px',
+              background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+              color: '#fff',
+              boxShadow: '0 4px 14px rgba(14, 165, 233, 0.35)',
               fontFamily: "'DM Sans', sans-serif",
-              letterSpacing: '-0.02em',
+              fontWeight: 700,
+              fontSize: '0.875rem',
+              textTransform: 'none',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)',
+                boxShadow: '0 6px 20px rgba(14, 165, 233, 0.45)',
+                transform: 'translateY(-1px)',
+              },
+              transition: 'all 0.2s ease',
             }}
           >
-            Vendor Payments
-          </Typography>
-          <Typography sx={{ fontSize: '14px', color: '#64748B', mt: 0.25 }}>
-            Track and manage all vendor payment records
-          </Typography>
-        </Box>
-        <Button
-          onClick={() => setOpenCreateDialog(true)}
-          startIcon={<Plus size={16} strokeWidth={2.5} />}
-          sx={{
-            background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
-            color: '#fff',
-            borderRadius: '10px',
-            px: 2.5,
-            py: 1.1,
-            fontSize: '13px',
-            fontWeight: 600,
-            fontFamily: "'DM Sans', sans-serif",
-            textTransform: 'none',
-            boxShadow: '0 4px 14px rgba(79, 70, 229, 0.35)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #4338CA 0%, #4F46E5 100%)',
-              boxShadow: '0 6px 20px rgba(79, 70, 229, 0.45)',
-              transform: 'translateY(-1px)',
-            },
-            transition: 'all 0.2s',
-          }}
-        >
-          Create Payment
-        </Button>
-      </Stack>
+            Create Payment
+          </Button>
+        </Stack>
+      </Box>
 
       {/* ── Stat Cards ─────────────────────────────────────────────────────── */}
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 4 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mx: 3, mt: 2.5, mb: 2.5 }}>
         <StatCard
           label="Total Billed"
           value={`₹${totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
           sub={`${totalCount} payments`}
           icon={<Receipt size={20} />}
-          iconBg="#EEF2FF"
-          iconColor="#4F46E5"
+          iconBg="#f0f4ff"
+          iconColor="#4f63d2"
         />
         <StatCard
           label="Total Paid"
@@ -635,9 +667,12 @@ export default function VendorPaymentsPage() {
         elevation={0}
         sx={{
           p: '12px 16px',
-          mb: 3,
-          border: '1px solid #F1F5F9',
-          borderRadius: '14px',
+          mx: 3,
+          mt: 0,
+          mb: 0,
+          border: '1px solid #eeeff5',
+          borderBottom: 'none',
+          borderRadius: '14px 14px 0 0',
           backgroundColor: '#FFFFFF',
         }}
       >
@@ -648,16 +683,16 @@ export default function VendorPaymentsPage() {
               alignItems: 'center',
               gap: 1,
               flex: 1,
-              border: '1px solid #E2E8F0',
+              border: '1px solid #eeeff5',
               borderRadius: '10px',
               px: 1.5,
               py: '8px',
-              backgroundColor: '#F8FAFC',
+              backgroundColor: '#f8f9fc',
               '&:focus-within': { borderColor: '#A5B4FC', backgroundColor: '#FAFBFF' },
               transition: 'all 0.15s',
             }}
           >
-            <Search size={15} color="#94A3B8" strokeWidth={2.5} />
+            <Search size={15} color="#9ca3af" strokeWidth={2.5} />
             <input
               placeholder="Search by payment number, vendor..."
               value={filters.search}
@@ -667,7 +702,7 @@ export default function VendorPaymentsPage() {
                 outline: 'none',
                 background: 'transparent',
                 fontSize: '13px',
-                color: '#0F172A',
+                color: '#1a1d2e',
                 flex: 1,
                 fontFamily: "'DM Sans', sans-serif",
               }}
@@ -675,7 +710,7 @@ export default function VendorPaymentsPage() {
             {filters.search && (
               <button
                 onClick={() => handleTypeChange('search', '')}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', display: 'flex' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', display: 'flex' }}
               >
                 <X size={13} />
               </button>
@@ -685,7 +720,7 @@ export default function VendorPaymentsPage() {
           <Stack direction="row" spacing={1}>
             {['all', 'pending', 'partial', 'completed'].map((s) => {
               const cfg = s === 'all'
-                ? { label: 'All', dot: '#64748B', bg: '#F1F5F9', active: '#334155' }
+                ? { label: 'All', dot: '#6b7280', bg: '#eeeff5', active: '#334155' }
                 : { ...PAYMENT_STATUS_CONFIG[s], label: PAYMENT_STATUS_CONFIG[s].label };
               const isActive = filters.status === s;
               return (
@@ -698,9 +733,9 @@ export default function VendorPaymentsPage() {
                     gap: 6,
                     padding: '6px 12px',
                     borderRadius: 8,
-                    border: `1px solid ${isActive ? '#4F46E5' : '#E2E8F0'}`,
-                    backgroundColor: isActive ? '#EEF2FF' : 'transparent',
-                    color: isActive ? '#4F46E5' : '#64748B',
+                    border: `1px solid ${isActive ? '#4f63d2' : '#eeeff5'}`,
+                    backgroundColor: isActive ? '#f0f4ff' : 'transparent',
+                    color: isActive ? '#4f63d2' : '#6b7280',
                     fontSize: '12px',
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -714,7 +749,7 @@ export default function VendorPaymentsPage() {
                         width: 6,
                         height: 6,
                         borderRadius: '50%',
-                        backgroundColor: (PAYMENT_STATUS_CONFIG[s] as any)?.dot || '#94A3B8',
+                        backgroundColor: (PAYMENT_STATUS_CONFIG[s] as any)?.dot || '#9ca3af',
                         display: 'inline-block',
                       }}
                     />
@@ -731,20 +766,23 @@ export default function VendorPaymentsPage() {
       <Paper
         elevation={0}
         sx={{
-          border: '1px solid #F1F5F9',
-          borderRadius: '16px',
+          mx: 3,
+          mb: 3,
+          border: '1px solid #eeeff5',
+          borderTop: 'none',
+          borderRadius: '0 0 14px 14px',
           overflow: 'hidden',
           backgroundColor: '#FFFFFF',
           '& .MuiTableHead-root': {
-            backgroundColor: '#F8FAFC',
+            backgroundColor: '#f8f9fc',
           },
           '& .MuiTableHead-root .MuiTableCell-root': {
             fontSize: '11px',
             fontWeight: 700,
-            color: '#64748B',
+            color: '#6b7280',
             letterSpacing: '0.07em',
             textTransform: 'uppercase',
-            borderBottom: '1px solid #F1F5F9',
+            borderBottom: '1px solid #eeeff5',
             py: 1.75,
             fontFamily: "'DM Sans', sans-serif",
           },
@@ -753,7 +791,7 @@ export default function VendorPaymentsPage() {
             transition: 'background-color 0.12s',
           },
           '& .MuiTableBody-root .MuiTableCell-root': {
-            borderBottom: '1px solid #F8FAFC',
+            borderBottom: '1px solid #f8f9fc',
             py: 1.75,
             fontFamily: "'DM Sans', sans-serif",
           },
@@ -764,7 +802,7 @@ export default function VendorPaymentsPage() {
             sx={{
               height: 2,
               '& .MuiLinearProgress-bar': {
-                background: 'linear-gradient(90deg, #4F46E5, #818CF8)',
+                background: 'linear-gradient(90deg, #0ea5e9, #6366f1)',
               },
             }}
           />
@@ -792,12 +830,12 @@ export default function VendorPaymentsPage() {
             <Box
               key={`timeline-${poId}`}
               sx={{
-                backgroundColor: '#F8FAFC',
-                borderTop: '2px solid #F1F5F9',
+                backgroundColor: '#f8f9fc',
+                borderTop: '2px solid #eeeff5',
                 p: 3,
               }}
             >
-              <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', mb: 2.5 }}>
+              <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#1a1d2e', mb: 2.5 }}>
                 Payment Timeline for {poPayments[0].purchase_order?.purchase_order_no || 'PO'}
               </Typography>
 
@@ -841,10 +879,10 @@ export default function VendorPaymentsPage() {
                       <Stack sx={{ flex: 1, pb: 2 }}>
                         <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                           <Box>
-                            <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
+                            <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#1a1d2e' }}>
                               {payment.payment_number}
                             </Typography>
-                            <Typography sx={{ fontSize: '12px', color: '#64748B', mt: 0.25 }}>
+                            <Typography sx={{ fontSize: '12px', color: '#6b7280', mt: 0.25 }}>
                               {dayjs(payment.created_at).format('DD MMM YYYY, hh:mm A')}
                             </Typography>
                           </Box>
@@ -864,24 +902,24 @@ export default function VendorPaymentsPage() {
                         <Stack
                           direction="row"
                           spacing={3}
-                          sx={{ mt: 1.5, p: 1.5, backgroundColor: '#FFFFFF', borderRadius: '10px', border: '1px solid #F1F5F9' }}
+                          sx={{ mt: 1.5, p: 1.5, backgroundColor: '#FFFFFF', borderRadius: '10px', border: '1px solid #eeeff5' }}
                         >
                           <Box>
-                            <Typography sx={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>Amount</Typography>
-                            <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', fontFamily: "'DM Mono', monospace" }}>
+                            <Typography sx={{ fontSize: '11px', color: '#9ca3af', fontWeight: 600 }}>Amount</Typography>
+                            <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#1a1d2e', fontFamily: "'DM Mono', monospace" }}>
                               ₹{payment.paid_amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}
                             </Typography>
                           </Box>
                           <Box>
-                            <Typography sx={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>Mode</Typography>
-                            <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', textTransform: 'capitalize' }}>
+                            <Typography sx={{ fontSize: '11px', color: '#9ca3af', fontWeight: 600 }}>Mode</Typography>
+                            <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#1a1d2e', textTransform: 'capitalize' }}>
                               {payment.payment_mode}
                             </Typography>
                           </Box>
                           {payment.reference_number && (
                             <Box>
-                              <Typography sx={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>Reference</Typography>
-                              <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', fontFamily: "'DM Mono', monospace" }}>
+                              <Typography sx={{ fontSize: '11px', color: '#9ca3af', fontWeight: 600 }}>Reference</Typography>
+                              <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#1a1d2e', fontFamily: "'DM Mono', monospace" }}>
                                 {payment.reference_number}
                               </Typography>
                             </Box>
@@ -922,7 +960,7 @@ const dialogSx = {
   '& .MuiDialog-paper': {
     borderRadius: '20px',
     boxShadow: '0 24px 64px rgba(0,0,0,0.12)',
-    border: '1px solid #F1F5F9',
+    border: '1px solid #eeeff5',
   },
 };
 
@@ -931,14 +969,14 @@ const fieldSx = {
     borderRadius: '10px',
     fontSize: '13px',
     fontFamily: "'DM Sans', sans-serif",
-    '& fieldset': { borderColor: '#E2E8F0' },
+    '& fieldset': { borderColor: '#eeeff5' },
     '&:hover fieldset': { borderColor: '#CBD5E1' },
-    '&.Mui-focused fieldset': { borderColor: '#4F46E5', borderWidth: 1.5 },
+    '&.Mui-focused fieldset': { borderColor: '#4f63d2', borderWidth: 1.5 },
   },
   '& .MuiInputLabel-root': {
     fontSize: '13px',
     fontFamily: "'DM Sans', sans-serif",
-    '&.Mui-focused': { color: '#4F46E5' },
+    '&.Mui-focused': { color: '#4f63d2' },
   },
 };
 
@@ -1036,22 +1074,22 @@ function CreateVendorPaymentDialog({ open, onClose, purchaseOrders, loading, pay
       <DialogTitle
         sx={{
           px: 3, py: 2.5,
-          borderBottom: '1px solid #F1F5F9',
+          borderBottom: '1px solid #eeeff5',
           fontWeight: 800,
           fontSize: '18px',
-          color: '#0F172A',
+          color: '#1a1d2e',
           fontFamily: "'DM Sans', sans-serif",
           letterSpacing: '-0.02em',
         }}
       >
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Box sx={{ width: 36, height: 36, borderRadius: '10px', background: 'linear-gradient(135deg, #4F46E5, #818CF8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Box sx={{ width: 36, height: 36, borderRadius: '10px', background: 'linear-gradient(135deg, #4f63d2, #0ea5e9)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Plus size={18} color="#fff" />
             </Box>
             Create Payment
           </Stack>
-          <IconButton size="small" onClick={handleClose} sx={{ color: '#94A3B8' }}>
+          <IconButton size="small" onClick={handleClose} sx={{ color: '#9ca3af' }}>
             <X size={18} />
           </IconButton>
         </Stack>
@@ -1074,8 +1112,8 @@ function CreateVendorPaymentDialog({ open, onClose, purchaseOrders, loading, pay
                   <Stack direction="row" justifyContent="space-between" sx={{ width: '100%' }}>
                     <span>{po.purchase_order_no}</span>
                     <Stack direction="row" spacing={1} alignItems="center">
-                      <span style={{ color: '#94A3B8', fontSize: '12px' }}>{po.vendor?.display_name}</span>
-                      <span style={{ fontWeight: 700, color: '#0F172A' }}>₹{po.total.toLocaleString('en-IN')}</span>
+                      <span style={{ color: '#9ca3af', fontSize: '12px' }}>{po.vendor?.display_name}</span>
+                      <span style={{ fontWeight: 700, color: '#1a1d2e' }}>₹{po.total.toLocaleString('en-IN')}</span>
                     </Stack>
                   </Stack>
                 </MenuItem>
@@ -1092,40 +1130,40 @@ function CreateVendorPaymentDialog({ open, onClose, purchaseOrders, loading, pay
                   sx={{
                     p: 2,
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #F8FAFF 0%, #EEF2FF 100%)',
-                    border: '1px solid #C7D2FE',
+                    background: 'linear-gradient(135deg, #F8FAFF 0%, #f0f4ff 100%)',
+                    border: '1px solid #c7d2fe',
                   }}
                 >
                   <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                     <Box>
-                      <Typography sx={{ fontSize: '11px', color: '#6366F1', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      <Typography sx={{ fontSize: '11px', color: '#6366f1', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                         Remaining Balance
                       </Typography>
-                      <Typography sx={{ fontSize: '22px', fontWeight: 800, color: '#0F172A', fontFamily: "'DM Mono', monospace", letterSpacing: '-0.02em' }}>
+                      <Typography sx={{ fontSize: '22px', fontWeight: 800, color: '#1a1d2e', fontFamily: "'DM Mono', monospace", letterSpacing: '-0.02em' }}>
                         ₹{calculateRemainingBalance(selectedPo.id).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </Typography>
-                      <Typography sx={{ fontSize: '11px', color: '#94A3B8', mt: 0.5 }}>
+                      <Typography sx={{ fontSize: '11px', color: '#9ca3af', mt: 0.5 }}>
                         of ₹{selectedPo.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })} PO Total
                       </Typography>
                     </Box>
                     <Box sx={{ textAlign: 'right' }}>
-                      <Typography sx={{ fontSize: '11px', color: '#94A3B8', mb: 0.5 }}>Payment Terms</Typography>
-                      <Chip label={selectedPo.payment_terms} size="small" sx={{ fontSize: '11px', fontWeight: 600, backgroundColor: '#EEF2FF', color: '#4F46E5', border: '1px solid #C7D2FE' }} />
+                      <Typography sx={{ fontSize: '11px', color: '#9ca3af', mb: 0.5 }}>Payment Terms</Typography>
+                      <Chip label={selectedPo.payment_terms} size="small" sx={{ fontSize: '11px', fontWeight: 600, backgroundColor: '#f0f4ff', color: '#4f63d2', border: '1px solid #c7d2fe' }} />
                     </Box>
                   </Stack>
                   <Box sx={{ mt: 1.5 }}>
                     <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                      <Typography sx={{ fontSize: '11px', color: '#6366F1', fontWeight: 600 }}>Paying {completionPct.toFixed(0)}%</Typography>
-                      <Typography sx={{ fontSize: '11px', color: '#94A3B8' }}>₹{remaining.toLocaleString('en-IN', { minimumFractionDigits: 2 })} remaining</Typography>
+                      <Typography sx={{ fontSize: '11px', color: '#6366f1', fontWeight: 600 }}>Paying {completionPct.toFixed(0)}%</Typography>
+                      <Typography sx={{ fontSize: '11px', color: '#9ca3af' }}>₹{remaining.toLocaleString('en-IN', { minimumFractionDigits: 2 })} remaining</Typography>
                     </Stack>
                     <LinearProgress
                       variant="determinate"
                       value={completionPct}
                       sx={{
-                        height: 6, borderRadius: 3, backgroundColor: '#C7D2FE',
+                        height: 6, borderRadius: 3, backgroundColor: '#c7d2fe',
                         '& .MuiLinearProgress-bar': {
                           borderRadius: 3,
-                          background: completionPct >= 100 ? '#22C55E' : 'linear-gradient(90deg, #4F46E5, #818CF8)',
+                          background: completionPct >= 100 ? '#22C55E' : 'linear-gradient(90deg, #0ea5e9, #6366f1)',
                         },
                       }}
                     />
@@ -1134,7 +1172,7 @@ function CreateVendorPaymentDialog({ open, onClose, purchaseOrders, loading, pay
 
                 {/* Mode Toggle */}
                 <Box>
-                  <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#64748B', mb: 1, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#6b7280', mb: 1, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     Payment Mode
                   </Typography>
                   <Stack direction="row" spacing={1}>
@@ -1146,9 +1184,9 @@ function CreateVendorPaymentDialog({ open, onClose, purchaseOrders, loading, pay
                           flex: 1,
                           padding: '10px',
                           borderRadius: '10px',
-                          border: `1.5px solid ${formData.payment_mode === mode ? '#4F46E5' : '#E2E8F0'}`,
-                          backgroundColor: formData.payment_mode === mode ? '#EEF2FF' : '#FAFAFA',
-                          color: formData.payment_mode === mode ? '#4F46E5' : '#64748B',
+                          border: `1.5px solid ${formData.payment_mode === mode ? '#4f63d2' : '#eeeff5'}`,
+                          backgroundColor: formData.payment_mode === mode ? '#f0f4ff' : '#FAFAFA',
+                          color: formData.payment_mode === mode ? '#4f63d2' : '#6b7280',
                           fontSize: '13px',
                           fontWeight: 600,
                           cursor: 'pointer',
@@ -1233,8 +1271,8 @@ function CreateVendorPaymentDialog({ open, onClose, purchaseOrders, loading, pay
               sx={{
                 borderRadius: '10px', px: 2.5, fontSize: '13px', fontWeight: 600,
                 fontFamily: "'DM Sans', sans-serif", textTransform: 'none',
-                color: '#64748B', border: '1px solid #E2E8F0',
-                '&:hover': { backgroundColor: '#F8FAFC' },
+                color: '#6b7280', border: '1px solid #eeeff5',
+                '&:hover': { backgroundColor: '#f8f9fc' },
               }}
             >
               Cancel
@@ -1245,10 +1283,10 @@ function CreateVendorPaymentDialog({ open, onClose, purchaseOrders, loading, pay
               sx={{
                 borderRadius: '10px', px: 3, fontSize: '13px', fontWeight: 600,
                 fontFamily: "'DM Sans', sans-serif", textTransform: 'none',
-                background: 'linear-gradient(135deg, #4F46E5, #6366F1)',
+                background: 'linear-gradient(135deg, #0ea5e9, #6366f1)',
                 color: '#fff',
                 boxShadow: '0 4px 12px rgba(79,70,229,0.3)',
-                '&:hover': { background: 'linear-gradient(135deg, #4338CA, #4F46E5)', boxShadow: '0 6px 18px rgba(79,70,229,0.4)' },
+                '&:hover': { background: 'linear-gradient(135deg, #0284c7, #4f46e5)', boxShadow: '0 6px 18px rgba(79,70,229,0.4)' },
                 '&:disabled': { opacity: 0.5, color: '#fff' },
               }}
             >
@@ -1300,10 +1338,10 @@ function RecordPaymentDialog({ open, payment, onClose, onSubmit }: RecordPayment
       <DialogTitle
         sx={{
           px: 3, py: 2.5,
-          borderBottom: '1px solid #F1F5F9',
+          borderBottom: '1px solid #eeeff5',
           fontWeight: 800,
           fontSize: '18px',
-          color: '#0F172A',
+          color: '#1a1d2e',
           fontFamily: "'DM Sans', sans-serif",
           letterSpacing: '-0.02em',
         }}
@@ -1315,7 +1353,7 @@ function RecordPaymentDialog({ open, payment, onClose, onSubmit }: RecordPayment
             </Box>
             Record Payment
           </Stack>
-          <IconButton size="small" onClick={onClose} sx={{ color: '#94A3B8' }}>
+          <IconButton size="small" onClick={onClose} sx={{ color: '#9ca3af' }}>
             <X size={18} />
           </IconButton>
         </Stack>
@@ -1325,16 +1363,16 @@ function RecordPaymentDialog({ open, payment, onClose, onSubmit }: RecordPayment
         <Stack spacing={2.5}>
 
           {/* Vendor info */}
-          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 2, backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid #F1F5F9' }}>
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 2, backgroundColor: '#f8f9fc', borderRadius: '12px', border: '1px solid #eeeff5' }}>
             <Avatar sx={{ width: 42, height: 42, backgroundColor: avatarStyle.bg, color: avatarStyle.color, fontSize: '14px', fontWeight: 700, border: `2px solid ${avatarStyle.color}22` }}>
               {getInitials(vendorName)}
             </Avatar>
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#0F172A' }}>{vendorName}</Typography>
-              <Typography sx={{ fontSize: '12px', color: '#94A3B8' }}>{payment.payment_number}</Typography>
+              <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#1a1d2e' }}>{vendorName}</Typography>
+              <Typography sx={{ fontSize: '12px', color: '#9ca3af' }}>{payment.payment_number}</Typography>
             </Box>
             <Box sx={{ textAlign: 'right' }}>
-              <Typography sx={{ fontSize: '11px', color: '#94A3B8' }}>Outstanding</Typography>
+              <Typography sx={{ fontSize: '11px', color: '#9ca3af' }}>Outstanding</Typography>
               <Typography sx={{ fontSize: '18px', fontWeight: 800, color: '#DC2626', fontFamily: "'DM Mono', monospace" }}>
                 ₹{payment.remaining_amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </Typography>
@@ -1347,7 +1385,7 @@ function RecordPaymentDialog({ open, payment, onClose, onSubmit }: RecordPayment
               <Typography sx={{ fontSize: '12px', color: '#16A34A', fontWeight: 600 }}>
                 Paying {pct.toFixed(0)}%
               </Typography>
-              <Typography sx={{ fontSize: '12px', color: '#94A3B8' }}>
+              <Typography sx={{ fontSize: '12px', color: '#9ca3af' }}>
                 ₹{Math.max(0, remainder).toFixed(2)} left after
               </Typography>
             </Stack>
@@ -1355,7 +1393,7 @@ function RecordPaymentDialog({ open, payment, onClose, onSubmit }: RecordPayment
               variant="determinate"
               value={pct}
               sx={{
-                height: 8, borderRadius: 4, backgroundColor: '#F1F5F9',
+                height: 8, borderRadius: 4, backgroundColor: '#eeeff5',
                 '& .MuiLinearProgress-bar': {
                   borderRadius: 4,
                   background: pct >= 100 ? '#22C55E' : 'linear-gradient(90deg, #16A34A, #4ADE80)',
@@ -1380,8 +1418,8 @@ function RecordPaymentDialog({ open, payment, onClose, onSubmit }: RecordPayment
               sx={{
                 borderRadius: '10px', px: 2.5, fontSize: '13px', fontWeight: 600,
                 fontFamily: "'DM Sans', sans-serif", textTransform: 'none',
-                color: '#64748B', border: '1px solid #E2E8F0',
-                '&:hover': { backgroundColor: '#F8FAFC' },
+                color: '#6b7280', border: '1px solid #eeeff5',
+                '&:hover': { backgroundColor: '#f8f9fc' },
               }}
             >
               Cancel

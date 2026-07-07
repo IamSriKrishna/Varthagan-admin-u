@@ -8,7 +8,7 @@ import {
   IconButton, Dialog, DialogContent, DialogActions, CircularProgress,
   Tooltip, InputAdornment,
 } from "@mui/material";
-import { BBTitle, BBButton } from "@/lib";
+import { BBButton } from "@/lib";
 import {
   ArrowLeft, Plus, Trash2, Search, Package2, Layers,
   Zap, ShoppingBag, TrendingUp, TrendingDown, X,
@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { Form, Formik } from "formik";
 import * as Yup from "yup";
-import useApi from "@/hooks/useApi";
 import useFetch from "@/hooks/useFetch";
 import { showToastMessage } from "@/utils/toastUtil";
 import { products } from "@/constants/apiConstants";
@@ -58,41 +57,41 @@ const initialValues: ProductGroupFormData = {
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const T = {
-  pageBg:       "#F7F8FC",
-  cardBg:       "#FFFFFF",
-  subtleBg:     "#F4F5F9",
-  glassOverlay: "rgba(255,255,255,0.85)",
+  pageBg: "#f8f9fc",
+  cardBg: "#ffffff",
+  subtleBg: "#fafbff",
+  glassOverlay: "#ffffff",
 
-  brand:        "#4F46E5",
-  brandMid:     "#818CF8",
-  brandSoft:    "#EEF2FF",
-  brandXSoft:   "#F5F3FF",
-  brandDark:    "#3730A3",
-  brandGlow:    "rgba(79,70,229,0.18)",
+  brand: "#0ea5e9",
+  brandMid: "#c7d2fe",
+  brandSoft: "#f0f4ff",
+  brandXSoft: "#fafbff",
+  brandDark: "#6366f1",
+  brandGlow: "rgba(14,165,233,0.16)",
 
-  success:      "#059669",
-  successSoft:  "#ECFDF5",
-  successMid:   "#6EE7B7",
-  danger:       "#DC2626",
-  dangerSoft:   "#FEF2F2",
-  dangerMid:    "#FECACA",
-  warning:      "#D97706",
-  warningSoft:  "#FFFBEB",
-  warningMid:   "#FDE68A",
+  success: "#059669",
+  successSoft: "#ecfdf5",
+  successMid: "#a7f3d0",
+  danger: "#ef4444",
+  dangerSoft: "#fef2f2",
+  dangerMid: "#fecaca",
+  warning: "#d97706",
+  warningSoft: "#fffbeb",
+  warningMid: "#fde68a",
 
-  text:         "#0F172A",
-  textMid:      "#334155",
-  textLight:    "#64748B",
-  textXLight:   "#CBD5E1",
+  text: "#1a1d2e",
+  textMid: "#374151",
+  textLight: "#9ca3af",
+  textXLight: "#cbd5e1",
 
-  border:       "#E8EBF2",
-  borderMid:    "#D1D5DB",
+  border: "#eeeff5",
+  borderMid: "#d1d5db",
 
-  shadowSm:     "0 2px 8px rgba(15,23,42,0.07)",
-  shadowMd:     "0 4px 16px rgba(15,23,42,0.10), 0 2px 6px rgba(15,23,42,0.05)",
-  shadowLg:     "0 12px 40px rgba(15,23,42,0.12), 0 4px 12px rgba(15,23,42,0.07)",
-  shadowBrand:  "0 4px 18px rgba(79,70,229,0.30)",
-  shadowBrandHover: "0 8px 28px rgba(79,70,229,0.40)",
+  shadowSm: "0 2px 8px rgba(0,0,0,0.04)",
+  shadowMd: "0 4px 24px rgba(0,0,0,0.04)",
+  shadowLg: "0 12px 40px rgba(0,0,0,0.10)",
+  shadowBrand: "0 4px 14px rgba(14,165,233,0.35)",
+  shadowBrandHover: "0 6px 20px rgba(14,165,233,0.45)",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -120,51 +119,85 @@ function SectionCard({
   topAction?: React.ReactNode; children: React.ReactNode;
 }) {
   return (
-    <Box sx={{
-      background: T.cardBg, borderRadius: "20px",
-      border: `1.5px solid ${T.border}`,
-      boxShadow: T.shadowMd, overflow: "hidden",
-      position: "relative",
-      "&::before": {
-        content: '""', position: "absolute",
-        top: 0, left: 0, right: 0, height: "3px",
-        background: `linear-gradient(90deg, ${T.brand}, ${T.brandMid}, #A78BFA)`,
-      },
-    }}>
-      {/* Card header */}
-      <Box sx={{
-        px: 3, pt: 3.5, pb: 2,
-        borderBottom: `1.5px solid ${T.border}`,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: `linear-gradient(180deg, #F8F9FF, ${T.cardBg})`,
-      }}>
+    <Box
+      sx={{
+        bgcolor: "#ffffff",
+        borderRadius: "16px",
+        border: "1px solid #eeeff5",
+        overflow: "hidden",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.04)",
+      }}
+    >
+      <Box
+        sx={{
+          px: 3,
+          py: 2,
+          borderBottom: "1px solid #f0f0f5",
+          bgcolor: "#fafbff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 1.5,
+        }}
+      >
         <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Box sx={{
-            p: 0.75, borderRadius: "9px",
-            background: `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`,
-            border: `1px solid ${T.brandMid}`,
-          }}>
-            <Icon size={15} color={T.brand} strokeWidth={2.5} />
+          <Box
+            sx={{
+              width: 30,
+              height: 30,
+              borderRadius: "9px",
+              background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Icon size={15} color="white" />
           </Box>
-          <Typography sx={{ fontWeight: 800, color: T.text, fontSize: "0.92rem", letterSpacing: "-0.02em" }}>
+
+          <Typography
+            sx={{
+              fontSize: "0.9375rem",
+              fontWeight: 700,
+              color: "#1a1d2e",
+              fontFamily: "'DM Sans', sans-serif",
+              letterSpacing: "-0.2px",
+            }}
+          >
             {title}
           </Typography>
+
           {badge !== undefined && (
-            <Box sx={{
-              display: "inline-flex", alignItems: "center", gap: 0.4,
-              px: 0.9, py: 0.25, borderRadius: "6px",
-              background: `linear-gradient(135deg, ${T.brandXSoft}, ${T.brandSoft})`,
-              border: `1px solid ${T.brandMid}`,
-            }}>
-              <Zap size={9} color={T.brand} />
-              <Typography sx={{ fontSize: "0.62rem", fontWeight: 800, color: T.brand, fontFamily: "'DM Mono', monospace" }}>
+            <Box
+              sx={{
+                height: 22,
+                px: 0.9,
+                borderRadius: "6px",
+                bgcolor: "#f0f4ff",
+                border: "1px solid #c7d2fe",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: "0.68rem",
+                  fontWeight: 800,
+                  color: "#4f63d2",
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
                 {badge}
               </Typography>
             </Box>
           )}
         </Stack>
+
         {topAction}
       </Box>
+
       <Box sx={{ p: 3 }}>{children}</Box>
     </Box>
   );
@@ -173,7 +206,7 @@ function SectionCard({
 // ─── Styled input label ───────────────────────────────────────────────────────
 function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <Typography sx={{ fontWeight: 700, color: T.textMid, fontSize: "0.8rem", mb: 0.75, display: "flex", alignItems: "center", gap: 0.4 }}>
+    <Typography sx={{ fontWeight: 800, color: '#9ca3af', fontSize: '0.68rem', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", gap: 0.4 }}>
       {children}
       {required && <span style={{ color: T.danger, fontSize: "0.9em" }}>*</span>}
     </Typography>
@@ -183,18 +216,14 @@ function FieldLabel({ children, required }: { children: React.ReactNode; require
 // ─── Shared input sx ──────────────────────────────────────────────────────────
 const inputSx = {
   "& .MuiOutlinedInput-root": {
-    borderRadius: "11px",
-    backgroundColor: T.subtleBg,
+    borderRadius: "10px",
+    backgroundColor: "#ffffff",
     fontSize: "0.875rem",
-    fontWeight: 500,
-    transition: "all 0.18s",
-    "& fieldset": { borderColor: T.border, borderWidth: "1.5px" },
-    "&:hover fieldset": { borderColor: T.brandMid },
-    "&.Mui-focused": {
-      backgroundColor: T.cardBg,
-      boxShadow: `0 0 0 3px ${T.brandGlow}`,
-    },
-    "&.Mui-focused fieldset": { borderColor: T.brand, borderWidth: "1.5px" },
+    fontFamily: "'DM Sans', sans-serif",
+    transition: "all 0.18s ease",
+    "& fieldset": { borderColor: "#e5e7eb" },
+    "&:hover fieldset": { borderColor: "#c7d2fe" },
+    "&.Mui-focused fieldset": { borderColor: "#4f63d2", borderWidth: 1.5 },
   },
 };
 
@@ -494,19 +523,20 @@ export default function CreateProductGroupPage() {
   return (
     <Box sx={{
       minHeight: "100vh",
-      backgroundColor: T.pageBg, pb: 8,
-      fontFamily: "'DM Sans', 'Plus Jakarta Sans', sans-serif",
-      backgroundImage: `radial-gradient(${T.border} 1.2px, transparent 1.2px)`,
-      backgroundSize: "28px 28px",
+      backgroundColor: T.pageBg, pb: 4,
+      fontFamily: "'DM Sans', sans-serif",
     }}>
 
       {/* ── Sticky Header ──────────────────────────────────────────────────── */}
       <Box sx={{
-        background: T.glassOverlay, backdropFilter: "blur(20px)",
-        borderBottom: `1.5px solid ${T.border}`,
-        px: { xs: 2, md: 4 }, py: 2,
-        position: "sticky", top: 0, zIndex: 20,
-        boxShadow: "0 1px 0 #E8EBF2, 0 4px 20px rgba(15,23,42,0.05)",
+        position: "sticky",
+        top: 0,
+        zIndex: 10,
+        px: 3,
+        pt: 2.5,
+        pb: 2,
+        bgcolor: "#ffffff",
+        borderBottom: "1px solid #f0f0f5",
       }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Stack direction="row" alignItems="center" spacing={2}>
@@ -516,7 +546,7 @@ export default function CreateProductGroupPage() {
               sx={{
                 color: T.textMid, textTransform: "none", fontWeight: 700,
                 fontSize: "0.82rem", borderRadius: "10px", px: 1.75, height: 36,
-                border: `1.5px solid ${T.border}`, background: T.cardBg,
+                border: "1px solid #e5e7eb", background: "#ffffff",
                 "&:hover": { background: T.subtleBg, borderColor: T.borderMid },
                 transition: "all 0.15s",
               }}
@@ -525,9 +555,9 @@ export default function CreateProductGroupPage() {
             </Button>
             <Box sx={{
               width: 42, height: 42, borderRadius: "13px",
-              background: `linear-gradient(135deg, ${T.brand}, ${T.brandDark})`,
+              background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: T.shadowBrand,
+              boxShadow: "0 4px 14px rgba(14,165,233,0.35)",
               transition: "transform 0.2s",
               "&:hover": { transform: "rotate(-5deg) scale(1.05)" },
             }}>
@@ -571,7 +601,7 @@ export default function CreateProductGroupPage() {
       </Box>
 
       {/* ── Form ───────────────────────────────────────────────────────────── */}
-      <Box sx={{ px: { xs: 2, md: 4 }, pt: 3.5 }}>
+      <Box sx={{ px: 3, pt: 2.5, pb: 4 }}>
         <Formik
           initialValues={initialValues}
           validationSchema={validationSchema}
@@ -667,12 +697,12 @@ export default function CreateProductGroupPage() {
                       startIcon={<Plus size={14} strokeWidth={2.5} />}
                       onClick={() => { setShowProductDialog(true); refetchProducts(); }}
                       sx={{
-                        background: `linear-gradient(135deg, ${T.brand}, ${T.brandDark})`,
+                        background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
                         borderRadius: "9px", textTransform: "none",
                         fontWeight: 800, fontSize: "0.78rem",
                         height: 32, px: 1.75,
-                        boxShadow: T.shadowBrand, border: "none",
-                        "&:hover": { boxShadow: T.shadowBrandHover, transform: "translateY(-1px)" },
+                        boxShadow: "0 4px 14px rgba(14,165,233,0.35)", border: "none",
+                        "&:hover": { boxShadow: "0 6px 20px rgba(14,165,233,0.45)", transform: "translateY(-1px)" },
                         transition: "all 0.15s",
                       }}
                     >
@@ -939,12 +969,12 @@ export default function CreateProductGroupPage() {
                       startIcon={<Plus size={14} strokeWidth={2.5} />}
                       onClick={() => setShowResourceDialog(true)}
                       sx={{
-                        background: `linear-gradient(135deg, ${T.brand}, ${T.brandDark})`,
+                        background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
                         borderRadius: "9px", textTransform: "none",
                         fontWeight: 800, fontSize: "0.78rem",
                         height: 32, px: 1.75,
-                        boxShadow: T.shadowBrand, border: "none",
-                        "&:hover": { boxShadow: T.shadowBrandHover, transform: "translateY(-1px)" },
+                        boxShadow: "0 4px 14px rgba(14,165,233,0.35)", border: "none",
+                        "&:hover": { boxShadow: "0 6px 20px rgba(14,165,233,0.45)", transform: "translateY(-1px)" },
                         transition: "all 0.15s",
                       }}
                     >
@@ -1097,7 +1127,7 @@ export default function CreateProductGroupPage() {
                       boxShadow: selectedProducts.length > 0 ? T.shadowBrand : "none",
                       border: "none",
                       "&:hover": selectedProducts.length > 0 ? {
-                        boxShadow: T.shadowBrandHover, transform: "translateY(-1.5px)",
+                        boxShadow: "0 6px 20px rgba(14,165,233,0.45)", transform: "translateY(-1.5px)",
                       } : {},
                       transition: "all 0.18s",
                     }}
@@ -1367,9 +1397,9 @@ export default function CreateProductGroupPage() {
             variant="contained"
             sx={{
               borderRadius: "10px", textTransform: "none", fontWeight: 800,
-              background: `linear-gradient(135deg, ${T.brand}, ${T.brandDark})`,
-              boxShadow: T.shadowBrand,
-              "&:hover": { boxShadow: T.shadowBrandHover, transform: "translateY(-1px)" },
+              background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
+              boxShadow: "0 4px 14px rgba(14,165,233,0.35)",
+              "&:hover": { boxShadow: "0 6px 20px rgba(14,165,233,0.45)", transform: "translateY(-1px)" },
               transition: "all 0.15s",
             }}
           >

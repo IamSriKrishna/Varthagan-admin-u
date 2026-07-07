@@ -1,3 +1,6 @@
+// CustomerPaymentsPage_REBUILT_UI.tsx
+// Rebuilt UI to match shared Customers style. Business logic preserved.
+
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -35,6 +38,7 @@ import {
   TrendingDown,
   Wallet,
   Receipt,
+  CreditCard,
   ArrowUpRight,
   Banknote,
   ChevronDown,
@@ -54,13 +58,13 @@ import { SalesOrderOutput } from '@/models/salesOrder.model';
 // ── Avatar Palette ─────────────────────────────────────────────────────────────
 
 const AVATAR_PALETTE = [
-  { bg: '#EEF2FF', color: '#4F46E5' },
-  { bg: '#FDF2F8', color: '#C026D3' },
-  { bg: '#ECFDF5', color: '#059669' },
-  { bg: '#FFFBEB', color: '#D97706' },
-  { bg: '#F0F9FF', color: '#0284C7' },
-  { bg: '#FFF1F2', color: '#E11D48' },
-  { bg: '#F5F3FF', color: '#7C3AED' },
+  { bg: '#e8edff', color: '#3d52c7' },
+  { bg: '#fce7f3', color: '#be185d' },
+  { bg: '#d1fae5', color: '#065f46' },
+  { bg: '#fff3cd', color: '#92400e' },
+  { bg: '#ede9fe', color: '#6d28d9' },
+  { bg: '#fee2e2', color: '#991b1b' },
+  { bg: '#e0f2fe', color: '#0369a1' },
 ];
 
 function getAvatarStyle(name: string) {
@@ -125,26 +129,28 @@ function StatCard({ label, value, sub, icon, iconBg, iconColor, trend }: StatCar
     <Paper
       elevation={0}
       sx={{
-        p: '20px 24px',
-        border: '1px solid #F1F5F9',
-        borderRadius: '16px',
-        backgroundColor: '#FFFFFF',
+        p: 2.5,
+        border: '1px solid #eeeff5',
+        borderRadius: '14px',
+        bgcolor: '#ffffff',
         flex: 1,
         minWidth: 0,
-        transition: 'box-shadow 0.2s, transform 0.2s',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.03)',
+        transition: 'all 0.2s ease',
         '&:hover': {
-          boxShadow: '0 8px 32px rgba(0,0,0,0.07)',
+          borderColor: iconColor,
           transform: 'translateY(-2px)',
+          boxShadow: `0 8px 24px ${iconColor}22`,
         },
       }}
     >
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+      <Stack direction="row" justifyContent="space-between" alignItems="center">
         <Box>
           <Typography
             sx={{
-              fontSize: '12px',
-              fontWeight: 500,
-              color: '#94A3B8',
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              color: '#9ca3af',
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
               mb: 0.75,
@@ -153,36 +159,48 @@ function StatCard({ label, value, sub, icon, iconBg, iconColor, trend }: StatCar
           >
             {label}
           </Typography>
+
           <Typography
             sx={{
-              fontSize: '26px',
-              fontWeight: 700,
-              color: '#0F172A',
-              lineHeight: 1.1,
+              fontSize: '1.55rem',
+              fontWeight: 800,
+              color: '#1a1d2e',
+              lineHeight: 1,
               fontFamily: "'DM Sans', sans-serif",
             }}
           >
             {value}
           </Typography>
+
           <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.75 }}>
             {trend === 'up' ? (
-              <TrendingUp size={12} color="#22C55E" />
+              <TrendingUp size={12} color="#15803d" />
             ) : trend === 'down' ? (
-              <TrendingDown size={12} color="#EF4444" />
+              <TrendingDown size={12} color="#ef4444" />
             ) : null}
-            <Typography sx={{ fontSize: '12px', color: '#64748B' }}>{sub}</Typography>
+            <Typography
+              sx={{
+                fontSize: '0.75rem',
+                color: '#9ca3af',
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              {sub}
+            </Typography>
           </Stack>
         </Box>
+
         <Box
           sx={{
-            width: 44,
-            height: 44,
-            borderRadius: '12px',
-            backgroundColor: iconBg,
+            width: 46,
+            height: 46,
+            borderRadius: '13px',
+            bgcolor: iconBg,
+            color: iconColor,
+            border: `1px solid ${iconColor}22`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: iconColor,
             flexShrink: 0,
           }}
         >
@@ -328,7 +346,7 @@ export default function CustomerPaymentsPage() {
               setExpandedSOs(newExpanded);
             }}
             sx={{
-              color: '#4F46E5',
+              color: '#4f63d2',
               width: 30,
               height: 30,
               transition: 'transform 0.2s',
@@ -349,7 +367,7 @@ export default function CustomerPaymentsPage() {
             sx={{
               fontSize: '13px',
               fontWeight: 600,
-              color: '#4F46E5',
+              color: '#4f63d2',
               fontFamily: "'DM Mono', monospace",
               letterSpacing: '0.02em',
             }}
@@ -363,9 +381,9 @@ export default function CustomerPaymentsPage() {
               sx={{
                 fontSize: '10px',
                 fontWeight: 700,
-                backgroundColor: '#EEF2FF',
-                color: '#4F46E5',
-                border: '1px solid #C7D2FE',
+                backgroundColor: '#f0f4ff',
+                color: '#4f63d2',
+                border: '1px solid #c7d2fe',
                 height: 18,
               }}
             />
@@ -396,10 +414,10 @@ export default function CustomerPaymentsPage() {
               {getInitials(name)}
             </Avatar>
             <Box>
-              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#1a1d2e' }}>
                 {name}
               </Typography>
-              <Typography sx={{ fontSize: '11px', color: '#94A3B8' }}>
+              <Typography sx={{ fontSize: '0.7rem', color: '#9ca3af' }}>
                 {row.sales_order?.sales_order_no || '—'}
               </Typography>
             </Box>
@@ -411,7 +429,7 @@ export default function CustomerPaymentsPage() {
       key: 'amount',
       label: 'Total Amount',
       render: (row) => (
-        <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', fontFamily: "'DM Mono', monospace" }}>
+        <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#1a1d2e', fontFamily: "'DM Mono', monospace" }}>
           ₹{row.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}
         </Typography>
       ),
@@ -427,7 +445,7 @@ export default function CustomerPaymentsPage() {
               <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#15803D', fontFamily: "'DM Mono', monospace" }}>
                 ₹{row.received_amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}
               </Typography>
-              <Typography sx={{ fontSize: '11px', color: '#94A3B8' }}>{pct}%</Typography>
+              <Typography sx={{ fontSize: '0.7rem', color: '#9ca3af' }}>{pct}%</Typography>
             </Stack>
             <LinearProgress
               variant="determinate"
@@ -475,7 +493,7 @@ export default function CustomerPaymentsPage() {
               gap: '5px',
               px: 1.5,
               py: '4px',
-              borderRadius: '20px',
+              borderRadius: '16px',
               backgroundColor: cfg.bg,
               border: `1px solid ${cfg.dot}33`,
             }}
@@ -498,7 +516,7 @@ export default function CustomerPaymentsPage() {
           <Typography sx={{ fontSize: '13px', color: '#334155', fontWeight: 500 }}>
             {dayjs(row.payment_date).format('DD MMM YYYY')}
           </Typography>
-          <Typography sx={{ fontSize: '11px', color: '#94A3B8' }}>
+          <Typography sx={{ fontSize: '0.7rem', color: '#9ca3af' }}>
             {dayjs(row.payment_date).format('ddd')}
           </Typography>
         </Box>
@@ -514,12 +532,12 @@ export default function CustomerPaymentsPage() {
               size="small"
               onClick={() => router.push(`/customer-payments/${row.id}`)}
               sx={{
-                color: '#64748B',
-                border: '1px solid #E2E8F0',
+                color: '#6b7280',
+                border: '1px solid #e8eaf0',
                 borderRadius: '8px',
                 width: 30,
                 height: 30,
-                '&:hover': { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1', color: '#0F172A' },
+                '&:hover': { backgroundColor: '#f8f9fc', borderColor: '#CBD5E1', color: '#1a1d2e' },
               }}
             >
               <Eye size={14} />
@@ -552,64 +570,105 @@ export default function CustomerPaymentsPage() {
   return (
     <Box
       sx={{
-        p: { xs: 2, md: 4 },
+        display: 'flex',
+        flexDirection: 'column',
         minHeight: '100vh',
-        backgroundColor: '#F8FAFC',
+        bgcolor: '#f8f9fc',
         fontFamily: "'DM Sans', sans-serif",
       }}
     >
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        justifyContent="space-between"
-        alignItems={{ xs: 'flex-start', sm: 'center' }}
-        sx={{ mb: 4 }}
-        spacing={2}
+      {/* Header */}
+      <Box
+        sx={{
+          px: 3,
+          pt: 3,
+          pb: 2.5,
+          bgcolor: '#ffffff',
+          borderBottom: '1px solid #f0f0f5',
+        }}
       >
-        <Box>
-          <Typography
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+              sx={{
+                width: 46,
+                height: 46,
+                borderRadius: '13px',
+                background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 6px 20px rgba(14, 165, 233, 0.3)',
+                flexShrink: 0,
+              }}
+            >
+              <CreditCard size={22} color="white" />
+            </Box>
+
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: '1.5rem',
+                  fontWeight: 800,
+                  color: '#1a1d2e',
+                  fontFamily: "'DM Sans', sans-serif",
+                  letterSpacing: '-0.4px',
+                  lineHeight: 1.15,
+                }}
+              >
+                Customer Payments
+              </Typography>
+
+              <Typography
+                sx={{
+                  fontSize: '0.8rem',
+                  color: '#9ca3af',
+                  fontFamily: "'DM Sans', sans-serif",
+                  mt: 0.25,
+                }}
+              >
+                Track and manage all customer payment records
+              </Typography>
+            </Box>
+          </Box>
+
+          <Button
+            onClick={() => setOpenCreateDialog(true)}
+            startIcon={<Plus size={16} strokeWidth={2.5} />}
             sx={{
-              fontSize: '26px',
-              fontWeight: 800,
-              color: '#0F172A',
+              px: 2.5,
+              py: 1.1,
+              borderRadius: '11px',
+              background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+              boxShadow: '0 4px 14px rgba(14, 165, 233, 0.35)',
+              color: '#fff',
               fontFamily: "'DM Sans', sans-serif",
-              letterSpacing: '-0.02em',
+              fontWeight: 700,
+              fontSize: '0.875rem',
+              textTransform: 'none',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)',
+                boxShadow: '0 6px 20px rgba(14, 165, 233, 0.45)',
+                transform: 'translateY(-1px)',
+              },
+              transition: 'all 0.2s ease',
             }}
           >
-            Customer Payments
-          </Typography>
-          <Typography sx={{ fontSize: '14px', color: '#64748B', mt: 0.25 }}>
-            Track and manage all customer payment records
-          </Typography>
-        </Box>
-        <Button
-          onClick={() => setOpenCreateDialog(true)}
-          startIcon={<Plus size={16} strokeWidth={2.5} />}
-          sx={{
-            background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
-            color: '#fff',
-            borderRadius: '10px',
-            px: 2.5,
-            py: 1.1,
-            fontSize: '13px',
-            fontWeight: 600,
-            fontFamily: "'DM Sans', sans-serif",
-            textTransform: 'none',
-            boxShadow: '0 4px 14px rgba(79, 70, 229, 0.35)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #4338CA 0%, #4F46E5 100%)',
-              boxShadow: '0 6px 20px rgba(79, 70, 229, 0.45)',
-              transform: 'translateY(-1px)',
-            },
-            transition: 'all 0.2s',
-          }}
-        >
-          Create Payment
-        </Button>
-      </Stack>
+            Create Payment
+          </Button>
+        </Stack>
+      </Box>
 
-      {/* ── Stat Cards ─────────────────────────────────────────────────────── */}
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 4 }}>
+      {/* Stat Cards ─────────────────────────────────────────────────────── */}
+      <Box
+        sx={{
+          mx: 3,
+          mt: 2.5,
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+          gap: 2,
+        }}
+      >
         <StatCard
           label="Total Ordered"
           value={`₹${totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
@@ -627,17 +686,20 @@ export default function CustomerPaymentsPage() {
           iconColor="#16A34A"
           trend="up"
         />
-      </Stack>
+      </Box>
 
-      {/* ── Filter Bar ──────────────────────────────────────────────────────── */}
+      {/* Toolbar ──────────────────────────────────────────────────────── */}
       <Paper
         elevation={0}
         sx={{
-          p: '12px 16px',
-          mb: 3,
-          border: '1px solid #F1F5F9',
-          borderRadius: '14px',
-          backgroundColor: '#FFFFFF',
+          mx: 3,
+          mt: 2.5,
+          borderRadius: '14px 14px 0 0',
+          border: '1px solid #eeeff5',
+          borderBottom: 'none',
+          bgcolor: '#ffffff',
+          px: 2.5,
+          py: 2,
         }}
       >
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems="center">
@@ -647,12 +709,12 @@ export default function CustomerPaymentsPage() {
               alignItems: 'center',
               gap: 1,
               flex: 1,
-              border: '1px solid #E2E8F0',
+              border: '1px solid #e8eaf0',
               borderRadius: '10px',
               px: 1.5,
               py: '8px',
-              backgroundColor: '#F8FAFC',
-              '&:focus-within': { borderColor: '#A5B4FC', backgroundColor: '#FAFBFF' },
+              backgroundColor: '#f8f9fc',
+              '&:focus-within': { borderColor: '#6366f1', backgroundColor: '#f8fbff' },
               transition: 'all 0.15s',
             }}
           >
@@ -666,7 +728,7 @@ export default function CustomerPaymentsPage() {
                 outline: 'none',
                 background: 'transparent',
                 fontSize: '13px',
-                color: '#0F172A',
+                color: '#1a1d2e',
                 flex: 1,
                 fontFamily: "'DM Sans', sans-serif",
               }}
@@ -674,7 +736,7 @@ export default function CustomerPaymentsPage() {
             {filters.search && (
               <button
                 onClick={() => handleTypeChange('search', '')}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', display: 'flex' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', display: 'flex' }}
               >
                 <X size={13} />
               </button>
@@ -697,9 +759,9 @@ export default function CustomerPaymentsPage() {
                     gap: 6,
                     padding: '6px 12px',
                     borderRadius: 8,
-                    border: `1px solid ${isActive ? '#4F46E5' : '#E2E8F0'}`,
-                    backgroundColor: isActive ? '#EEF2FF' : 'transparent',
-                    color: isActive ? '#4F46E5' : '#64748B',
+                    border: `1px solid ${isActive ? '#c7d2fe' : '#eeeff5'}`,
+                    backgroundColor: isActive ? '#f0f4ff' : 'transparent',
+                    color: isActive ? '#4f63d2' : '#9ca3af',
                     fontSize: '12px',
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -730,29 +792,33 @@ export default function CustomerPaymentsPage() {
       <Paper
         elevation={0}
         sx={{
-          border: '1px solid #F1F5F9',
-          borderRadius: '16px',
+          mx: 3,
+          mb: 3,
+          border: '1px solid #eeeff5',
+          borderTop: 'none',
+          borderRadius: '0 0 14px 14px',
           overflow: 'hidden',
-          backgroundColor: '#FFFFFF',
+          bgcolor: '#ffffff',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
           '& .MuiTableHead-root': {
-            backgroundColor: '#F8FAFC',
+            backgroundColor: '#f8f9fc',
           },
           '& .MuiTableHead-root .MuiTableCell-root': {
-            fontSize: '11px',
+            fontSize: '0.7rem',
             fontWeight: 700,
-            color: '#64748B',
+            color: '#6b7280',
             letterSpacing: '0.07em',
             textTransform: 'uppercase',
-            borderBottom: '1px solid #F1F5F9',
+            borderBottom: '1px solid #eeeff5',
             py: 1.75,
             fontFamily: "'DM Sans', sans-serif",
           },
           '& .MuiTableBody-root .MuiTableRow-root': {
-            '&:hover': { backgroundColor: '#FAFBFF' },
+            '&:hover': { backgroundColor: '#f8fbff' },
             transition: 'background-color 0.12s',
           },
           '& .MuiTableBody-root .MuiTableCell-root': {
-            borderBottom: '1px solid #F8FAFC',
+            borderBottom: '1px solid #f5f5fa',
             py: 1.75,
             fontFamily: "'DM Sans', sans-serif",
           },
@@ -763,7 +829,7 @@ export default function CustomerPaymentsPage() {
             sx={{
               height: 2,
               '& .MuiLinearProgress-bar': {
-                background: 'linear-gradient(90deg, #4F46E5, #818CF8)',
+                background: 'linear-gradient(90deg, #0ea5e9, #6366f1)',
               },
             }}
           />
@@ -791,12 +857,12 @@ export default function CustomerPaymentsPage() {
             <Box
               key={`timeline-${soId}`}
               sx={{
-                backgroundColor: '#F8FAFC',
+                backgroundColor: '#f8f9fc',
                 borderTop: '2px solid #F1F5F9',
                 p: 3,
               }}
             >
-              <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', mb: 2.5 }}>
+              <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#1a1d2e', mb: 2.5 }}>
                 Payment Timeline for {soPayments[0].sales_order?.sales_order_no || 'SO'}
               </Typography>
 
@@ -840,10 +906,10 @@ export default function CustomerPaymentsPage() {
                       <Stack sx={{ flex: 1, pb: 2 }}>
                         <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                           <Box>
-                            <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
+                            <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#1a1d2e' }}>
                               {payment.payment_number}
                             </Typography>
-                            <Typography sx={{ fontSize: '12px', color: '#64748B', mt: 0.25 }}>
+                            <Typography sx={{ fontSize: '12px', color: '#6b7280', mt: 0.25 }}>
                               {dayjs(payment.created_at).format('DD MMM YYYY, hh:mm A')}
                             </Typography>
                           </Box>
@@ -854,7 +920,7 @@ export default function CustomerPaymentsPage() {
                               backgroundColor: cfg.bg,
                               color: cfg.color,
                               border: `1px solid ${cfg.dot}33`,
-                              fontSize: '11px',
+                              fontSize: '0.7rem',
                               fontWeight: 600,
                             }}
                           />
@@ -863,24 +929,24 @@ export default function CustomerPaymentsPage() {
                         <Stack
                           direction="row"
                           spacing={3}
-                          sx={{ mt: 1.5, p: 1.5, backgroundColor: '#FFFFFF', borderRadius: '10px', border: '1px solid #F1F5F9' }}
+                          sx={{ mt: 1.5, p: 1.5, backgroundColor: '#FFFFFF', borderRadius: '10px', border: '1px solid #e8eaf0' }}
                         >
                           <Box>
-                            <Typography sx={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>Amount</Typography>
-                            <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', fontFamily: "'DM Mono', monospace" }}>
+                            <Typography sx={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 600 }}>Amount</Typography>
+                            <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#1a1d2e', fontFamily: "'DM Mono', monospace" }}>
                               ₹{payment.received_amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}
                             </Typography>
                           </Box>
                           <Box>
-                            <Typography sx={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>Mode</Typography>
-                            <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', textTransform: 'capitalize' }}>
+                            <Typography sx={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 600 }}>Mode</Typography>
+                            <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#1a1d2e', textTransform: 'capitalize' }}>
                               {payment.payment_mode}
                             </Typography>
                           </Box>
                           {payment.reference_number && (
                             <Box>
-                              <Typography sx={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>Reference</Typography>
-                              <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', fontFamily: "'DM Mono', monospace" }}>
+                              <Typography sx={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 600 }}>Reference</Typography>
+                              <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#1a1d2e', fontFamily: "'DM Mono', monospace" }}>
                                 {payment.reference_number}
                               </Typography>
                             </Box>
@@ -919,9 +985,9 @@ export default function CustomerPaymentsPage() {
 
 const dialogSx = {
   '& .MuiDialog-paper': {
-    borderRadius: '20px',
-    boxShadow: '0 24px 64px rgba(0,0,0,0.12)',
-    border: '1px solid #F1F5F9',
+    borderRadius: '16px',
+    boxShadow: '0 20px 60px rgba(79,99,210,0.15)',
+    border: '1px solid #e8eaf0',
   },
 };
 
@@ -937,7 +1003,7 @@ const fieldSx = {
   '& .MuiInputLabel-root': {
     fontSize: '13px',
     fontFamily: "'DM Sans', sans-serif",
-    '&.Mui-focused': { color: '#4F46E5' },
+    '&.Mui-focused': { color: '#4f63d2' },
   },
 };
 
@@ -1035,22 +1101,22 @@ function CreateCustomerPaymentDialog({ open, onClose, salesOrders, loading, paym
       <DialogTitle
         sx={{
           px: 3, py: 2.5,
-          borderBottom: '1px solid #F1F5F9',
+          borderBottom: '1px solid #eeeff5',
           fontWeight: 800,
           fontSize: '18px',
-          color: '#0F172A',
+          color: '#1a1d2e',
           fontFamily: "'DM Sans', sans-serif",
           letterSpacing: '-0.02em',
         }}
       >
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Box sx={{ width: 36, height: 36, borderRadius: '10px', background: 'linear-gradient(135deg, #4F46E5, #818CF8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Box sx={{ width: 36, height: 36, borderRadius: '10px', background: 'linear-gradient(135deg, #0ea5e9, #6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Plus size={18} color="#fff" />
             </Box>
             Create Payment
           </Stack>
-          <IconButton size="small" onClick={handleClose} sx={{ color: '#94A3B8' }}>
+          <IconButton size="small" onClick={handleClose} sx={{ color: '#9ca3af' }}>
             <X size={18} />
           </IconButton>
         </Stack>
@@ -1073,8 +1139,8 @@ function CreateCustomerPaymentDialog({ open, onClose, salesOrders, loading, paym
                   <Stack direction="row" justifyContent="space-between" sx={{ width: '100%' }}>
                     <span>{so.sales_order_no}</span>
                     <Stack direction="row" spacing={1} alignItems="center">
-                      <span style={{ color: '#94A3B8', fontSize: '12px' }}>{so.customer?.display_name}</span>
-                      <span style={{ fontWeight: 700, color: '#0F172A' }}>₹{so.total.toLocaleString('en-IN')}</span>
+                      <span style={{ color: '#9ca3af', fontSize: '12px' }}>{so.customer?.display_name}</span>
+                      <span style={{ fontWeight: 700, color: '#1a1d2e' }}>₹{so.total.toLocaleString('en-IN')}</span>
                     </Stack>
                   </Stack>
                 </MenuItem>
@@ -1092,30 +1158,30 @@ function CreateCustomerPaymentDialog({ open, onClose, salesOrders, loading, paym
                     p: 2,
                     borderRadius: '12px',
                     background: 'linear-gradient(135deg, #F8FAFF 0%, #EEF2FF 100%)',
-                    border: '1px solid #C7D2FE',
+                    border: '1px solid #c7d2fe',
                   }}
                 >
                   <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                     <Box>
-                      <Typography sx={{ fontSize: '11px', color: '#6366F1', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      <Typography sx={{ fontSize: '0.7rem', color: '#6366F1', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                         Remaining Balance
                       </Typography>
-                      <Typography sx={{ fontSize: '22px', fontWeight: 800, color: '#0F172A', fontFamily: "'DM Mono', monospace", letterSpacing: '-0.02em' }}>
+                      <Typography sx={{ fontSize: '22px', fontWeight: 800, color: '#1a1d2e', fontFamily: "'DM Mono', monospace", letterSpacing: '-0.02em' }}>
                         ₹{calculateRemainingBalance(selectedSo.id).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </Typography>
-                      <Typography sx={{ fontSize: '11px', color: '#94A3B8', mt: 0.5 }}>
+                      <Typography sx={{ fontSize: '0.7rem', color: '#9ca3af', mt: 0.5 }}>
                         of ₹{selectedSo.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })} SO Total
                       </Typography>
                     </Box>
                     <Box sx={{ textAlign: 'right' }}>
-                      <Typography sx={{ fontSize: '11px', color: '#94A3B8', mb: 0.5 }}>Payment Terms</Typography>
-                      <Chip label={selectedSo.payment_terms} size="small" sx={{ fontSize: '11px', fontWeight: 600, backgroundColor: '#EEF2FF', color: '#4F46E5', border: '1px solid #C7D2FE' }} />
+                      <Typography sx={{ fontSize: '0.7rem', color: '#9ca3af', mb: 0.5 }}>Payment Terms</Typography>
+                      <Chip label={selectedSo.payment_terms} size="small" sx={{ fontSize: '0.7rem', fontWeight: 600, backgroundColor: '#f0f4ff', color: '#4f63d2', border: '1px solid #c7d2fe' }} />
                     </Box>
                   </Stack>
                   <Box sx={{ mt: 1.5 }}>
                     <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                      <Typography sx={{ fontSize: '11px', color: '#6366F1', fontWeight: 600 }}>Paying {completionPct.toFixed(0)}%</Typography>
-                      <Typography sx={{ fontSize: '11px', color: '#94A3B8' }}>₹{remaining.toLocaleString('en-IN', { minimumFractionDigits: 2 })} remaining</Typography>
+                      <Typography sx={{ fontSize: '0.7rem', color: '#6366F1', fontWeight: 600 }}>Paying {completionPct.toFixed(0)}%</Typography>
+                      <Typography sx={{ fontSize: '0.7rem', color: '#9ca3af' }}>₹{remaining.toLocaleString('en-IN', { minimumFractionDigits: 2 })} remaining</Typography>
                     </Stack>
                     <LinearProgress
                       variant="determinate"
@@ -1133,7 +1199,7 @@ function CreateCustomerPaymentDialog({ open, onClose, salesOrders, loading, paym
 
                 {/* Mode Toggle */}
                 <Box>
-                  <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#64748B', mb: 1, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#6b7280', mb: 1, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     Payment Mode
                   </Typography>
                   <Stack direction="row" spacing={1}>
@@ -1232,8 +1298,8 @@ function CreateCustomerPaymentDialog({ open, onClose, salesOrders, loading, paym
               sx={{
                 borderRadius: '10px', px: 2.5, fontSize: '13px', fontWeight: 600,
                 fontFamily: "'DM Sans', sans-serif", textTransform: 'none',
-                color: '#64748B', border: '1px solid #E2E8F0',
-                '&:hover': { backgroundColor: '#F8FAFC' },
+                color: '#6b7280', border: '1px solid #e8eaf0',
+                '&:hover': { backgroundColor: '#f8f9fc' },
               }}
             >
               Cancel
@@ -1244,10 +1310,10 @@ function CreateCustomerPaymentDialog({ open, onClose, salesOrders, loading, paym
               sx={{
                 borderRadius: '10px', px: 3, fontSize: '13px', fontWeight: 600,
                 fontFamily: "'DM Sans', sans-serif", textTransform: 'none',
-                background: 'linear-gradient(135deg, #4F46E5, #6366F1)',
+                background: 'linear-gradient(135deg, #0ea5e9, #6366f1)',
                 color: '#fff',
                 boxShadow: '0 4px 12px rgba(79,70,229,0.3)',
-                '&:hover': { background: 'linear-gradient(135deg, #4338CA, #4F46E5)', boxShadow: '0 6px 18px rgba(79,70,229,0.4)' },
+                '&:hover': { background: 'linear-gradient(135deg, #0284c7, #4f46e5)', boxShadow: '0 6px 18px rgba(79,70,229,0.4)' },
                 '&:disabled': { opacity: 0.5, color: '#fff' },
               }}
             >
@@ -1299,10 +1365,10 @@ function RecordPaymentDialog({ open, payment, onClose, onSubmit }: RecordPayment
       <DialogTitle
         sx={{
           px: 3, py: 2.5,
-          borderBottom: '1px solid #F1F5F9',
+          borderBottom: '1px solid #eeeff5',
           fontWeight: 800,
           fontSize: '18px',
-          color: '#0F172A',
+          color: '#1a1d2e',
           fontFamily: "'DM Sans', sans-serif",
           letterSpacing: '-0.02em',
         }}
@@ -1314,7 +1380,7 @@ function RecordPaymentDialog({ open, payment, onClose, onSubmit }: RecordPayment
             </Box>
             Record Payment
           </Stack>
-          <IconButton size="small" onClick={onClose} sx={{ color: '#94A3B8' }}>
+          <IconButton size="small" onClick={onClose} sx={{ color: '#9ca3af' }}>
             <X size={18} />
           </IconButton>
         </Stack>
@@ -1324,16 +1390,16 @@ function RecordPaymentDialog({ open, payment, onClose, onSubmit }: RecordPayment
         <Stack spacing={2.5}>
 
           {/* Customer info */}
-          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 2, backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid #F1F5F9' }}>
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 2, backgroundColor: '#f8f9fc', borderRadius: '12px', border: '1px solid #e8eaf0' }}>
             <Avatar sx={{ width: 42, height: 42, backgroundColor: avatarStyle.bg, color: avatarStyle.color, fontSize: '14px', fontWeight: 700, border: `2px solid ${avatarStyle.color}22` }}>
               {getInitials(customerName)}
             </Avatar>
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#0F172A' }}>{customerName}</Typography>
-              <Typography sx={{ fontSize: '12px', color: '#94A3B8' }}>{payment.payment_number}</Typography>
+              <Typography sx={{ fontWeight: 700, fontSize: '14px', color: '#1a1d2e' }}>{customerName}</Typography>
+              <Typography sx={{ fontSize: '12px', color: '#9ca3af' }}>{payment.payment_number}</Typography>
             </Box>
             <Box sx={{ textAlign: 'right' }}>
-              <Typography sx={{ fontSize: '11px', color: '#94A3B8' }}>Outstanding</Typography>
+              <Typography sx={{ fontSize: '0.7rem', color: '#9ca3af' }}>Outstanding</Typography>
               <Typography sx={{ fontSize: '18px', fontWeight: 800, color: '#DC2626', fontFamily: "'DM Mono', monospace" }}>
                 ₹{payment.remaining_amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </Typography>
@@ -1346,7 +1412,7 @@ function RecordPaymentDialog({ open, payment, onClose, onSubmit }: RecordPayment
               <Typography sx={{ fontSize: '12px', color: '#16A34A', fontWeight: 600 }}>
                 Paying {pct.toFixed(0)}%
               </Typography>
-              <Typography sx={{ fontSize: '12px', color: '#94A3B8' }}>
+              <Typography sx={{ fontSize: '12px', color: '#9ca3af' }}>
                 ₹{Math.max(0, remainder).toFixed(2)} left after
               </Typography>
             </Stack>
@@ -1379,8 +1445,8 @@ function RecordPaymentDialog({ open, payment, onClose, onSubmit }: RecordPayment
               sx={{
                 borderRadius: '10px', px: 2.5, fontSize: '13px', fontWeight: 600,
                 fontFamily: "'DM Sans', sans-serif", textTransform: 'none',
-                color: '#64748B', border: '1px solid #E2E8F0',
-                '&:hover': { backgroundColor: '#F8FAFC' },
+                color: '#6b7280', border: '1px solid #e8eaf0',
+                '&:hover': { backgroundColor: '#f8f9fc' },
               }}
             >
               Cancel

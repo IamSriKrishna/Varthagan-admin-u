@@ -561,7 +561,7 @@ export default function EmployeesPage() {
             variant="contained"
             onClick={() => { setEditingId(null); setSelectedEmployee(null); setFormValues({ name: "", email: "", number: "", address: "", employee_type: "full-time", salary_type: "monthly", monthly_salary: "", weekly_salary: "", document_file: null }); setFormErrors({}); setOpenCreateDialog(true); }}
             startIcon={<Plus size={16} />}
-            sx={{ px: 2.5, py: 1.1, borderRadius: "11px", background: "linear-gradient(135deg, #4f63d2 0%, #7c3aed 100%)", boxShadow: "0 4px 14px rgba(79,99,210,0.35)", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: "0.875rem", textTransform: "none", "&:hover": { background: "linear-gradient(135deg, #3d52c7 0%, #6d28d9 100%)", boxShadow: "0 6px 20px rgba(79,99,210,0.45)", transform: "translateY(-1px)" }, transition: "all 0.2s ease" }}
+            sx={{ px: 2.5, py: 1.1, borderRadius: "11px", background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)", boxShadow: "0 6px 20px rgba(14, 165, 233, 0.3)", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: "0.875rem", textTransform: "none", "&:hover": { background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)", boxShadow: "0 6px 20px rgba(14, 165, 233, 0.3)", transform: "translateY(-1px)" }, transition: "all 0.2s ease" }}
           >
             Add Employee
           </BBButton>

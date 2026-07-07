@@ -1,21 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Box, Container } from '@mui/material';
+import { Box, Stack, Tab, Tabs, Typography } from '@mui/material';
+import { Factory } from 'lucide-react';
 import ConversionRulesList from '@/components/conversion/ConversionRulesList';
 import ConversionRecordsList from '@/components/conversion/ConversionRecordsList';
 
 const TABS = ['Conversion Rules', 'Conversion Records'];
-
-const T = {
-  bg: '#f8fafc',
-  surface: '#ffffff',
-  border: '#e5e7eb',
-  text: '#111827',
-  sub: '#6b7280',
-  primary: '#2563eb',
-  success: '#16a34a',
-};
 
 export default function ConversionPage() {
   const [currentTab, setCurrentTab] = useState(0);
@@ -23,114 +14,132 @@ export default function ConversionPage() {
   return (
     <Box
       sx={{
+        display: 'flex',
+        flexDirection: 'column',
         minHeight: '100vh',
-        bgcolor: T.bg,
-        fontFamily: "'Inter', sans-serif",
+        bgcolor: '#f8f9fc',
       }}
     >
-      <Container maxWidth="xl" sx={{ py: 3 }}>
-        <Box sx={{ mb: 2.5 }}>
-          <Box
-            sx={{
-              display: 'inline-flex',
-              px: 1.5,
-              py: 0.55,
-              mb: 1.25,
-              borderRadius: '999px',
-              bgcolor: '#ecfdf5',
-              color: T.success,
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              letterSpacing: '0.04em',
-              textTransform: 'uppercase',
-            }}
-          >
-            Production Module
-          </Box>
-
-          <Box
-            component="h1"
-            sx={{
-              m: 0,
-              fontSize: '1.8rem',
-              fontWeight: 800,
-              color: T.text,
-              letterSpacing: '-0.025em',
-              fontFamily: "'Inter', sans-serif",
-            }}
-          >
-            Conversion Management
-          </Box>
-
-          <Box
-            component="p"
-            sx={{
-              mt: 0.5,
-              mb: 0,
-              fontSize: '0.9rem',
-              color: T.sub,
-              fontWeight: 500,
-            }}
-          >
-            Define rules and track every raw-to-finished conversion.
-          </Box>
-        </Box>
-
-        <Box
-          sx={{
-            display: 'inline-flex',
-            gap: 0.5,
-            mb: 2,
-            p: 0.5,
-            bgcolor: T.surface,
-            border: `1px solid ${T.border}`,
-            borderRadius: '14px',
-            boxShadow: '0 4px 14px rgba(15,23,42,0.04)',
-          }}
-        >
-          {TABS.map((tab, idx) => (
+      {/* Header */}
+      <Box
+        sx={{
+          px: 3,
+          pt: 3,
+          pb: 2.5,
+          bgcolor: '#ffffff',
+          borderBottom: '1px solid #f0f0f5',
+        }}
+      >
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box
-              key={tab}
-              onClick={() => setCurrentTab(idx)}
               sx={{
-                px: 2.25,
-                py: 0.9,
-                borderRadius: '10px',
-                fontSize: '0.82rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                userSelect: 'none',
-                transition: '0.18s ease',
-                color: currentTab === idx ? '#ffffff' : T.sub,
-                bgcolor: currentTab === idx ? T.primary : 'transparent',
-                '&:hover': {
-                  bgcolor: currentTab === idx ? T.primary : '#f3f4f6',
-                  color: currentTab === idx ? '#ffffff' : T.text,
-                },
+                width: 46,
+                height: 46,
+                borderRadius: '13px',
+                background:
+                  'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 6px 20px rgba(14, 165, 233, 0.3)',
+                flexShrink: 0,
               }}
             >
-              {tab}
+              <Factory size={22} color="white" />
             </Box>
-          ))}
-        </Box>
 
-        <Box
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: '1.5rem',
+                  fontWeight: 800,
+                  color: '#1a1d2e',
+                  fontFamily: "'DM Sans', sans-serif",
+                  letterSpacing: '-0.4px',
+                  lineHeight: 1.15,
+                }}
+              >
+                Conversion Management
+              </Typography>
+
+              <Typography
+                sx={{
+                  fontSize: '0.8rem',
+                  color: '#9ca3af',
+                  fontFamily: "'DM Sans', sans-serif",
+                  mt: 0.25,
+                }}
+              >
+                Define rules and track every raw-to-finished conversion
+              </Typography>
+            </Box>
+          </Box>
+        </Stack>
+      </Box>
+
+      {/* Toolbar Tabs */}
+      <Box
+        sx={{
+          mx: 3,
+          mt: 2.5,
+          borderRadius: '14px 14px 0 0',
+          border: '1px solid #eeeff5',
+          borderBottom: 'none',
+          bgcolor: '#ffffff',
+          px: 2.5,
+          py: 1.5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+        }}
+      >
+        <Tabs
+          value={currentTab}
+          onChange={(_, value) => setCurrentTab(value)}
           sx={{
-            bgcolor: T.surface,
-            borderRadius: '18px',
-            border: `1px solid ${T.border}`,
-            boxShadow: '0 10px 32px rgba(15,23,42,0.05)',
-            overflow: 'hidden',
+            minHeight: 38,
+            '& .MuiTab-root': {
+              fontFamily: "'DM Sans', sans-serif",
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              textTransform: 'none',
+              minHeight: 38,
+              px: 2,
+              color: '#9ca3af',
+            },
+            '& .Mui-selected': {
+              color: '#4f63d2 !important',
+            },
+            '& .MuiTabs-indicator': {
+              background: 'linear-gradient(90deg, #0ea5e9, #6366f1)',
+              height: 2.5,
+              borderRadius: 2,
+            },
           }}
         >
-          {currentTab === 0 && <ConversionRulesList />}
-          {currentTab === 1 && <ConversionRecordsList />}
-        </Box>
-      </Container>
+          {TABS.map((tab) => (
+            <Tab key={tab} label={tab} />
+          ))}
+        </Tabs>
+      </Box>
 
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-      `}</style>
+      {/* Content */}
+      <Box
+        sx={{
+          mx: 3,
+          mb: 3,
+          borderRadius: '0 0 14px 14px',
+          border: '1px solid #eeeff5',
+          borderTop: 'none',
+          bgcolor: '#ffffff',
+          overflow: 'hidden',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
+        }}
+      >
+        {currentTab === 0 && <ConversionRulesList />}
+        {currentTab === 1 && <ConversionRecordsList />}
+      </Box>
     </Box>
   );
 }

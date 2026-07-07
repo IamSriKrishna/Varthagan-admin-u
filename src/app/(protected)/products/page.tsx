@@ -1,156 +1,180 @@
-"use client";
-import { category, products } from "@/constants/apiConstants";
-import { activeTypescategories } from "@/constants/commonConstans";
-import { productTypes } from "@/constants/productConstans";
-import useFetch from "@/hooks/useFetch";
-import { BBButton, BBDialog, BBDropdownBase, BBInputBase, BBLoader, BBTable, BBTitle } from "@/lib";
-import { ITableColumn } from "@/lib/BBTable/BBTable";
-import { showToastMessage } from "@/utils/toastUtil";
+'use client';
+
+import { category, products } from '@/constants/apiConstants';
+import { activeTypescategories } from '@/constants/commonConstans';
+import { productTypes } from '@/constants/productConstans';
+import useFetch from '@/hooks/useFetch';
 import {
+  BBButton,
+  BBDialog,
+  BBDropdownBase,
+  BBInputBase,
+  BBLoader,
+  BBTable,
+} from '@/lib';
+import { ITableColumn } from '@/lib/BBTable/BBTable';
+import { showToastMessage } from '@/utils/toastUtil';
+import {
+  Avatar,
   Box,
   Button,
   Chip,
   Collapse,
-  Divider,
   Grid,
   IconButton,
   Paper,
   Stack,
-  Typography,
-  Avatar,
   Tooltip,
-  Badge,
-} from "@mui/material";
+  Typography,
+} from '@mui/material';
 import {
-  Filter,
-  PencilLine,
-  Plus,
-  Trash2,
-  Package2,
-  TrendingUp,
-  TrendingDown,
-  Layers,
-  Search,
-  SlidersHorizontal,
-  X,
-  ChevronDown,
-  Sparkles,
   BarChart3,
   BoxSelect,
+  ChevronDown,
+  Filter,
+  Layers,
+  Package2,
+  PencilLine,
+  Plus,
+  Search,
   ShoppingBag,
+  SlidersHorizontal,
+  Sparkles,
+  Trash2,
+  X,
   Zap,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useMemo, useState, useEffect, useRef } from "react";
-import { useDebounce } from "@/hooks/useDebounce";
-import { ICategorys } from "@/models/ICategory";
-import { productService } from "@/lib/api/productService";
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { ICategorys } from '@/models/ICategory';
+import { productService } from '@/lib/api/productService';
 
-// ─── Design Tokens ─────────────────────────────────────────────────────────────
-const T = {
-  // Core backgrounds
-  pageBg: "#F7F8FC",
-  cardBg: "#FFFFFF",
-  subtleBg: "#F4F5F9",
-  glassOverlay: "rgba(255,255,255,0.85)",
-
-  // Brand — deep violet-indigo
-  brand: "#4F46E5",
-  brandMid: "#818CF8",
-  brandSoft: "#EEF2FF",
-  brandXSoft: "#F5F3FF",
-  brandDark: "#3730A3",
-  brandGlow: "rgba(79,70,229,0.18)",
-
-  // Accent — electric amber
-  accent: "#F59E0B",
-  accentSoft: "#FFFBEB",
-
-  // Semantic
-  success: "#059669",
-  successSoft: "#ECFDF5",
-  successMid: "#6EE7B7",
-  danger: "#DC2626",
-  dangerSoft: "#FEF2F2",
-  dangerMid: "#FECACA",
-  warning: "#D97706",
-  warningSoft: "#FFFBEB",
-  neutral: "#9CA3AF",
-
-  // Text hierarchy
-  text: "#0F172A",
-  textMid: "#334155",
-  textLight: "#64748B",
-  textXLight: "#CBD5E1",
-  textGhost: "#E2E8F0",
-
-  // Borders
-  border: "#E8EBF2",
-  borderMid: "#D1D5DB",
-  borderFocus: "#818CF8",
-
-  // Elevation shadows
-  shadow: "0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)",
-  shadowSm: "0 2px 8px rgba(15,23,42,0.07)",
-  shadowMd: "0 4px 16px rgba(15,23,42,0.10), 0 2px 6px rgba(15,23,42,0.05)",
-  shadowLg: "0 12px 40px rgba(15,23,42,0.12), 0 4px 12px rgba(15,23,42,0.07)",
-  shadowBrand: "0 4px 18px rgba(79,70,229,0.30)",
-  shadowBrandHover: "0 8px 28px rgba(79,70,229,0.40)",
-};
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function colorFromString(str: string) {
+function getAvatarStyle(name: string) {
   const palette = [
-    { bg: "#EEF2FF", fg: "#4F46E5", border: "#C7D2FE" },
-    { bg: "#F0FDF4", fg: "#059669", border: "#A7F3D0" },
-    { bg: "#FFF7ED", fg: "#D97706", border: "#FDE68A" },
-    { bg: "#FDF2F8", fg: "#BE185D", border: "#FBCFE8" },
-    { bg: "#EFF6FF", fg: "#1D4ED8", border: "#BFDBFE" },
-    { bg: "#F5F3FF", fg: "#7C3AED", border: "#DDD6FE" },
-    { bg: "#ECFDF5", fg: "#065F46", border: "#6EE7B7" },
-    { bg: "#FFFBEB", fg: "#B45309", border: "#FDE68A" },
+    { bg: '#e8edff', color: '#3d52c7' },
+    { bg: '#fce7f3', color: '#be185d' },
+    { bg: '#d1fae5', color: '#065f46' },
+    { bg: '#fff3cd', color: '#92400e' },
+    { bg: '#ede9fe', color: '#6d28d9' },
+    { bg: '#fee2e2', color: '#991b1b' },
+    { bg: '#e0f2fe', color: '#0369a1' },
   ];
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  return palette[Math.abs(hash) % palette.length];
+
+  const idx =
+    name.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0) %
+    palette.length;
+
+  return palette[idx];
 }
 
-// ─── Product Avatar ───────────────────────────────────────────────────────────
 function ProductAvatar({ name }: { name: string }) {
+  const style = getAvatarStyle(name || 'P');
+
   const initials = name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
+    .split(' ')
+    .filter(Boolean)
     .slice(0, 2)
-    .toUpperCase();
-  const { bg, fg, border } = colorFromString(name);
+    .map((w) => w[0]?.toUpperCase())
+    .join('');
+
   return (
     <Avatar
       sx={{
-        width: 40,
-        height: 40,
-        borderRadius: "12px",
-        background: `linear-gradient(135deg, ${bg}, ${bg}CC)`,
-        color: fg,
-        fontSize: "0.75rem",
-        fontWeight: 800,
-        fontFamily: "'DM Mono', 'Fira Code', monospace",
-        flexShrink: 0,
-        border: `1.5px solid ${border}`,
-        boxShadow: `0 2px 8px ${fg}18`,
-        transition: "transform 0.2s, box-shadow 0.2s",
-        "&:hover": {
-          transform: "scale(1.08) rotate(-2deg)",
-          boxShadow: `0 4px 14px ${fg}30`,
-        },
+        width: 34,
+        height: 34,
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        bgcolor: style.bg,
+        color: style.color,
+        fontFamily: "'DM Sans', sans-serif",
+        border: '1.5px solid',
+        borderColor: style.color + '33',
       }}
     >
-      {initials}
+      {initials || 'P'}
     </Avatar>
   );
 }
 
-// ─── Price Cell ───────────────────────────────────────────────────────────────
+function StatCard({
+  label,
+  value,
+  icon,
+  color,
+  bg,
+}: {
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+  color: string;
+  bg: string;
+}) {
+  return (
+    <Box
+      sx={{
+        bgcolor: '#ffffff',
+        border: '1px solid #eeeff5',
+        borderRadius: '14px',
+        p: 2.5,
+        boxShadow: '0 4px 24px rgba(0,0,0,0.03)',
+        transition: 'all 0.2s ease',
+        '&:hover': {
+          borderColor: color,
+          transform: 'translateY(-2px)',
+          boxShadow: `0 8px 24px ${color}22`,
+        },
+      }}
+    >
+      <Stack direction="row" alignItems="center" justifyContent="space-between">
+        <Box>
+          <Typography
+            sx={{
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              color: '#9ca3af',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              mb: 0.75,
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            {label}
+          </Typography>
+
+          <Typography
+            sx={{
+              fontSize: '1.55rem',
+              fontWeight: 800,
+              color: '#1a1d2e',
+              lineHeight: 1,
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            {value}
+          </Typography>
+        </Box>
+
+        <Box
+          sx={{
+            width: 46,
+            height: 46,
+            borderRadius: '13px',
+            bgcolor: bg,
+            color,
+            border: `1px solid ${color}22`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {icon}
+        </Box>
+      </Stack>
+    </Box>
+  );
+}
+
 function PriceCell({
   cost,
   selling,
@@ -164,390 +188,141 @@ function PriceCell({
   isResource?: boolean;
   resourceCostPerUnit?: number;
   isRaw?: boolean;
-  rawCostPerUnit?: number; // ← add this
+  rawCostPerUnit?: number;
 }) {
-  // For raw products, show "Raw" badge
-  if (isRaw && rawCostPerUnit) {
-    return (
-      <Stack spacing={0.4}>
-        <Stack direction="row" alignItems="center" spacing={0.75}>
-          <Tooltip title="Raw Cost Per Unit">
-            <Typography
-              sx={{
-                fontFamily: "'DM Mono', monospace",
-                fontWeight: 800,
-                color: T.text,
-                fontSize: "0.88rem",
-                letterSpacing: "-0.02em",
-              }}
-            >
-              ₹{typeof rawCostPerUnit?.toFixed === "function" ? rawCostPerUnit.toFixed(2) : rawCostPerUnit}
-            </Typography>
-          </Tooltip>
-          <Chip
-            label="Raw"
-            size="small"
-            sx={{
-              height: 20,
-              fontSize: "0.65rem",
-              background: "#FEF3C7",
-              border: "1px solid #FCD34D",
-              color: "#92400E",
-              fontWeight: 700,
-            }}
-          />
-        </Stack>
-      </Stack>
-    );
-  }
-
-  // fallback for isRaw with no cost yet
   if (isRaw) {
     return (
-      <Chip
-        label="Raw"
-        size="small"
-        sx={{
-          height: 20,
-          fontSize: "0.65rem",
-          background: "#FEF3C7",
-          border: "1px solid #FCD34D",
-          color: "#92400E",
-          fontWeight: 700,
-        }}
-      />
-    );
-  }
-
-  // For resource products with no sales/purchase info, show resource cost
-  if (isResource && !selling && resourceCostPerUnit) {
-    return (
-      <Stack spacing={0.4}>
-        <Stack direction="row" alignItems="center" spacing={0.75}>
-          <Tooltip title="Resource Cost Per Unit">
-            <Typography
-              sx={{
-                fontFamily: "'DM Mono', monospace",
-                fontWeight: 800,
-                color: T.text,
-                fontSize: "0.88rem",
-                letterSpacing: "-0.02em",
-              }}
-            >
-              ₹
-              {typeof resourceCostPerUnit?.toFixed === "function"
-                ? resourceCostPerUnit.toFixed(2)
-                : resourceCostPerUnit}
-            </Typography>
-          </Tooltip>
-          <Chip
-            icon={<Zap size={12} />}
-            label="Resource"
-            size="small"
+      <Stack spacing={0.5}>
+        {rawCostPerUnit ? (
+          <Typography
             sx={{
-              height: 20,
-              fontSize: "0.65rem",
-              background: T.brandSoft,
-              border: `1px solid ${T.brandMid}`,
-              color: T.brand,
+              fontFamily: "'DM Mono', monospace",
+              fontWeight: 700,
+              color: '#1a1d2e',
+              fontSize: '0.8125rem',
             }}
-          />
-        </Stack>
+          >
+            ₹{rawCostPerUnit.toFixed?.(2) ?? rawCostPerUnit}
+          </Typography>
+        ) : null}
+
+        <Chip
+          label="Raw"
+          size="small"
+          sx={{
+            height: 22,
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            fontFamily: "'DM Sans', sans-serif",
+            bgcolor: '#fff8eb',
+            color: '#b45309',
+            border: '1px solid #fcd34d',
+            borderRadius: '6px',
+          }}
+        />
       </Stack>
     );
   }
 
-  // Regular product pricing
-  const profit = selling - cost;
-  const isUp = profit >= 0;
-  const markup = cost > 0 ? ((profit / cost) * 100).toFixed(1) : null;
-  return (
-    <Stack spacing={0.4}>
-      <Stack direction="row" alignItems="center" spacing={0.75}>
+  if (isResource && !selling && resourceCostPerUnit) {
+    return (
+      <Stack spacing={0.5}>
         <Typography
           sx={{
             fontFamily: "'DM Mono', monospace",
-            fontWeight: 800,
-            color: T.text,
-            fontSize: "0.88rem",
-            letterSpacing: "-0.02em",
+            fontWeight: 700,
+            color: '#1a1d2e',
+            fontSize: '0.8125rem',
           }}
         >
-          ₹{typeof selling?.toFixed === "function" ? selling.toFixed(2) : selling}
+          ₹{resourceCostPerUnit.toFixed?.(2) ?? resourceCostPerUnit}
         </Typography>
-        {markup && (
-          <Box
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 0.4,
-              px: 0.75,
-              py: 0.15,
-              borderRadius: "5px",
-              background: isUp
-                ? `linear-gradient(135deg, ${T.successSoft}, #D1FAE5)`
-                : `linear-gradient(135deg, ${T.dangerSoft}, #FEE2E2)`,
-              border: `1px solid ${isUp ? T.successMid : T.dangerMid}`,
-            }}
-          >
-            {isUp ? <TrendingUp size={9} color={T.success} /> : <TrendingDown size={9} color={T.danger} />}
-            <Typography
-              sx={{
-                fontSize: "0.65rem",
-                fontWeight: 800,
-                color: isUp ? T.success : T.danger,
-                fontFamily: "'DM Mono', monospace",
-              }}
-            >
-              {markup}%
-            </Typography>
-          </Box>
-        )}
+
+        <Chip
+          label="Resource"
+          size="small"
+          sx={{
+            height: 22,
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            fontFamily: "'DM Sans', sans-serif",
+            bgcolor: '#f0f4ff',
+            color: '#4f63d2',
+            border: '1px solid #c7d2fe',
+            borderRadius: '6px',
+          }}
+        />
       </Stack>
-      <Typography sx={{ fontFamily: "'DM Mono', monospace", color: T.textLight, fontSize: "0.7rem" }}>
-        Cost ₹{typeof cost?.toFixed === "function" ? cost.toFixed(2) : cost}
+    );
+  }
+
+  return (
+    <Stack spacing={0.4}>
+      <Typography
+        sx={{
+          fontFamily: "'DM Mono', monospace",
+          fontWeight: 700,
+          color: '#1a1d2e',
+          fontSize: '0.8125rem',
+        }}
+      >
+        ₹{selling?.toFixed?.(2) ?? selling}
+      </Typography>
+
+      <Typography
+        sx={{
+          fontFamily: "'DM Mono', monospace",
+          color: '#9ca3af',
+          fontSize: '0.7rem',
+        }}
+      >
+        Cost ₹{cost?.toFixed?.(2) ?? cost}
       </Typography>
     </Stack>
   );
 }
 
-// ─── Variant Badge ────────────────────────────────────────────────────────────
 function VariantBadge({ count }: { count: number }) {
-  const active = count > 1;
   return (
-    <Box
+    <Chip
+      icon={<Layers size={12} />}
+      label={count}
+      size="small"
       sx={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 0.5,
-        px: 1.25,
-        py: 0.35,
-        borderRadius: "8px",
-        background: active ? `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)` : T.subtleBg,
-        border: `1.5px solid ${active ? T.brandMid : T.border}`,
-        transition: "all 0.2s",
-        "&:hover": active
-          ? {
-              background: `linear-gradient(135deg, #E0E7FF, ${T.brandSoft})`,
-              transform: "scale(1.05)",
-            }
-          : {},
+        height: 24,
+        minWidth: 34,
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        fontFamily: "'DM Mono', monospace",
+        bgcolor: count > 1 ? '#f0f4ff' : '#f8f9fc',
+        color: count > 1 ? '#4f63d2' : '#9ca3af',
+        border: count > 1 ? '1px solid #c7d2fe' : '1px solid #eeeff5',
+        borderRadius: '7px',
       }}
-    >
-      <Layers size={11} color={active ? T.brand : T.textLight} />
-      <Typography
-        sx={{
-          fontWeight: 800,
-          fontSize: "0.72rem",
-          color: active ? T.brand : T.textLight,
-          fontFamily: "'DM Mono', monospace",
-        }}
-      >
-        {count}
-      </Typography>
-    </Box>
+    />
   );
 }
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-function StatCard({
-  label,
-  value,
-  sub,
-  icon: Icon,
-  gradient,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  icon?: any;
-  gradient?: string;
-  accent?: string;
-}) {
-  return (
-    <Box
-      sx={{
-        flex: 1,
-        minWidth: 140,
-        position: "relative",
-        overflow: "hidden",
-        px: 2.5,
-        py: 2.25,
-        background: gradient ?? T.cardBg,
-        border: `1.5px solid ${T.border}`,
-        borderRadius: "16px",
-        boxShadow: T.shadowSm,
-        transition: "transform 0.2s, box-shadow 0.2s",
-        "&:hover": { transform: "translateY(-2px)", boxShadow: T.shadowMd },
-        "&::before": gradient
-          ? {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              right: 0,
-              width: 80,
-              height: 80,
-              borderRadius: "50%",
-              background: `radial-gradient(circle, ${accent ?? T.brand}18 0%, transparent 70%)`,
-              transform: "translate(20px, -20px)",
-            }
-          : {},
-      }}
-    >
-      {Icon && (
-        <Box
-          sx={{
-            display: "inline-flex",
-            p: 0.75,
-            borderRadius: "8px",
-            background: `${accent ?? T.brand}15`,
-            mb: 1,
-          }}
-        >
-          <Icon size={14} color={accent ?? T.brand} strokeWidth={2.5} />
-        </Box>
-      )}
-      <Typography
-        sx={{
-          color: T.textLight,
-          fontWeight: 600,
-          fontSize: "0.68rem",
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          mb: 0.25,
-        }}
-      >
-        {label}
-      </Typography>
-      <Typography
-        sx={{
-          fontWeight: 900,
-          color: T.text,
-          fontSize: "1.45rem",
-          fontFamily: "'DM Mono', monospace",
-          letterSpacing: "-0.04em",
-          lineHeight: 1,
-        }}
-      >
-        {value}
-      </Typography>
-      {sub && <Typography sx={{ color: T.textLight, fontSize: "0.68rem", mt: 0.4, fontWeight: 500 }}>{sub}</Typography>}
-    </Box>
-  );
-}
-
-// ─── Filter Pill ──────────────────────────────────────────────────────────────
-function FilterPill({ label, onRemove }: { label: string; onRemove: () => void }) {
-  return (
-    <Box
-      sx={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 0.5,
-        px: 1.25,
-        py: 0.4,
-        borderRadius: "8px",
-        background: `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`,
-        border: `1.5px solid ${T.brandMid}`,
-        animation: "pillPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)",
-        "@keyframes pillPop": {
-          from: { transform: "scale(0.8)", opacity: 0 },
-          to: { transform: "scale(1)", opacity: 1 },
-        },
-      }}
-    >
-      <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, color: T.brand }}>{label}</Typography>
-      <IconButton
-        size="small"
-        onClick={onRemove}
-        sx={{
-          p: 0.15,
-          color: T.brand,
-          width: 16,
-          height: 16,
-          "&:hover": { backgroundColor: T.brandMid + "60" },
-          borderRadius: "4px",
-        }}
-      >
-        <X size={10} />
-      </IconButton>
-    </Box>
-  );
-}
-
-// ─── Row Action Buttons ───────────────────────────────────────────────────────
-function ActionButtons({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
-  return (
-    <Stack
-      direction="row"
-      spacing={0.5}
-      sx={{ opacity: 0, transition: "opacity 0.15s", ".MuiTableRow-root:hover &": { opacity: 1 } }}
-    >
-      <Tooltip title="Edit" placement="top" arrow>
-        <IconButton
-          size="small"
-          onClick={onEdit}
-          sx={{
-            color: T.brand,
-            background: `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`,
-            borderRadius: "9px",
-            width: 32,
-            height: 32,
-            border: `1.5px solid ${T.brandMid}`,
-            "&:hover": {
-              background: `linear-gradient(135deg, #E0E7FF, ${T.brandMid}60)`,
-              transform: "scale(1.08)",
-              boxShadow: T.shadowBrand,
-            },
-            transition: "all 0.15s",
-          }}
-        >
-          <PencilLine size={14} />
-        </IconButton>
-      </Tooltip>
-      <Tooltip title="Delete" placement="top" arrow>
-        <IconButton
-          size="small"
-          onClick={onDelete}
-          sx={{
-            color: T.danger,
-            background: `linear-gradient(135deg, ${T.dangerSoft}, #FEE2E2)`,
-            borderRadius: "9px",
-            width: 32,
-            height: 32,
-            border: `1.5px solid ${T.dangerMid}`,
-            "&:hover": {
-              background: `linear-gradient(135deg, #FEE2E2, ${T.dangerMid}80)`,
-              transform: "scale(1.08)",
-              boxShadow: `0 4px 12px ${T.danger}30`,
-            },
-            transition: "all 0.15s",
-          }}
-        >
-          <Trash2 size={14} />
-        </IconButton>
-      </Tooltip>
-    </Stack>
-  );
-}
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 export default function Products() {
   const [page, setPage] = useState(0);
   const [filterOpen, setFilterOpen] = useState(false);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const router = useRouter();
+
   const [open, setOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
   const [filters, setFilters] = useState({
-    search: "",
-    type: "",
-    active: "",
-    category_ids: "",
+    search: '',
+    type: '',
+    active: '',
+    category_ids: '',
   });
 
-  const { data: categoryData } = useFetch<{ data: ICategorys }>({ url: `${category.getCategory}` });
+  const { data: categoryData } = useFetch<{ data: ICategorys }>({
+    url: `${category.getCategory}`,
+  });
+
   const categoryOptions =
     categoryData?.data?.categories?.map((cat) => ({
       label: cat.category_name,
@@ -558,12 +333,17 @@ export default function Products() {
 
   const queryParams = useMemo(() => {
     const params = new URLSearchParams();
-    if (filters.search && debouncedSearch) params.append("search", debouncedSearch);
-    if (filters.category_ids) params.append("category_ids", filters.category_ids);
-    if (filters.type?.trim()) params.append("type", filters.type);
-    if (String(filters.active).trim()) params.append("is_active", String(filters.active));
-    params.append("page", String(page + 1));
-    params.append("limit", String(rowsPerPage));
+
+    if (filters.search && debouncedSearch) params.append('search', debouncedSearch);
+    if (filters.category_ids) params.append('category_ids', filters.category_ids);
+    if (filters.type?.trim()) params.append('type', filters.type);
+    if (String(filters.active).trim()) {
+      params.append('is_active', String(filters.active));
+    }
+
+    params.append('page', String(page + 1));
+    params.append('limit', String(rowsPerPage));
+
     return params.toString();
   }, [filters, debouncedSearch, page, rowsPerPage]);
 
@@ -575,124 +355,130 @@ export default function Products() {
     url: `${products.postProduct}?${queryParams}`,
   });
 
-  const handleDelete = async () => {
-    if (!selectedId) return;
-    try {
-      const response = await productService.deleteProduct(selectedId);
-      if (response?.success) {
-        showToastMessage(response.message || "Item deleted successfully", "success");
-        refetch();
-        setOpen(false);
-      } else {
-        showToastMessage(response?.message ?? "Delete failed", "error");
-      }
-    } catch (e: unknown) {
-      const msg = typeof e === "object" && e !== null && "message" in e ? (e as any).message : "Something went wrong.";
-      showToastMessage(msg, "error");
-    }
-  };
+  const productList = results?.products ?? [];
+  const totalProducts = results?.total ?? 0;
+  const activeProducts = productList.filter((p) => p.is_active !== false).length;
+  const totalVariants = productList.reduce(
+    (acc, p) => acc + (p.product_details?.variants?.length ?? 0),
+    0
+  );
+
+  const activeFilterCount = [
+    filters.type,
+    filters.category_ids,
+    filters.active,
+  ].filter(Boolean).length;
 
   const handleFilterChange = (key: keyof typeof filters, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
     setPage(0);
   };
 
-  const activeFilterCount = [filters.type, filters.category_ids, filters.active].filter(Boolean).length;
+  const handleDelete = async () => {
+    if (!selectedId) return;
 
-  const productList: any[] = results?.products ?? [];
-  const totalProducts = results?.total ?? 0;
-  const activeProducts = productList.filter((p) => p.is_active !== false).length;
-  const totalVariants = productList.reduce((acc, p) => acc + (p.product_details?.variants?.length ?? 0), 0);
+    try {
+      const response = await productService.deleteProduct(selectedId);
 
-  // ─── Columns ─────────────────────────────────────────────────────────────────
+      if (response?.success) {
+        showToastMessage(response.message || 'Item deleted successfully', 'success');
+        refetch();
+        setOpen(false);
+      } else {
+        showToastMessage(response?.message ?? 'Delete failed', 'error');
+      }
+    } catch (e: any) {
+      showToastMessage(e?.message || 'Something went wrong.', 'error');
+    }
+  };
+
   const columns: ITableColumn<any>[] = [
     {
-      key: "name",
-      label: "Item",
+      key: 'name',
+      label: 'Item',
       render: (row) => (
-        <Stack direction="row" alignItems="center" spacing={1.75}>
-          <ProductAvatar name={row.name ?? "P"} />
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <ProductAvatar name={row.name ?? 'Product'} />
+
           <Box>
-            <Typography sx={{ fontWeight: 700, color: T.text, fontSize: "0.875rem", lineHeight: 1.3, mb: 0.3 }}>
+            <Typography
+              sx={{
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                color: '#1a1d2e',
+                fontFamily: "'DM Sans', sans-serif",
+                lineHeight: 1.3,
+              }}
+            >
               {row.name}
             </Typography>
-            {row.product_details?.base_sku && (
-              <Box
-                sx={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  px: 0.75,
-                  py: 0.15,
-                  borderRadius: "5px",
-                  background: T.subtleBg,
-                  border: `1px solid ${T.border}`,
-                }}
-              >
-                <Typography
-                  sx={{ fontFamily: "'DM Mono', monospace", fontSize: "0.68rem", color: T.textLight, fontWeight: 600 }}
-                >
-                  {row.product_details.base_sku}
-                </Typography>
-              </Box>
-            )}
+
+            <Typography
+              sx={{
+                fontSize: '0.7rem',
+                color: '#9ca3af',
+                fontFamily: "'DM Mono', monospace",
+                letterSpacing: '0.02em',
+              }}
+            >
+              {row.product_details?.base_sku || '—'}
+            </Typography>
           </Box>
         </Stack>
       ),
       cellStyle: { minWidth: 220 },
     },
     {
-      key: "unit",
-      label: "Unit",
+      key: 'unit',
+      label: 'Unit',
       render: (row) => (
-        <Box
-          sx={{
-            display: "inline-flex",
-            alignItems: "center",
-            px: 1.25,
-            py: 0.35,
-            borderRadius: "8px",
-            background: T.subtleBg,
-            border: `1.5px solid ${T.border}`,
-          }}
-        >
-          <Typography sx={{ fontWeight: 700, color: T.textMid, fontSize: "0.72rem" }}>
-            {row.is_raw
-              ? (row.raw_specification ?? "—")
+        <Chip
+          label={
+            row.is_raw
+              ? row.raw_specification ?? '—'
               : row.is_resource
-                ? (row.resource_unit ?? "—")
-                : (row.product_details?.unit ?? "—")}
-          </Typography>
-        </Box>
+                ? row.resource_unit ?? '—'
+                : row.product_details?.unit ?? '—'
+          }
+          size="small"
+          sx={{
+            height: 22,
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            fontFamily: "'DM Sans', sans-serif",
+            bgcolor: '#f8f9fc',
+            color: '#6b7280',
+            border: '1px solid #eeeff5',
+            borderRadius: '6px',
+          }}
+        />
       ),
-      cellStyle: { minWidth: 80 },
     },
     {
-      key: "description",
-      label: "Description",
+      key: 'description',
+      label: 'Description',
       render: (row) => (
-        <Tooltip title={row.product_details?.description ?? ""} placement="top" arrow>
+        <Tooltip title={row.product_details?.description ?? ''} arrow>
           <Typography
             sx={{
               maxWidth: 260,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              color: T.textMid,
-              fontSize: "0.82rem",
-              cursor: "default",
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              color: row.product_details?.description ? '#6b7280' : '#d1d5db',
+              fontSize: '0.8rem',
+              fontFamily: "'DM Sans', sans-serif",
             }}
           >
-            {row.product_details?.description || (
-              <span style={{ color: T.textXLight, fontStyle: "italic", fontSize: "0.78rem" }}>No description</span>
-            )}
+            {row.product_details?.description || 'No description'}
           </Typography>
         </Tooltip>
       ),
       cellStyle: { minWidth: 200, maxWidth: 260 },
     },
     {
-      key: "pricing",
-      label: "Pricing",
+      key: 'pricing',
+      label: 'Pricing',
       render: (row) => (
         <PriceCell
           cost={row.purchase_info?.cost_price ?? 0}
@@ -700,203 +486,217 @@ export default function Products() {
           isResource={row.is_resource}
           resourceCostPerUnit={row.resource_cost_per_unit}
           isRaw={row.is_raw}
-          rawCostPerUnit={row.raw_cost_per_unit} // ← add this
+          rawCostPerUnit={row.raw_cost_per_unit}
         />
       ),
       cellStyle: { minWidth: 150 },
     },
     {
-      key: "variants",
-      label: "Variants",
-      render: (row) => <VariantBadge count={row.product_details?.variants?.length ?? 0} />,
-      cellStyle: { minWidth: 90, textAlign: "center" },
+      key: 'variants',
+      label: 'Variants',
+      render: (row) => (
+        <VariantBadge count={row.product_details?.variants?.length ?? 0} />
+      ),
+      cellStyle: { minWidth: 90, textAlign: 'center' },
     },
     {
-      key: "action",
-      label: "",
+      key: 'action',
+      label: '',
       render: (row) => (
-        <ActionButtons
-          onEdit={() => {
-            console.log("Navigating to:", `/products/product/${row.id}`);
-            console.log("Row ID:", row.id);
-            router.push(`/products/product/${row.id}`);
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 0.5,
+            opacity: 0,
+            transition: 'opacity 0.15s ease',
+            '.MuiTableRow-root:hover &': { opacity: 1 },
           }}
-          onDelete={() => {
-            setSelectedId(row.id);
-            setOpen(true);
-          }}
-        />
+        >
+          <Tooltip title="Edit product" arrow>
+            <IconButton
+              size="small"
+              onClick={() => router.push(`/products/product/${row.id}`)}
+              sx={{
+                width: 30,
+                height: 30,
+                borderRadius: '8px',
+                color: '#4f63d2',
+                bgcolor: '#f0f4ff',
+                '&:hover': {
+                  bgcolor: '#e0e7ff',
+                  transform: 'scale(1.05)',
+                },
+              }}
+            >
+              <PencilLine size={14} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Delete product" arrow>
+            <IconButton
+              size="small"
+              onClick={() => {
+                setSelectedId(row.id);
+                setOpen(true);
+              }}
+              sx={{
+                width: 30,
+                height: 30,
+                borderRadius: '8px',
+                color: '#ef4444',
+                bgcolor: '#fef2f2',
+                '&:hover': {
+                  bgcolor: '#fee2e2',
+                  transform: 'scale(1.05)',
+                },
+              }}
+            >
+              <Trash2 size={14} />
+            </IconButton>
+          </Tooltip>
+        </Box>
       ),
-      cellStyle: { minWidth: 90, textAlign: "right" },
+      cellStyle: { minWidth: 90, textAlign: 'right' },
     },
   ];
 
-  // ─── Render ───────────────────────────────────────────────────────────────────
   return (
     <Box
       sx={{
-        minHeight: "100vh",
-        backgroundColor: T.pageBg,
-        pb: 8,
-        fontFamily: "'DM Sans', 'Plus Jakarta Sans', sans-serif",
-        // Subtle dot grid background
-        backgroundImage: `radial-gradient(${T.border} 1.2px, transparent 1.2px)`,
-        backgroundSize: "28px 28px",
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        bgcolor: '#f8f9fc',
       }}
     >
       <BBLoader enabled={loading} />
 
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      {/* Header */}
       <Box
         sx={{
-          background: `${T.glassOverlay}`,
-          backdropFilter: "blur(20px)",
-          borderBottom: `1.5px solid ${T.border}`,
-          px: { xs: 2, md: 4 },
-          py: 2,
-          position: "sticky",
-          top: 0,
-          zIndex: 20,
-          boxShadow: "0 1px 0 #E8EBF2, 0 4px 20px rgba(15,23,42,0.05)",
+          px: 3,
+          pt: 3,
+          pb: 2.5,
+          bgcolor: '#ffffff',
+          borderBottom: '1px solid #f0f0f5',
         }}
       >
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Stack direction="row" alignItems="center" spacing={2}>
-            {/* Animated logo icon */}
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box
               sx={{
-                width: 42,
-                height: 42,
-                borderRadius: "13px",
-                background: `linear-gradient(135deg, ${T.brand} 0%, ${T.brandDark} 100%)`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: T.shadowBrand,
-                position: "relative",
-                overflow: "hidden",
-                "&::after": {
-                  content: '""',
-                  position: "absolute",
-                  top: -10,
-                  right: -10,
-                  width: 30,
-                  height: 30,
-                  borderRadius: "50%",
-                  background: "rgba(255,255,255,0.12)",
-                },
-                transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": { transform: "rotate(-5deg) scale(1.05)", boxShadow: T.shadowBrandHover },
+                width: 46,
+                height: 46,
+                borderRadius: '13px',
+                background:
+                  'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 6px 20px rgba(14, 165, 233, 0.3)',
+                flexShrink: 0,
               }}
             >
-              <ShoppingBag size={19} color="#fff" />
+              <ShoppingBag size={22} color="white" />
             </Box>
-            <Box>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Typography
-                  sx={{ fontWeight: 900, color: T.text, fontSize: "1rem", letterSpacing: "-0.03em", lineHeight: 1 }}
-                >
-                  Items
-                </Typography>
-                <Box
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 0.4,
-                    px: 0.9,
-                    py: 0.25,
-                    borderRadius: "6px",
-                    background: `linear-gradient(135deg, ${T.brandXSoft}, ${T.brandSoft})`,
-                    border: `1px solid ${T.brandMid}`,
-                  }}
-                >
-                  <Zap size={9} color={T.brand} />
-                  <Typography
-                    sx={{ fontSize: "0.62rem", fontWeight: 800, color: T.brand, fontFamily: "'DM Mono', monospace" }}
-                  >
-                    {totalProducts}
-                  </Typography>
-                </Box>
-              </Stack>
-              <Typography sx={{ color: T.textLight, fontSize: "0.7rem", mt: 0.15 }}>Catalogue & inventory</Typography>
-            </Box>
-          </Stack>
 
-          <Stack direction="row" spacing={1.25} alignItems="center">
-            {/* Filter toggle */}
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: '1.5rem',
+                  fontWeight: 800,
+                  color: '#1a1d2e',
+                  fontFamily: "'DM Sans', sans-serif",
+                  letterSpacing: '-0.4px',
+                  lineHeight: 1.15,
+                }}
+              >
+                Items
+              </Typography>
+
+              <Typography
+                sx={{
+                  fontSize: '0.8rem',
+                  color: '#9ca3af',
+                  fontFamily: "'DM Sans', sans-serif",
+                  mt: 0.25,
+                }}
+              >
+                {totalProducts} product{totalProducts !== 1 ? 's' : ''} in catalogue
+              </Typography>
+            </Box>
+          </Box>
+
+          <Stack direction="row" spacing={1}>
             <Button
               variant="outlined"
-              startIcon={<SlidersHorizontal size={14} />}
+              startIcon={<SlidersHorizontal size={15} />}
               endIcon={
                 activeFilterCount > 0 ? (
-                  <Box
+                  <Chip
+                    label={activeFilterCount}
+                    size="small"
                     sx={{
-                      width: 18,
                       height: 18,
-                      borderRadius: "50%",
-                      background: `linear-gradient(135deg, ${T.brand}, ${T.brandDark})`,
-                      color: "#fff",
-                      fontSize: "0.62rem",
-                      fontWeight: 900,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: T.shadowBrand,
+                      minWidth: 18,
+                      bgcolor: '#4f63d2',
+                      color: '#fff',
+                      fontSize: '0.65rem',
+                      fontWeight: 800,
                     }}
-                  >
-                    {activeFilterCount}
-                  </Box>
+                  />
                 ) : (
                   <ChevronDown
-                    size={13}
-                    style={{ transform: filterOpen ? "rotate(180deg)" : "none", transition: "transform 0.25s" }}
+                    size={14}
+                    style={{
+                      transform: filterOpen ? 'rotate(180deg)' : 'none',
+                      transition: 'transform 0.2s',
+                    }}
                   />
                 )
               }
               onClick={() => setFilterOpen(!filterOpen)}
               sx={{
-                borderColor: filterOpen ? T.brand : T.border,
-                color: filterOpen ? T.brand : T.textMid,
-                background: filterOpen ? `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)` : T.cardBg,
-                borderRadius: "11px",
-                textTransform: "none",
-                fontWeight: 700,
-                fontSize: "0.82rem",
-                height: 38,
                 px: 2,
-                borderWidth: "1.5px",
-                "&:hover": {
-                  borderColor: T.brand,
-                  background: `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`,
-                  color: T.brand,
+                py: 1,
+                borderRadius: '11px',
+                borderColor: filterOpen ? '#c7d2fe' : '#eeeff5',
+                color: filterOpen ? '#4f63d2' : '#6b7280',
+                bgcolor: filterOpen ? '#f0f4ff' : '#ffffff',
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                textTransform: 'none',
+                '&:hover': {
+                  borderColor: '#c7d2fe',
+                  bgcolor: '#f0f4ff',
                 },
-                transition: "all 0.18s",
               }}
             >
               Filters
             </Button>
 
-            {/* New product CTA */}
             <Button
               variant="contained"
-              startIcon={<Plus size={15} strokeWidth={2.5} />}
-              onClick={() => router.push("/products/create")}
+              startIcon={<Plus size={16} />}
+              onClick={() => router.push('/products/create')}
               sx={{
-                background: `linear-gradient(135deg, ${T.brand} 0%, ${T.brandDark} 100%)`,
-                borderRadius: "11px",
-                textTransform: "none",
-                fontWeight: 800,
-                fontSize: "0.85rem",
-                height: 38,
                 px: 2.5,
-                boxShadow: T.shadowBrand,
-                border: "none",
-                "&:hover": {
-                  background: `linear-gradient(135deg, #6366F1 0%, ${T.brand} 100%)`,
-                  boxShadow: T.shadowBrandHover,
-                  transform: "translateY(-1.5px)",
+                py: 1.1,
+                borderRadius: '11px',
+                background:
+                  'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+                boxShadow: '0 4px 14px rgba(14, 165, 233, 0.35)',
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                textTransform: 'none',
+                '&:hover': {
+                  background:
+                    'linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)',
+                  boxShadow: '0 6px 20px rgba(14, 165, 233, 0.45)',
+                  transform: 'translateY(-1px)',
                 },
-                transition: "all 0.18s",
               }}
             >
               New Product
@@ -905,429 +705,334 @@ export default function Products() {
         </Stack>
       </Box>
 
-      {/* ── Body ─────────────────────────────────────────────────────────────── */}
-      <Box sx={{ px: { xs: 2, md: 4 }, pt: 3.5 }}>
-        {/* ── Stat cards ──────────────────────────────────────────────────── */}
-        <Stack
-          direction="row"
-          spacing={2}
-          mb={3}
-          flexWrap="wrap"
-          useFlexGap
-          sx={{
-            "& > *": {
-              animation: "fadeSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both",
-            },
-            "& > *:nth-of-type(1)": { animationDelay: "0ms" },
-            "& > *:nth-of-type(2)": { animationDelay: "60ms" },
-            "& > *:nth-of-type(3)": { animationDelay: "120ms" },
-            "& > *:nth-of-type(4)": { animationDelay: "180ms" },
-            "@keyframes fadeSlideUp": {
-              from: { opacity: 0, transform: "translateY(12px)" },
-              to: { opacity: 1, transform: "translateY(0)" },
-            },
-          }}
-        >
-          <StatCard label="Total Products" value={totalProducts} sub="in catalogue" icon={BarChart3} accent={T.brand} />
-          <StatCard
-            label="This Page"
-            value={productList.length}
-            sub="loaded results"
-            icon={BoxSelect}
-            accent="#7C3AED"
-          />
-          <StatCard label="Total Variants" value={totalVariants} sub="across page" icon={Layers} accent={T.warning} />
-          <StatCard label="Active" value={activeProducts} sub="on this page" icon={Sparkles} accent={T.success} />
-        </Stack>
+      {/* Stats */}
+      <Box
+        sx={{
+          mx: 3,
+          mt: 2.5,
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' },
+          gap: 2,
+        }}
+      >
+        <StatCard
+          label="Total Products"
+          value={totalProducts}
+          icon={<BarChart3 size={22} />}
+          color="#4f63d2"
+          bg="#f0f4ff"
+        />
 
-        {/* ── Main card ────────────────────────────────────────────────────── */}
-        <Box
-          sx={{
-            background: T.cardBg,
-            borderRadius: "20px",
-            border: `1.5px solid ${T.border}`,
-            boxShadow: T.shadowMd,
-            overflow: "hidden",
-            animation: "fadeSlideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both",
-            "@keyframes fadeSlideUp": {
-              from: { opacity: 0, transform: "translateY(14px)" },
-              to: { opacity: 1, transform: "translateY(0)" },
-            },
-          }}
-        >
-          {/* ── Filter panel ─────────────────────────────────────────────── */}
-          <Collapse in={filterOpen} timeout={300}>
-            <Box
-              sx={{
-                px: 3,
-                pt: 3,
-                pb: 2.5,
-                background: `linear-gradient(180deg, #F8F9FF 0%, ${T.cardBg} 100%)`,
-                borderBottom: `1.5px solid ${T.border}`,
-              }}
-            >
-              <Stack direction="row" alignItems="center" spacing={1} mb={2.25}>
-                <Box
-                  sx={{
-                    p: 0.6,
-                    borderRadius: "7px",
-                    background: `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`,
-                    border: `1px solid ${T.brandMid}`,
-                  }}
-                >
-                  <Filter size={12} color={T.brand} />
-                </Box>
-                <Typography
-                  sx={{
-                    fontWeight: 800,
-                    color: T.textMid,
-                    fontSize: "0.75rem",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                  }}
-                >
-                  Filters
-                </Typography>
-                {activeFilterCount > 0 && (
-                  <Button
-                    size="small"
-                    onClick={() => setFilters((f) => ({ ...f, type: "", active: "", category_ids: "" }))}
-                    sx={{
-                      ml: "auto",
-                      textTransform: "none",
-                      color: T.danger,
-                      fontWeight: 700,
-                      fontSize: "0.72rem",
-                      p: 0,
-                      minWidth: 0,
-                      "&:hover": { backgroundColor: "transparent", textDecoration: "underline" },
-                    }}
-                  >
-                    Clear all
-                  </Button>
-                )}
-              </Stack>
+        <StatCard
+          label="This Page"
+          value={productList.length}
+          icon={<BoxSelect size={22} />}
+          color="#7c3aed"
+          bg="#f3eeff"
+        />
 
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <BBDropdownBase
-                    name="type"
-                    label="Product Type"
-                    value={filters.type}
-                    options={[{ value: "", label: "All types" }, ...productTypes]}
-                    onDropdownChange={(_e, _n, val) => handleFilterChange("type", val as string)}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <BBDropdownBase
-                    name="category_ids"
-                    label="Category"
-                    value={filters.category_ids}
-                    options={[{ value: "", label: "All categories" }, ...categoryOptions]}
-                    onDropdownChange={(_e, _n, val) => handleFilterChange("category_ids", val as string)}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <BBDropdownBase
-                    name="active"
-                    label="Status"
-                    value={filters.active}
-                    options={[{ value: "", label: "All statuses" }, ...activeTypescategories]}
-                    onDropdownChange={(_e, _n, val) => handleFilterChange("active", val as string)}
-                  />
-                </Grid>
-              </Grid>
+        <StatCard
+          label="Variants"
+          value={totalVariants}
+          icon={<Layers size={22} />}
+          color="#d97706"
+          bg="#fffbeb"
+        />
 
-              {activeFilterCount > 0 && (
-                <Stack direction="row" spacing={1} mt={2.25} flexWrap="wrap" useFlexGap alignItems="center">
-                  <Typography
-                    sx={{
-                      color: T.textLight,
-                      fontWeight: 700,
-                      fontSize: "0.68rem",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
-                    }}
-                  >
-                    Active:
-                  </Typography>
-                  {filters.type && (
-                    <FilterPill label={`Type: ${filters.type}`} onRemove={() => handleFilterChange("type", "")} />
-                  )}
-                  {filters.category_ids && (
-                    <FilterPill
-                      label={`Category: ${categoryOptions.find((c) => String(c.value) === filters.category_ids)?.label ?? filters.category_ids}`}
-                      onRemove={() => handleFilterChange("category_ids", "")}
-                    />
-                  )}
-                  {filters.active && (
-                    <FilterPill label={`Status: ${filters.active}`} onRemove={() => handleFilterChange("active", "")} />
-                  )}
-                </Stack>
-              )}
-            </Box>
-          </Collapse>
-
-          {/* ── Search & count bar ───────────────────────────────────────── */}
-          <Box
-            sx={{
-              px: 3,
-              py: 2,
-              borderBottom: `1.5px solid ${T.border}`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 2,
-              flexWrap: "wrap",
-              background: T.cardBg,
-            }}
-          >
-            <Box sx={{ position: "relative", flex: "0 0 320px" }}>
-              <Search
-                size={14}
-                color={T.textLight}
-                style={{
-                  position: "absolute",
-                  left: 13,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  pointerEvents: "none",
-                  zIndex: 1,
-                }}
-              />
-              <BBInputBase
-                label=""
-                name="search"
-                value={filters.search}
-                onChange={(e) => handleFilterChange("search", e.target.value)}
-                placeholder="Search products, SKUs…"
-                sx={{
-                  "& .MuiInputBase-root": {
-                    pl: "38px",
-                    borderRadius: "12px",
-                    backgroundColor: T.subtleBg,
-                    border: `1.5px solid ${T.border}`,
-                    transition: "border-color 0.18s, box-shadow 0.18s",
-                    "&:focus-within": {
-                      borderColor: T.brandMid,
-                      boxShadow: `0 0 0 3px ${T.brandGlow}`,
-                      backgroundColor: T.cardBg,
-                    },
-                  },
-                }}
-              />
-              {filters.search && (
-                <IconButton
-                  size="small"
-                  onClick={() => handleFilterChange("search", "")}
-                  sx={{
-                    position: "absolute",
-                    right: 8,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    color: T.textLight,
-                    p: 0.25,
-                    borderRadius: "6px",
-                    "&:hover": { backgroundColor: T.subtleBg, color: T.text },
-                  }}
-                >
-                  <X size={12} />
-                </IconButton>
-              )}
-            </Box>
-
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 0.75,
-                px: 1.5,
-                py: 0.5,
-                borderRadius: "9px",
-                background: totalProducts > 0 ? T.brandXSoft : T.subtleBg,
-                border: `1.5px solid ${totalProducts > 0 ? T.brandMid : T.border}`,
-              }}
-            >
-              <Typography sx={{ color: T.textLight, fontSize: "0.72rem", fontWeight: 500 }}>
-                {totalProducts > 0 ? (
-                  <>
-                    <span style={{ fontWeight: 900, color: T.brand, fontFamily: "'DM Mono', monospace" }}>
-                      {totalProducts}
-                    </span>{" "}
-                    products found
-                  </>
-                ) : (
-                  "No products"
-                )}
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* ── Table ────────────────────────────────────────────────────── */}
-          <Box
-            sx={{
-              width: "100%",
-              overflowX: "auto",
-              WebkitOverflowScrolling: "touch",
-              "& .MuiTableRow-root:not(.MuiTableRow-head)": {
-                transition: "background 0.12s",
-                "&:hover": {
-                  background: `linear-gradient(90deg, ${T.brandXSoft}80, ${T.subtleBg}50)`,
-                },
-              },
-              "& .MuiTableCell-root": {
-                borderBottom: `1px solid ${T.border}`,
-                py: 1.75,
-                px: 2.5,
-              },
-              "& .MuiTableCell-head": {
-                background: `linear-gradient(180deg, #F8F9FF, ${T.subtleBg})`,
-                color: T.textLight,
-                fontSize: "0.68rem",
-                fontWeight: 800,
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                borderBottom: `2px solid ${T.border}`,
-                py: 1.5,
-              },
-            }}
-          >
-            <BBTable
-              data={productList}
-              columns={columns}
-              page={page}
-              rowsPerPage={rowsPerPage}
-              totalCount={totalProducts}
-              onPageChange={(newPage) => setPage(newPage)}
-              onRowsPerPageChange={(newRows) => {
-                setRowsPerPage(newRows);
-                setPage(0);
-              }}
-            />
-          </Box>
-
-          {/* ── Empty state ──────────────────────────────────────────────── */}
-          {!loading && productList.length === 0 && (
-            <Box
-              sx={{
-                py: 12,
-                textAlign: "center",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                animation: "fadeSlideUp 0.4s ease both",
-              }}
-            >
-              {/* Decorative rings */}
-              <Box sx={{ position: "relative", width: 88, height: 88, mb: 3, mx: "auto" }}>
-                <Box
-                  sx={{
-                    position: "absolute",
-                    inset: 0,
-                    borderRadius: "50%",
-                    border: `2px dashed ${T.brandMid}`,
-                    animation: "spin 12s linear infinite",
-                    "@keyframes spin": { to: { transform: "rotate(360deg)" } },
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: "absolute",
-                    inset: 12,
-                    borderRadius: "50%",
-                    border: `1.5px solid ${T.brandSoft}`,
-                    animation: "spin 8s linear infinite reverse",
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: "absolute",
-                    inset: 22,
-                    borderRadius: "50%",
-                    background: `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <ShoppingBag size={24} color={T.brand} />
-                </Box>
-              </Box>
-
-              <Typography
-                sx={{ fontWeight: 900, color: T.text, mb: 0.75, fontSize: "1.05rem", letterSpacing: "-0.03em" }}
-              >
-                No products yet
-              </Typography>
-              <Typography
-                sx={{ color: T.textLight, mb: 3.5, fontSize: "0.85rem", maxWidth: 280, mx: "auto", lineHeight: 1.6 }}
-              >
-                {filters.search || activeFilterCount > 0
-                  ? "Try adjusting your search or filters"
-                  : "Add your first product to get started with your catalogue"}
-              </Typography>
-              {!filters.search && activeFilterCount === 0 && (
-                <Button
-                  variant="contained"
-                  startIcon={<Plus size={15} strokeWidth={2.5} />}
-                  onClick={() => router.push("/products/create")}
-                  sx={{
-                    background: `linear-gradient(135deg, ${T.brand}, ${T.brandDark})`,
-                    borderRadius: "12px",
-                    textTransform: "none",
-                    fontWeight: 800,
-                    fontSize: "0.85rem",
-                    height: 42,
-                    px: 3,
-                    boxShadow: T.shadowBrand,
-                    "&:hover": { boxShadow: T.shadowBrandHover, transform: "translateY(-2px)" },
-                    transition: "all 0.18s",
-                  }}
-                >
-                  Create First Product
-                </Button>
-              )}
-            </Box>
-          )}
-        </Box>
+        <StatCard
+          label="Active"
+          value={activeProducts}
+          icon={<Sparkles size={22} />}
+          color="#15803d"
+          bg="#f0fdf6"
+        />
       </Box>
 
-      {/* ── Delete dialog ──────────────────────────────────────────────────── */}
+      {/* Filters */}
+      <Collapse in={filterOpen} timeout={250}>
+        <Box
+          component={Paper}
+          elevation={0}
+          sx={{
+            mx: 3,
+            mt: 2.5,
+            borderRadius: '14px',
+            border: '1px solid #eeeff5',
+            bgcolor: '#ffffff',
+            p: 2.5,
+          }}
+        >
+          <Stack direction="row" alignItems="center" spacing={1} mb={2}>
+            <Filter size={15} color="#4f63d2" />
+
+            <Typography
+              sx={{
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                color: '#6b7280',
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              Filters
+            </Typography>
+
+            {activeFilterCount > 0 && (
+              <Button
+                size="small"
+                onClick={() =>
+                  setFilters((f) => ({
+                    ...f,
+                    type: '',
+                    active: '',
+                    category_ids: '',
+                  }))
+                }
+                sx={{
+                  ml: 'auto',
+                  color: '#ef4444',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                Clear all
+              </Button>
+            )}
+          </Stack>
+
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <BBDropdownBase
+                name="type"
+                label="Product Type"
+                value={filters.type}
+                options={[{ value: '', label: 'All types' }, ...productTypes]}
+                onDropdownChange={(_e, _n, val) =>
+                  handleFilterChange('type', val as string)
+                }
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 4 }}>
+              <BBDropdownBase
+                name="category_ids"
+                label="Category"
+                value={filters.category_ids}
+                options={[{ value: '', label: 'All categories' }, ...categoryOptions]}
+                onDropdownChange={(_e, _n, val) =>
+                  handleFilterChange('category_ids', val as string)
+                }
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 4 }}>
+              <BBDropdownBase
+                name="active"
+                label="Status"
+                value={filters.active}
+                options={[{ value: '', label: 'All statuses' }, ...activeTypescategories]}
+                onDropdownChange={(_e, _n, val) =>
+                  handleFilterChange('active', val as string)
+                }
+              />
+            </Grid>
+          </Grid>
+        </Box>
+      </Collapse>
+
+      {/* Toolbar */}
+      <Box
+        component={Paper}
+        elevation={0}
+        sx={{
+          mx: 3,
+          mt: 2.5,
+          borderRadius: '14px 14px 0 0',
+          border: '1px solid #eeeff5',
+          borderBottom: 'none',
+          bgcolor: '#ffffff',
+          px: 2.5,
+          py: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+        }}
+      >
+        <Box sx={{ position: 'relative', flexGrow: 1, maxWidth: 380 }}>
+          <Box
+            sx={{
+              position: 'absolute',
+              left: 12,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#9ca3af',
+              display: 'flex',
+              alignItems: 'center',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          >
+            <Search size={15} />
+          </Box>
+
+          <BBInputBase
+            label=""
+            name="search"
+            value={filters.search}
+            onChange={(e) => handleFilterChange('search', e.target.value)}
+            placeholder="Search products, SKUs…"
+            sx={{ pl: 4.5 }}
+          />
+        </Box>
+
+        {filters.search && (
+          <Chip
+            label={`${productList.length} result${
+              productList.length !== 1 ? 's' : ''
+            }`}
+            size="small"
+            sx={{
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              fontFamily: "'DM Sans', sans-serif",
+              bgcolor: '#e0f2fe',
+              color: '#0369a1',
+              border: '1px solid #bae6fd',
+              borderRadius: '8px',
+            }}
+          />
+        )}
+      </Box>
+
+      {/* Table */}
+      <Box
+        sx={{
+          mx: 3,
+          mb: 3,
+          borderRadius: '0 0 14px 14px',
+          border: '1px solid #eeeff5',
+          borderTop: 'none',
+          bgcolor: '#ffffff',
+          overflow: 'hidden',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
+        }}
+      >
+        <BBTable
+          data={productList}
+          columns={columns}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          totalCount={totalProducts}
+          onPageChange={(newPage) => setPage(newPage)}
+          onRowsPerPageChange={(newRows) => {
+            setRowsPerPage(newRows);
+            setPage(0);
+          }}
+          sx={{
+            '& .MuiTableHead-root .MuiTableCell-root': {
+              bgcolor: '#f8fbff',
+              color: '#6b7280',
+              fontWeight: 600,
+              fontSize: '0.7rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              fontFamily: "'DM Sans', sans-serif",
+              borderBottom: '1px solid #eeeff5',
+              py: 1.5,
+            },
+            '& .MuiTableBody-root .MuiTableRow-root': {
+              cursor: 'pointer',
+              transition: 'background 0.12s ease',
+              '&:hover': { bgcolor: '#f8fbff' },
+            },
+            '& .MuiTableBody-root .MuiTableCell-root': {
+              borderBottom: '1px solid #f5f5fa',
+              py: 1.5,
+              fontFamily: "'DM Sans', sans-serif",
+            },
+          }}
+        />
+      </Box>
+
+      {/* Delete Dialog */}
       <BBDialog
         open={open}
         onClose={() => setOpen(false)}
         title="Delete Product"
         maxWidth="sm"
         content={
-          <Box>
+          <Box sx={{ pt: 1 }}>
             <Box
               sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1.5,
-                p: 2.25,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 2,
+                p: 2,
+                bgcolor: '#fff5f5',
+                border: '1px solid #fee2e2',
+                borderRadius: '10px',
                 mb: 2,
-                borderRadius: "12px",
-                background: `linear-gradient(135deg, ${T.dangerSoft}, #FEE2E2)`,
-                border: `1.5px solid ${T.dangerMid}`,
               }}
             >
-              <Box sx={{ p: 0.75, borderRadius: "8px", background: `${T.danger}15` }}>
-                <Trash2 size={16} color={T.danger} />
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '8px',
+                  bgcolor: '#fee2e2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  mt: 0.25,
+                }}
+              >
+                <Trash2 size={16} color="#ef4444" />
               </Box>
-              <Typography sx={{ fontWeight: 700, color: T.danger, fontSize: "0.875rem" }}>
-                This action cannot be undone
-              </Typography>
+
+              <Box>
+                <Typography
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.875rem',
+                    color: '#991b1b',
+                    fontFamily: "'DM Sans', sans-serif",
+                    mb: 0.5,
+                  }}
+                >
+                  This action cannot be undone
+                </Typography>
+
+                <Typography
+                  sx={{
+                    fontSize: '0.8125rem',
+                    color: '#b91c1c',
+                    fontFamily: "'DM Sans', sans-serif",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  The product will be permanently removed from your catalogue.
+                  All associated variants and pricing data will be lost.
+                </Typography>
+              </Box>
             </Box>
-            <Typography sx={{ color: T.textMid, lineHeight: 1.75, fontSize: "0.875rem" }}>
-              The product will be permanently removed from your catalogue. All associated variants and pricing data will
-              be lost.
+
+            <Typography
+              sx={{
+                fontSize: '0.875rem',
+                color: '#6b7280',
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              Are you sure you want to permanently delete this product?
             </Typography>
           </Box>
         }
         onConfirm={handleDelete}
         confirmText="Delete Product"
-        cancelText="Cancel"
+        cancelText="Keep Product"
         confirmColor="error"
       />
     </Box>

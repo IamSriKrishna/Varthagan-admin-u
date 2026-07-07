@@ -1,201 +1,335 @@
-"use client";
+'use client';
 
 import {
-  Box,
-  Paper,
-  Stack,
-  Typography,
-  Button,
   Avatar,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
-  TextField,
+  Box,
+  Button,
   Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  LinearProgress,
+  Stack,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  TableContainer,
-  LinearProgress,
-  Chip,
-} from "@mui/material";
-import { ChevronLeft, ChevronRight, Settings, Trash2, Clock, CalendarDays, TrendingUp, Users } from "lucide-react";
-import dayjs, { Dayjs } from "dayjs";
-import { useEffect, useState } from "react";
-import { employeeService } from "@/lib/api/employeeService";
-import { attendanceService, AttendanceRecord } from "@/lib/api/attendanceService";
-import { Employee } from "@/models/employee.model";
-import { showToastMessage } from "@/utils/toastUtil";
-import SalaryView from "@/components/salary/SalaryView";
-
-/* ─── Design tokens ──────────────────────────────────────────── */
-const COLORS = {
-  bg: "#F4F6FB",
-  surface: "#FFFFFF",
-  surfaceAlt: "#F8FAFD",
-  border: "#E3E8F0",
-  borderHover: "#C5CDE0",
-  accent: "#5B52F0",
-  accentGlow: "rgba(91,82,240,0.08)",
-  text: "#1A1D2E",
-  textMuted: "#7B8299",
-  textFaint: "#C5CDE0",
-
-  on_time: { bg: "rgba(16,185,129,0.09)",  text: "#059669", border: "rgba(16,185,129,0.28)", dot: "#10B981" },
-  late:    { bg: "rgba(245,158,11,0.10)",  text: "#B45309", border: "rgba(245,158,11,0.30)", dot: "#F59E0B" },
-  absent:  { bg: "rgba(239,68,68,0.09)",   text: "#DC2626", border: "rgba(239,68,68,0.28)",  dot: "#EF4444" },
-  holiday: { bg: "rgba(139,92,246,0.09)",  text: "#7C3AED", border: "rgba(139,92,246,0.28)", dot: "#8B5CF6" },
-  half_day:{ bg: "rgba(14,165,233,0.09)",  text: "#0369A1", border: "rgba(14,165,233,0.28)", dot: "#0EA5E9" },
-  leave:   { bg: "rgba(249,115,22,0.09)",  text: "#C2410C", border: "rgba(249,115,22,0.28)", dot: "#F97316" },
-};
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Settings,
+  Trash2,
+  TrendingUp,
+  Users,
+} from 'lucide-react';
+import dayjs, { Dayjs } from 'dayjs';
+import { useEffect, useState } from 'react';
+import { attendanceService, AttendanceRecord } from '@/lib/api/attendanceService';
+import { Employee } from '@/models/employee.model';
+import { showToastMessage } from '@/utils/toastUtil';
+import SalaryView from '@/components/salary/SalaryView';
 
 const STATUS_LABELS: Record<string, string> = {
-  on_time: "On Time", absent: "Absent", late: "Late",
-  holiday: "Holiday", half_day: "Half Day", leave: "Leave",
+  on_time: 'On Time',
+  absent: 'Absent',
+  late: 'Late',
+  holiday: 'Holiday',
+  half_day: 'Half Day',
+  leave: 'Leave',
 };
 
-/* ─── Shared sx helpers ──────────────────────────────────────── */
-const glassCard = {
-  background: COLORS.surface,
-  border: `1px solid ${COLORS.border}`,
-  borderRadius: "14px",
-  boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)",
+const STATUS_COLORS: Record<string, any> = {
+  on_time: { bg: '#f0fdf6', text: '#15803d', border: '#6ddc98', dot: '#16a34a' },
+  late: { bg: '#fff8eb', text: '#b45309', border: '#fcd34d', dot: '#f59e0b' },
+  absent: { bg: '#fff5f5', text: '#ef4444', border: '#fecaca', dot: '#ef4444' },
+  holiday: { bg: '#f3eeff', text: '#7c3aed', border: '#ddd6fe', dot: '#7c3aed' },
+  half_day: { bg: '#e0f2fe', text: '#0369a1', border: '#bae6fd', dot: '#0ea5e9' },
+  leave: { bg: '#fff7ed', text: '#c2410c', border: '#fed7aa', dot: '#f97316' },
 };
 
-const monoFont = { fontFamily: "'JetBrains Mono', 'Fira Code', monospace" };
-
-/* ─── Stat Card ──────────────────────────────────────────────── */
-function StatCard({ icon, label, value, color, pct }: {
-  icon: React.ReactNode; label: string; value: string; color: string; pct: number;
+function StatCard({
+  icon,
+  label,
+  value,
+  color,
+  pct,
+  bg,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  color: string;
+  pct: number;
+  bg: string;
 }) {
   return (
-    <Box sx={{
-      ...glassCard, p: 2.5, display: "flex", flexDirection: "column", gap: 1.5,
-      position: "relative", overflow: "hidden",
-      "&:hover": { borderColor: COLORS.borderHover, transform: "translateY(-2px)", transition: "all 0.2s" },
-      transition: "all 0.2s",
-    }}>
-      <Box sx={{
-        position: "absolute", top: 0, right: 0, width: 80, height: 80,
-        background: `radial-gradient(circle at top right, ${color}18, transparent 70%)`,
-        borderRadius: "0 14px 0 0",
-      }} />
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
-        <Box sx={{ color, opacity: 0.9 }}>{icon}</Box>
-        <Typography sx={{ fontSize: "0.75rem", color: COLORS.textMuted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600 }}>
-          {label}
-        </Typography>
-      </Box>
-      <Typography sx={{ fontSize: "1.9rem", fontWeight: 700, color: COLORS.text, ...monoFont, lineHeight: 1 }}>
-        {value}
-      </Typography>
-      <Box>
-        <LinearProgress
-          variant="determinate"
-          value={pct}
+    <Box
+      sx={{
+        bgcolor: '#ffffff',
+        border: '1px solid #eeeff5',
+        borderRadius: '14px',
+        p: 2.5,
+        boxShadow: '0 4px 24px rgba(0,0,0,0.03)',
+        transition: 'all 0.2s ease',
+        '&:hover': {
+          borderColor: color,
+          transform: 'translateY(-2px)',
+          boxShadow: `0 8px 24px ${color}22`,
+        },
+      }}
+    >
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1.5}>
+        <Box>
+          <Typography
+            sx={{
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              color: '#9ca3af',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              mb: 0.75,
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            {label}
+          </Typography>
+
+          <Typography
+            sx={{
+              fontSize: '1.55rem',
+              fontWeight: 800,
+              color: '#1a1d2e',
+              lineHeight: 1,
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            {value}
+          </Typography>
+        </Box>
+
+        <Box
           sx={{
-            height: 4, borderRadius: 2,
-            bgcolor: COLORS.border,
-            "& .MuiLinearProgress-bar": { bgcolor: color, borderRadius: 2 },
+            width: 46,
+            height: 46,
+            borderRadius: '13px',
+            bgcolor: bg,
+            color,
+            border: `1px solid ${color}22`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
-        />
-        <Typography sx={{ fontSize: "0.7rem", color: COLORS.textMuted, mt: 0.5, ...monoFont }}>
-          {pct}% of total
-        </Typography>
-      </Box>
+        >
+          {icon}
+        </Box>
+      </Stack>
+
+      <LinearProgress
+        variant="determinate"
+        value={pct}
+        sx={{
+          height: 4,
+          borderRadius: 2,
+          bgcolor: '#eeeff5',
+          '& .MuiLinearProgress-bar': {
+            bgcolor: color,
+            borderRadius: 2,
+          },
+        }}
+      />
     </Box>
   );
 }
 
-/* ─── Status Badge ───────────────────────────────────────────── */
 function StatusBadge({ status }: { status: string }) {
-  const c = (COLORS as any)[status] ?? { bg: COLORS.surfaceAlt, text: COLORS.textMuted, border: COLORS.border, dot: COLORS.textMuted };
+  const c = STATUS_COLORS[status] ?? {
+    bg: '#f8f9fc',
+    text: '#6b7280',
+    border: '#eeeff5',
+    dot: '#9ca3af',
+  };
+
   return (
-    <Box sx={{
-      display: "inline-flex", alignItems: "center", gap: 0.6,
-      px: 1.2, py: 0.35, borderRadius: "6px",
-      background: c.bg, border: `1px solid ${c.border}`,
-    }}>
-      <Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: c.dot, flexShrink: 0 }} />
-      <Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: c.text, letterSpacing: "0.04em" }}>
+    <Box
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.6,
+        px: 1.1,
+        py: 0.4,
+        borderRadius: '7px',
+        bgcolor: c.bg,
+        border: `1px solid ${c.border}`,
+      }}
+    >
+      <Box
+        sx={{
+          width: 5,
+          height: 5,
+          borderRadius: '50%',
+          bgcolor: c.dot,
+        }}
+      />
+
+      <Typography
+        sx={{
+          fontSize: '0.68rem',
+          fontWeight: 700,
+          color: c.text,
+          fontFamily: "'DM Sans', sans-serif",
+        }}
+      >
         {STATUS_LABELS[status] ?? status}
       </Typography>
     </Box>
   );
 }
 
-/* ─── Main Page ──────────────────────────────────────────────── */
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase();
+}
+
+function getAvatarStyle(name: string) {
+  const palette = [
+    { bg: '#e8edff', color: '#3d52c7' },
+    { bg: '#fce7f3', color: '#be185d' },
+    { bg: '#d1fae5', color: '#065f46' },
+    { bg: '#fff3cd', color: '#92400e' },
+    { bg: '#ede9fe', color: '#6d28d9' },
+    { bg: '#fee2e2', color: '#991b1b' },
+    { bg: '#e0f2fe', color: '#0369a1' },
+  ];
+
+  const idx =
+    name.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0) %
+    palette.length;
+
+  return palette[idx];
+}
+
 export default function EmployeeAttendancePage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [currentDate, setCurrentDate] = useState<Dayjs>(dayjs().startOf("week"));
+  const [currentDate, setCurrentDate] = useState<Dayjs>(dayjs().startOf('week'));
   const [loading, setLoading] = useState(false);
-  const [attendance, setAttendance] = useState<Record<number, Record<string, AttendanceRecord>>>({});
+  const [attendance, setAttendance] = useState<
+    Record<number, Record<string, AttendanceRecord>>
+  >({});
   const [companyId, setCompanyId] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedCell, setSelectedCell] = useState<{ date: string; employeeId: number } | null>(null);
-  const [status, setStatus] = useState<string>("on_time");
-  const [reason, setReason] = useState("");
-  const [notes, setNotes] = useState("");
-  const [stats, setStats] = useState({ onTime: 0, late: 0, absent: 0, total: 0 });
+  const [selectedCell, setSelectedCell] = useState<{
+    date: string;
+    employeeId: number;
+  } | null>(null);
+  const [status, setStatus] = useState<string>('on_time');
+  const [reason, setReason] = useState('');
+  const [notes, setNotes] = useState('');
+  const [stats, setStats] = useState({
+    onTime: 0,
+    late: 0,
+    absent: 0,
+    total: 0,
+  });
   const [selectAll, setSelectAll] = useState(false);
-  const [selectedEmployees, setSelectedEmployees] = useState<Set<number>>(new Set());
+  const [selectedEmployees, setSelectedEmployees] = useState<Set<number>>(
+    new Set()
+  );
 
   const fetchWeeklyAttendance = async () => {
     try {
       setLoading(true);
-      const startDate = currentDate.format("YYYY-MM-DD");
-      const endDate = currentDate.add(6, "days").format("YYYY-MM-DD");
-      const response = await attendanceService.getCompanyWeekView(startDate, endDate);
+
+      const startDate = currentDate.format('YYYY-MM-DD');
+      const endDate = currentDate.add(6, 'days').format('YYYY-MM-DD');
+
+      const response = await attendanceService.getCompanyWeekView(
+        startDate,
+        endDate
+      );
 
       if (response.success && response.data) {
         if (response.data.company_id) setCompanyId(response.data.company_id);
 
-        const employeeList: Employee[] = (response.data.employees || []).map((emp: any) => ({
-          id: emp.employee_id, name: emp.employee_name,
-          email: emp.email, employee_type: emp.employee_type,
-        })) as Employee[];
+        const employeeList: Employee[] = (response.data.employees || []).map(
+          (emp: any) =>
+            ({
+              id: emp.employee_id,
+              name: emp.employee_name,
+              email: emp.email,
+              employee_type: emp.employee_type,
+            }) as Employee
+        );
 
         setEmployees(employeeList);
 
-        const attendanceMap: Record<number, Record<string, AttendanceRecord>> = {};
+        const attendanceMap: Record<number, Record<string, AttendanceRecord>> =
+          {};
+
         (response.data.employees || []).forEach((emp: any) => {
           const ea: Record<string, AttendanceRecord> = {};
-          Object.entries(emp.daily_attendance || {}).forEach(([d, day]: [string, any]) => {
-            ea[d] = {
-              id: day.id, employee_id: emp.employee_id, company_id: response.data.company_id,
-              date: d, status: day.status, reason: day.reason || "", notes: day.notes || "",
-              check_in_time: day.check_in_time || null, check_out_time: day.check_out_time || null,
-              working_hours: day.working_hours || 0,
-            };
-          });
+
+          Object.entries(emp.daily_attendance || {}).forEach(
+            ([d, day]: [string, any]) => {
+              ea[d] = {
+                id: day.id,
+                employee_id: emp.employee_id,
+                company_id: response.data.company_id,
+                date: d,
+                status: day.status,
+                reason: day.reason || '',
+                notes: day.notes || '',
+                check_in_time: day.check_in_time || null,
+                check_out_time: day.check_out_time || null,
+                working_hours: day.working_hours || 0,
+              };
+            }
+          );
+
           attendanceMap[emp.employee_id] = ea;
         });
+
         setAttendance(attendanceMap);
       }
     } catch (error: any) {
-      showToastMessage(error.message || "Failed to fetch attendance", "error");
+      showToastMessage(error.message || 'Failed to fetch attendance', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchWeeklyAttendance(); }, [currentDate]);
+  useEffect(() => {
+    fetchWeeklyAttendance();
+  }, [currentDate]);
 
   useEffect(() => {
-    let onTime = 0, late = 0, absent = 0;
-    Object.values(attendance).forEach(ea => Object.values(ea).forEach(r => {
-      if (r.status === "on_time") onTime++;
-      else if (r.status === "late") late++;
-      else if (r.status === "absent") absent++;
-    }));
+    let onTime = 0;
+    let late = 0;
+    let absent = 0;
+
+    Object.values(attendance).forEach((ea) =>
+      Object.values(ea).forEach((r) => {
+        if (r.status === 'on_time') onTime++;
+        else if (r.status === 'late') late++;
+        else if (r.status === 'absent') absent++;
+      })
+    );
+
     const total = onTime + late + absent || 1;
+
     setStats({
       onTime: Math.round((onTime / total) * 100),
       late: Math.round((late / total) * 100),
@@ -206,56 +340,87 @@ export default function EmployeeAttendancePage() {
 
   const handleCellClick = (date: string, employeeId: number) => {
     setSelectedCell({ date, employeeId });
+
     const record = attendance[employeeId]?.[date];
-    if (record) { setStatus(record.status); setReason(record.reason || ""); setNotes(record.notes || ""); }
-    else { setStatus("on_time"); setReason(""); setNotes(""); }
+
+    if (record) {
+      setStatus(record.status);
+      setReason(record.reason || '');
+      setNotes(record.notes || '');
+    } else {
+      setStatus('on_time');
+      setReason('');
+      setNotes('');
+    }
+
     setDialogOpen(true);
   };
 
   const handleSaveAttendance = async () => {
     if (!selectedCell || !companyId) return;
+
     try {
       setLoading(true);
+
       const data: AttendanceRecord = {
-        employee_id: selectedCell.employeeId, company_id: companyId, date: selectedCell.date,
-        status: status as any, reason, notes,
-        check_in_time: status === "absent" ? null : dayjs(`${selectedCell.date}T09:00:00Z`).format(),
-        check_out_time: status === "absent" ? null : dayjs(`${selectedCell.date}T18:00:00Z`).format(),
-        working_hours: status === "absent" ? 0 : 9,
+        employee_id: selectedCell.employeeId,
+        company_id: companyId,
+        date: selectedCell.date,
+        status: status as any,
+        reason,
+        notes,
+        check_in_time:
+          status === 'absent'
+            ? null
+            : dayjs(`${selectedCell.date}T09:00:00Z`).format(),
+        check_out_time:
+          status === 'absent'
+            ? null
+            : dayjs(`${selectedCell.date}T18:00:00Z`).format(),
+        working_hours: status === 'absent' ? 0 : 9,
       };
+
       const existing = attendance[selectedCell.employeeId]?.[selectedCell.date];
+
       if (existing?.id) {
         await attendanceService.updateAttendance(existing.id, data);
-        showToastMessage("Attendance updated", "success");
+        showToastMessage('Attendance updated', 'success');
       } else {
         await attendanceService.createAttendance(data);
-        showToastMessage("Attendance marked", "success");
+        showToastMessage('Attendance marked', 'success');
       }
+
       setDialogOpen(false);
       fetchWeeklyAttendance();
     } catch (error: any) {
-      showToastMessage(error.message || "Failed to save", "error");
-    } finally { setLoading(false); }
+      showToastMessage(error.message || 'Failed to save', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteAttendance = async () => {
     if (!selectedCell) return;
+
     try {
       const record = attendance[selectedCell.employeeId]?.[selectedCell.date];
+
       if (record?.id) {
         await attendanceService.deleteAttendance(record.id);
-        showToastMessage("Attendance deleted", "success");
+        showToastMessage('Attendance deleted', 'success');
         setDialogOpen(false);
         fetchWeeklyAttendance();
       }
     } catch (error: any) {
-      showToastMessage(error.message || "Failed to delete", "error");
+      showToastMessage(error.message || 'Failed to delete', 'error');
     }
   };
 
   const handleSelectAll = (checked: boolean) => {
     setSelectAll(checked);
-    setSelectedEmployees(checked ? new Set(employees.map(e => e.id)) : new Set());
+    setSelectedEmployees(
+      checked ? new Set(employees.map((e) => e.id)) : new Set()
+    );
   };
 
   const handleSelectEmployee = (id: number, checked: boolean) => {
@@ -265,79 +430,123 @@ export default function EmployeeAttendancePage() {
     setSelectAll(s.size === employees.length);
   };
 
-  const getInitials = (name: string) =>
-    name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+  const datesInWeek = Array.from({ length: 7 }, (_, i) =>
+    currentDate.add(i, 'days')
+  );
 
-  const avatarColor = (name: string) => {
-    const palette = ["#6C63FF","#34D399","#FBBF24","#F87171","#38BDF8","#A78BFA","#FB923C"];
-    return palette[name.charCodeAt(0) % palette.length];
-  };
-
-  const datesInWeek = Array.from({ length: 7 }, (_, i) => currentDate.add(i, "days"));
-  const startStr = datesInWeek[0].format("D MMM");
-  const endStr = datesInWeek[6].format("D MMM YYYY");
-  const today = dayjs().format("YYYY-MM-DD");
+  const startStr = datesInWeek[0].format('D MMM');
+  const endStr = datesInWeek[6].format('D MMM YYYY');
+  const today = dayjs().format('YYYY-MM-DD');
 
   return (
-    <Box sx={{
-      minHeight: "100vh", bgcolor: COLORS.bg, p: { xs: 2, md: 3 },
-      fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
-      color: COLORS.text,
-    }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: '#f8f9fc',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Header */}
+      <Box
+        sx={{
+          px: 3,
+          pt: 3,
+          pb: 2.5,
+          bgcolor: '#ffffff',
+          borderBottom: '1px solid #f0f0f5',
+        }}
+      >
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+              sx={{
+                width: 46,
+                height: 46,
+                borderRadius: '13px',
+                background:
+                  'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 6px 20px rgba(14, 165, 233, 0.3)',
+                flexShrink: 0,
+              }}
+            >
+              <CalendarDays size={22} color="white" />
+            </Box>
 
-      {/* ── Header ─────────────────────────────────────────── */}
-      <Box sx={{ mb: 3 }}>
-        <Stack direction="row" alignItems="flex-end" justifyContent="space-between" flexWrap="wrap" gap={2}>
-          <Box>
-            <Stack direction="row" alignItems="center" gap={1.5} mb={0.5}>
-              <Box sx={{
-                width: 36, height: 36, borderRadius: "10px",
-                background: `linear-gradient(135deg, ${COLORS.accent}, #9C63FF)`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <CalendarDays size={18} color="#fff" />
-              </Box>
-              <Typography sx={{ fontSize: "1.6rem", fontWeight: 800, color: COLORS.text, letterSpacing: "-0.03em" }}>
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: '1.5rem',
+                  fontWeight: 800,
+                  color: '#1a1d2e',
+                  fontFamily: "'DM Sans', sans-serif",
+                  letterSpacing: '-0.4px',
+                  lineHeight: 1.15,
+                }}
+              >
                 Attendance
               </Typography>
-            </Stack>
-            <Typography sx={{ fontSize: "0.82rem", color: COLORS.textMuted, ml: "50px" }}>
-              Track & manage team presence — {startStr} to {endStr}
-            </Typography>
+
+              <Typography
+                sx={{
+                  fontSize: '0.8rem',
+                  color: '#9ca3af',
+                  fontFamily: "'DM Sans', sans-serif",
+                  mt: 0.25,
+                }}
+              >
+                Track team presence — {startStr} to {endStr}
+              </Typography>
+            </Box>
           </Box>
 
           <Stack direction="row" gap={1}>
             <Button
               size="small"
-              onClick={() => setCurrentDate(currentDate.subtract(7, "days"))}
+              onClick={() => setCurrentDate(currentDate.subtract(7, 'days'))}
               startIcon={<ChevronLeft size={15} />}
               sx={{
-                color: COLORS.textMuted, border: `1px solid ${COLORS.border}`,
-                borderRadius: "8px", textTransform: "none", fontSize: "0.8rem",
-                "&:hover": { borderColor: COLORS.borderHover, color: COLORS.text, bgcolor: COLORS.surfaceAlt },
+                border: '1px solid #eeeff5',
+                borderRadius: '9px',
+                color: '#6b7280',
+                textTransform: 'none',
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 700,
+                '&:hover': { bgcolor: '#f8fbff', borderColor: '#c7d2fe' },
               }}
             >
               Prev
             </Button>
+
             <Button
               size="small"
-              onClick={() => setCurrentDate(currentDate.add(7, "days"))}
+              onClick={() => setCurrentDate(currentDate.add(7, 'days'))}
               endIcon={<ChevronRight size={15} />}
               sx={{
-                color: COLORS.textMuted, border: `1px solid ${COLORS.border}`,
-                borderRadius: "8px", textTransform: "none", fontSize: "0.8rem",
-                "&:hover": { borderColor: COLORS.borderHover, color: COLORS.text, bgcolor: COLORS.surfaceAlt },
+                border: '1px solid #eeeff5',
+                borderRadius: '9px',
+                color: '#6b7280',
+                textTransform: 'none',
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 700,
+                '&:hover': { bgcolor: '#f8fbff', borderColor: '#c7d2fe' },
               }}
             >
               Next
             </Button>
-            <Tooltip title="Settings">
+
+            <Tooltip title="Settings" arrow>
               <Button
                 size="small"
                 sx={{
-                  minWidth: 36, p: 1, color: COLORS.textMuted, border: `1px solid ${COLORS.border}`,
-                  borderRadius: "8px",
-                  "&:hover": { borderColor: COLORS.borderHover, color: COLORS.text, bgcolor: COLORS.surfaceAlt },
+                  minWidth: 38,
+                  border: '1px solid #eeeff5',
+                  borderRadius: '9px',
+                  color: '#6b7280',
+                  '&:hover': { bgcolor: '#f8fbff', borderColor: '#c7d2fe' },
                 }}
               >
                 <Settings size={15} />
@@ -347,84 +556,155 @@ export default function EmployeeAttendancePage() {
         </Stack>
       </Box>
 
-      {/* ── Stat Cards ──────────────────────────────────────── */}
-      <Box sx={{
-        display: "grid",
-        gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" },
-        gap: 2, mb: 3,
-      }}>
-        <StatCard icon={<Users size={16} />} label="Employees" value={String(employees.length)} color={COLORS.accent} pct={100} />
-        <StatCard icon={<TrendingUp size={16} />} label="On Time" value={`${stats.onTime}%`} color={COLORS.on_time.dot} pct={stats.onTime} />
-        <StatCard icon={<Clock size={16} />} label="Late" value={`${stats.late}%`} color={COLORS.late.dot} pct={stats.late} />
-        <StatCard icon={<CalendarDays size={16} />} label="Absent" value={`${stats.absent}%`} color={COLORS.absent.dot} pct={stats.absent} />
+      {/* Stats */}
+      <Box
+        sx={{
+          mx: 3,
+          mt: 2.5,
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' },
+          gap: 2,
+        }}
+      >
+        <StatCard
+          icon={<Users size={22} />}
+          label="Employees"
+          value={String(employees.length)}
+          color="#4f63d2"
+          bg="#f0f4ff"
+          pct={100}
+        />
+
+        <StatCard
+          icon={<TrendingUp size={22} />}
+          label="On Time"
+          value={`${stats.onTime}%`}
+          color="#15803d"
+          bg="#f0fdf6"
+          pct={stats.onTime}
+        />
+
+        <StatCard
+          icon={<Clock size={22} />}
+          label="Late"
+          value={`${stats.late}%`}
+          color="#d97706"
+          bg="#fffbeb"
+          pct={stats.late}
+        />
+
+        <StatCard
+          icon={<CalendarDays size={22} />}
+          label="Absent"
+          value={`${stats.absent}%`}
+          color="#ef4444"
+          bg="#fef2f2"
+          pct={stats.absent}
+        />
       </Box>
 
-      {/* ── Table ───────────────────────────────────────────── */}
       {loading && (
-        <LinearProgress sx={{
-          mb: 1, borderRadius: 1, bgcolor: COLORS.border,
-          "& .MuiLinearProgress-bar": { bgcolor: COLORS.accent },
-        }} />
+        <LinearProgress
+          sx={{
+            mx: 3,
+            mt: 2,
+            borderRadius: 1,
+            bgcolor: '#eeeff5',
+            '& .MuiLinearProgress-bar': {
+              bgcolor: '#6366f1',
+            },
+          }}
+        />
       )}
 
-      <Box sx={{ ...glassCard, overflow: "hidden" }}>
-        <TableContainer sx={{ overflowX: "auto" }}>
+      {/* Table */}
+      <Box
+        sx={{
+          mx: 3,
+          mt: 2.5,
+          mb: 3,
+          borderRadius: '14px',
+          border: '1px solid #eeeff5',
+          bgcolor: '#ffffff',
+          overflow: 'hidden',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
+        }}
+      >
+        <TableContainer sx={{ overflowX: 'auto' }}>
           <Table sx={{ minWidth: 900 }}>
             <TableHead>
-              <TableRow sx={{ bgcolor: COLORS.surfaceAlt }}>
-                {/* Checkbox */}
-                <TableCell sx={{ width: 44, p: "10px 8px", borderBottom: `1px solid ${COLORS.border}` }}>
+              <TableRow>
+                <TableCell
+                  sx={{
+                    width: 44,
+                    bgcolor: '#f8fbff',
+                    borderBottom: '1px solid #eeeff5',
+                  }}
+                >
                   <Checkbox
                     checked={selectAll}
-                    onChange={e => handleSelectAll(e.target.checked)}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
                     size="small"
-                    sx={{ color: COLORS.textFaint, "&.Mui-checked": { color: COLORS.accent }, p: 0 }}
+                    sx={{
+                      color: '#d1d5db',
+                      '&.Mui-checked': { color: '#6366f1' },
+                    }}
                   />
                 </TableCell>
 
-                {/* Employee column */}
-                <TableCell sx={{
-                  width: 220, p: "12px 16px", borderBottom: `1px solid ${COLORS.border}`,
-                  fontSize: "0.7rem", fontWeight: 700, color: COLORS.textMuted,
-                  letterSpacing: "0.1em", textTransform: "uppercase",
-                }}>
+                <TableCell
+                  sx={{
+                    width: 240,
+                    bgcolor: '#f8fbff',
+                    color: '#6b7280',
+                    fontWeight: 600,
+                    fontSize: '0.7rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    fontFamily: "'DM Sans', sans-serif",
+                    borderBottom: '1px solid #eeeff5',
+                  }}
+                >
                   Team Member
                 </TableCell>
 
-                {/* Day columns */}
-                {datesInWeek.map(date => {
-                  const isToday = date.format("YYYY-MM-DD") === today;
+                {datesInWeek.map((date) => {
+                  const isToday = date.format('YYYY-MM-DD') === today;
+
                   return (
                     <TableCell
-                      key={date.format("YYYY-MM-DD")}
+                      key={date.format('YYYY-MM-DD')}
                       sx={{
-                        p: "10px 6px", textAlign: "center",
-                        borderBottom: `1px solid ${COLORS.border}`,
-                        borderLeft: `1px solid ${COLORS.border}`,
-                        minWidth: 88,
-                        background: isToday ? `linear-gradient(180deg, ${COLORS.accentGlow}, transparent)` : "transparent",
+                        minWidth: 95,
+                        textAlign: 'center',
+                        bgcolor: isToday ? '#f0f4ff' : '#f8fbff',
+                        borderBottom: '1px solid #eeeff5',
+                        borderLeft: '1px solid #eeeff5',
                       }}
                     >
-                      <Typography sx={{
-                        fontSize: "0.65rem", fontWeight: 700,
-                        color: isToday ? COLORS.accent : COLORS.textMuted,
-                        letterSpacing: "0.08em", textTransform: "uppercase",
-                      }}>
-                        {date.format("ddd")}
+                      <Typography
+                        sx={{
+                          fontSize: '0.65rem',
+                          fontWeight: 800,
+                          color: isToday ? '#4f63d2' : '#9ca3af',
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          fontFamily: "'DM Sans', sans-serif",
+                        }}
+                      >
+                        {date.format('ddd')}
                       </Typography>
-                      <Typography sx={{
-                        fontSize: "1rem", fontWeight: 800, ...monoFont,
-                        color: isToday ? COLORS.accent : COLORS.text,
-                        lineHeight: 1.1,
-                      }}>
+
+                      <Typography
+                        sx={{
+                          fontSize: '1rem',
+                          fontWeight: 800,
+                          color: isToday ? '#4f63d2' : '#1a1d2e',
+                          fontFamily: "'DM Sans', sans-serif",
+                        }}
+                      >
                         {date.date()}
                       </Typography>
-                      {isToday && (
-                        <Box sx={{
-                          width: 4, height: 4, borderRadius: "50%", bgcolor: COLORS.accent,
-                          mx: "auto", mt: 0.3,
-                        }} />
-                      )}
                     </TableCell>
                   );
                 })}
@@ -434,136 +714,188 @@ export default function EmployeeAttendancePage() {
             <TableBody>
               {employees.length === 0 && !loading && (
                 <TableRow>
-                  <TableCell colSpan={9} sx={{ textAlign: "center", py: 8, borderBottom: "none" }}>
-                    <Typography sx={{ color: COLORS.textMuted, fontSize: "0.85rem" }}>
+                  <TableCell colSpan={9} sx={{ textAlign: 'center', py: 8 }}>
+                    <Typography
+                      sx={{
+                        color: '#9ca3af',
+                        fontSize: '0.875rem',
+                        fontFamily: "'DM Sans', sans-serif",
+                      }}
+                    >
                       No employees found for this period
                     </Typography>
                   </TableCell>
                 </TableRow>
               )}
 
-              {employees.map((employee, idx) => (
-                <TableRow
-                  key={employee.id}
-                  sx={{
-                    bgcolor: idx % 2 === 0 ? COLORS.surface : COLORS.surfaceAlt,
-                    "&:hover": { bgcolor: COLORS.surfaceAlt },
-                    transition: "background 0.15s",
-                  }}
-                >
-                  {/* Checkbox */}
-                  <TableCell sx={{ p: "10px 8px", borderBottom: `1px solid ${COLORS.border}` }}>
-                    <Checkbox
-                      size="small"
-                      checked={selectedEmployees.has(employee.id)}
-                      onChange={e => handleSelectEmployee(employee.id, e.target.checked)}
-                      sx={{ color: COLORS.textFaint, "&.Mui-checked": { color: COLORS.accent }, p: 0 }}
-                    />
-                  </TableCell>
+              {employees.map((employee) => {
+                const style = getAvatarStyle(employee.name);
 
-                  {/* Employee info */}
-                  <TableCell sx={{ p: "10px 16px", borderBottom: `1px solid ${COLORS.border}` }}>
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Avatar sx={{
-                        width: 32, height: 32, fontSize: "0.72rem", fontWeight: 700,
-                        bgcolor: avatarColor(employee.name), flexShrink: 0,
-                        border: `2px solid ${COLORS.border}`,
-                      }}>
-                        {getInitials(employee.name)}
-                      </Avatar>
-                      <Box minWidth={0}>
-                        <Typography sx={{
-                          fontSize: "0.82rem", fontWeight: 600, color: COLORS.text,
-                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                        }}>
-                          {employee.name}
-                        </Typography>
-                        {employee.email && (
-                          <Typography sx={{
-                            fontSize: "0.68rem", color: COLORS.textMuted,
-                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                          }}>
-                            {employee.email}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Stack>
-                  </TableCell>
-
-                  {/* Attendance cells */}
-                  {datesInWeek.map(date => {
-                    const dateStr = date.format("YYYY-MM-DD");
-                    const record = attendance[employee.id]?.[dateStr];
-                    const isToday = dateStr === today;
-                    const c = record ? (COLORS as any)[record.status] : null;
-
-                    return (
-                      <TableCell
-                        key={dateStr}
-                        onClick={() => handleCellClick(dateStr, employee.id)}
+                return (
+                  <TableRow
+                    key={employee.id}
+                    sx={{
+                      '&:hover': { bgcolor: '#f8fbff' },
+                      '& td': {
+                        borderBottom: '1px solid #f5f5fa',
+                        fontFamily: "'DM Sans', sans-serif",
+                      },
+                    }}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        size="small"
+                        checked={selectedEmployees.has(employee.id)}
+                        onChange={(e) =>
+                          handleSelectEmployee(employee.id, e.target.checked)
+                        }
                         sx={{
-                          p: 1, textAlign: "center", cursor: "pointer",
-                          borderBottom: `1px solid ${COLORS.border}`,
-                          borderLeft: `1px solid ${COLORS.border}`,
-                          background: isToday ? `${COLORS.accentGlow}` : "transparent",
-                          transition: "all 0.15s",
-                          "&:hover": {
-                            background: record ? `${c?.bg}` : COLORS.surfaceAlt,
-                            "& .cell-add": { opacity: 1 },
-                          },
-                          position: "relative",
+                          color: '#d1d5db',
+                          '&.Mui-checked': { color: '#6366f1' },
                         }}
-                      >
-                        {record ? (
-                          <Box sx={{
-                            display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 0.4,
-                            px: 1, py: 0.5, borderRadius: "8px",
-                            background: c.bg, border: `1px solid ${c.border}`,
-                          }}>
-                            <Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: c.dot }} />
-                            <Typography sx={{ fontSize: "0.65rem", fontWeight: 700, color: c.text, letterSpacing: "0.03em" }}>
-                              {STATUS_LABELS[record.status]}
-                            </Typography>
-                          </Box>
-                        ) : (
-                          <Box
-                            className="cell-add"
+                      />
+                    </TableCell>
+
+                    <TableCell>
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        <Avatar
+                          sx={{
+                            width: 34,
+                            height: 34,
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            bgcolor: style.bg,
+                            color: style.color,
+                            fontFamily: "'DM Sans', sans-serif",
+                            border: '1.5px solid',
+                            borderColor: style.color + '33',
+                          }}
+                        >
+                          {getInitials(employee.name)}
+                        </Avatar>
+
+                        <Box minWidth={0}>
+                          <Typography
                             sx={{
-                              opacity: 0, transition: "opacity 0.15s",
-                              color: COLORS.textFaint, fontSize: "1.2rem", lineHeight: 1,
+                              fontSize: '0.8125rem',
+                              fontWeight: 700,
+                              color: '#1a1d2e',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
                             }}
                           >
-                            +
-                          </Box>
-                        )}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))}
+                            {employee.name}
+                          </Typography>
+
+                          {employee.email && (
+                            <Typography
+                              sx={{
+                                fontSize: '0.7rem',
+                                color: '#9ca3af',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {employee.email}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Stack>
+                    </TableCell>
+
+                    {datesInWeek.map((date) => {
+                      const dateStr = date.format('YYYY-MM-DD');
+                      const record = attendance[employee.id]?.[dateStr];
+                      const isToday = dateStr === today;
+                      const c = record ? STATUS_COLORS[record.status] : null;
+
+                      return (
+                        <TableCell
+                          key={dateStr}
+                          onClick={() => handleCellClick(dateStr, employee.id)}
+                          sx={{
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            borderLeft: '1px solid #f5f5fa',
+                            bgcolor: isToday ? '#fbfdff' : 'transparent',
+                            '&:hover': {
+                              bgcolor: record ? c?.bg : '#f8fbff',
+                              '& .cell-add': { opacity: 1 },
+                            },
+                          }}
+                        >
+                          {record ? (
+                            <StatusBadge status={record.status} />
+                          ) : (
+                            <Box
+                              className="cell-add"
+                              sx={{
+                                opacity: 0,
+                                color: '#d1d5db',
+                                fontSize: '1.2rem',
+                                transition: 'opacity 0.15s',
+                              }}
+                            >
+                              +
+                            </Box>
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
       </Box>
 
-      {/* ── Legend ──────────────────────────────────────────── */}
-      <Stack direction="row" gap={1.5} flexWrap="wrap" mt={2}>
+      {/* Legend */}
+      <Stack direction="row" gap={1.5} flexWrap="wrap" sx={{ mx: 3, mb: 3 }}>
         {Object.entries(STATUS_LABELS).map(([key, label]) => {
-          const c = (COLORS as any)[key];
+          const c = STATUS_COLORS[key];
+
           return (
-            <Box key={key} sx={{
-              display: "flex", alignItems: "center", gap: 0.7,
-              px: 1.2, py: 0.4, borderRadius: "6px",
-              background: c.bg, border: `1px solid ${c.border}`,
-            }}>
-              <Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: c.dot }} />
-              <Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: c.text }}>{label}</Typography>
+            <Box
+              key={key}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.7,
+                px: 1.2,
+                py: 0.45,
+                borderRadius: '7px',
+                bgcolor: c.bg,
+                border: `1px solid ${c.border}`,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: '50%',
+                  bgcolor: c.dot,
+                }}
+              />
+
+              <Typography
+                sx={{
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  color: c.text,
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                {label}
+              </Typography>
             </Box>
           );
         })}
       </Stack>
 
-      {/* ── Dialog ──────────────────────────────────────────── */}
+      {/* Dialog */}
       <Dialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
@@ -571,64 +903,107 @@ export default function EmployeeAttendancePage() {
         fullWidth
         PaperProps={{
           sx: {
-            ...glassCard,
-            backgroundImage: "none",
-            color: COLORS.text,
-            bgcolor: COLORS.surface,
+            borderRadius: '16px',
+            border: '1px solid #e8eaf0',
+            boxShadow: '0 20px 60px rgba(79,99,210,0.15)',
           },
         }}
       >
-        <DialogTitle sx={{
-          px: 3, pt: 3, pb: 1,
-          fontSize: "1rem", fontWeight: 700, color: COLORS.text,
-          borderBottom: `1px solid ${COLORS.border}`,
-        }}>
-          <Stack direction="row" alignItems="center" gap={1}>
-            <Box sx={{
-              width: 28, height: 28, borderRadius: "8px",
-              background: `linear-gradient(135deg, ${COLORS.accent}, #9C63FF)`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <Clock size={14} color="#fff" />
-            </Box>
-            Mark Attendance
-          </Stack>
+        <Box
+          sx={{
+            height: 4,
+            background: 'linear-gradient(90deg, #0ea5e9, #6366f1)',
+            borderRadius: '16px 16px 0 0',
+          }}
+        />
+
+        <DialogTitle
+          sx={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontWeight: 800,
+            fontSize: '1rem',
+            color: '#1a1d2e',
+          }}
+        >
+          Mark Attendance
           {selectedCell && (
-            <Typography sx={{ fontSize: "0.72rem", color: COLORS.textMuted, fontWeight: 400, mt: 0.5 }}>
-              {dayjs(selectedCell.date).format("dddd, D MMMM YYYY")}
+            <Typography
+              sx={{
+                fontSize: '0.75rem',
+                color: '#9ca3af',
+                fontWeight: 500,
+                mt: 0.5,
+              }}
+            >
+              {dayjs(selectedCell.date).format('dddd, D MMMM YYYY')}
             </Typography>
           )}
         </DialogTitle>
 
-        <DialogContent sx={{ px: 3, pt: 2.5, pb: 1 }}>
+        <DialogContent>
           <Stack spacing={2.5}>
-            {/* Status grid */}
             <Box>
-              <Typography sx={{ fontSize: "0.7rem", fontWeight: 700, color: COLORS.textMuted, letterSpacing: "0.1em", textTransform: "uppercase", mb: 1.2 }}>
+              <Typography
+                sx={{
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  color: '#6b7280',
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  mb: 1,
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
                 Status
               </Typography>
-              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
+
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 1,
+                }}
+              >
                 {Object.entries(STATUS_LABELS).map(([key, label]) => {
-                  const c = (COLORS as any)[key];
+                  const c = STATUS_COLORS[key];
                   const selected = status === key;
+
                   return (
                     <Box
                       key={key}
                       onClick={() => setStatus(key)}
                       sx={{
-                        display: "flex", alignItems: "center", gap: 1,
-                        px: 1.5, py: 1, borderRadius: "8px", cursor: "pointer",
-                        background: selected ? c.bg : COLORS.surfaceAlt,
-                        border: `1px solid ${selected ? c.border : COLORS.border}`,
-                        transition: "all 0.15s",
-                        "&:hover": { border: `1px solid ${c.border}` },
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        px: 1.5,
+                        py: 1,
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        bgcolor: selected ? c.bg : '#f8f9fc',
+                        border: `1px solid ${selected ? c.border : '#eeeff5'}`,
+                        '&:hover': {
+                          borderColor: c.border,
+                        },
                       }}
                     >
-                      <Box sx={{ width: 7, height: 7, borderRadius: "50%", bgcolor: c.dot, flexShrink: 0 }} />
-                      <Typography sx={{
-                        fontSize: "0.75rem", fontWeight: selected ? 700 : 500,
-                        color: selected ? c.text : COLORS.textMuted,
-                      }}>
+                      <Box
+                        sx={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: '50%',
+                          bgcolor: c.dot,
+                        }}
+                      />
+
+                      <Typography
+                        sx={{
+                          fontSize: '0.75rem',
+                          fontWeight: selected ? 800 : 600,
+                          color: selected ? c.text : '#6b7280',
+                          fontFamily: "'DM Sans', sans-serif",
+                        }}
+                      >
                         {label}
                       </Typography>
                     </Box>
@@ -637,18 +1012,16 @@ export default function EmployeeAttendancePage() {
               </Box>
             </Box>
 
-            {/* Reason */}
             <TextField
               label="Reason"
               size="small"
               fullWidth
               value={reason}
-              onChange={e => setReason(e.target.value)}
+              onChange={(e) => setReason(e.target.value)}
               placeholder="e.g., Sick leave, Traffic..."
               sx={dialogInputSx}
             />
 
-            {/* Notes */}
             <TextField
               label="Notes"
               size="small"
@@ -656,46 +1029,59 @@ export default function EmployeeAttendancePage() {
               multiline
               rows={2}
               value={notes}
-              onChange={e => setNotes(e.target.value)}
+              onChange={(e) => setNotes(e.target.value)}
               placeholder="Additional notes..."
               sx={dialogInputSx}
             />
           </Stack>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${COLORS.border}`, gap: 1 }}>
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
           <Button
             onClick={handleDeleteAttendance}
             size="small"
             startIcon={<Trash2 size={13} />}
             sx={{
-              mr: "auto", color: COLORS.absent.text, fontSize: "0.78rem", textTransform: "none",
-              "&:hover": { bgcolor: COLORS.absent.bg },
+              mr: 'auto',
+              color: '#ef4444',
+              textTransform: 'none',
+              fontFamily: "'DM Sans', sans-serif",
+              '&:hover': { bgcolor: '#fef2f2' },
             }}
           >
             Delete
           </Button>
+
           <Button
             onClick={() => setDialogOpen(false)}
             size="small"
             sx={{
-              color: COLORS.textMuted, border: `1px solid ${COLORS.border}`,
-              borderRadius: "8px", textTransform: "none", fontSize: "0.78rem",
-              "&:hover": { borderColor: COLORS.borderHover, bgcolor: COLORS.surfaceAlt },
+              color: '#6b7280',
+              border: '1px solid #eeeff5',
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontFamily: "'DM Sans', sans-serif",
+              '&:hover': { bgcolor: '#f8fbff' },
             }}
           >
             Cancel
           </Button>
+
           <Button
             onClick={handleSaveAttendance}
             size="small"
             disabled={loading}
             sx={{
-              bgcolor: COLORS.accent, color: "#fff", borderRadius: "8px",
-              textTransform: "none", fontWeight: 700, fontSize: "0.78rem",
+              background: 'linear-gradient(135deg, #0ea5e9, #6366f1)',
+              color: '#fff',
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontFamily: "'DM Sans', sans-serif",
               px: 2.5,
-              "&:hover": { bgcolor: "#5A52E8" },
-              "&:disabled": { bgcolor: COLORS.border, color: COLORS.textMuted },
+              '&:hover': {
+                background: 'linear-gradient(135deg, #0284c7, #4f46e5)',
+              },
             }}
           >
             Save
@@ -703,26 +1089,33 @@ export default function EmployeeAttendancePage() {
         </DialogActions>
       </Dialog>
 
-      {/* ── Salary View Section ──────────────────────────────– */}
-      <Box sx={{ mt: 4 }}>
+      <Box sx={{ mx: 3, mb: 3 }}>
         <SalaryView />
       </Box>
     </Box>
   );
 }
 
-/* ─── Dialog input styles ──────────────────────────────────── */
 const dialogInputSx = {
-  "& .MuiInputBase-root": {
-    bgcolor: COLORS.surfaceAlt,
-    color: COLORS.text,
-    borderRadius: "8px",
-    fontSize: "0.82rem",
+  '& .MuiInputBase-root': {
+    bgcolor: '#f8f9fc',
+    color: '#1a1d2e',
+    borderRadius: '8px',
+    fontSize: '0.8125rem',
+    fontFamily: "'DM Sans', sans-serif",
   },
-  "& .MuiOutlinedInput-notchedOutline": { borderColor: COLORS.border },
-  "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: COLORS.borderHover },
-  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: COLORS.accent },
-  "& .MuiInputLabel-root": { color: COLORS.textMuted, fontSize: "0.8rem" },
-  "& .MuiInputLabel-root.Mui-focused": { color: COLORS.accent },
-  "& .MuiInputBase-input::placeholder": { color: COLORS.textFaint, opacity: 1 },
+  '& .MuiOutlinedInput-notchedOutline': {
+    borderColor: '#eeeff5',
+  },
+  '&:hover .MuiOutlinedInput-notchedOutline': {
+    borderColor: '#c7d2fe',
+  },
+  '& .MuiInputLabel-root': {
+    color: '#9ca3af',
+    fontSize: '0.8rem',
+    fontFamily: "'DM Sans', sans-serif",
+  },
+  '& .MuiInputLabel-root.Mui-focused': {
+    color: '#6366f1',
+  },
 };

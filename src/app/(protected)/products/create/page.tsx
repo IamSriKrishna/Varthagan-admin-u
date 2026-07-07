@@ -295,46 +295,75 @@ const STEPS = [
 // ─── Design tokens ─────────────────────────────────────────────────────────────
 
 const C = {
-  brand:      "#2563EB",
-  brandSoft:  "#EFF6FF",
-  brandMid:   "#DBEAFE",
-  success:    "#16A34A",
-  successSoft:"#F0FDF4",
-  danger:     "#DC2626",
+  brand: "#4f63d2",
+  brand2: "#0ea5e9",
+  gradient: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
+  gradientHover: "linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)",
+  brandSoft: "#f0f4ff",
+  brandMid: "#dbeafe",
+  success: "#16A34A",
+  successSoft: "#F0FDF4",
+  danger: "#DC2626",
   dangerSoft: "#FEF2F2",
-  text:       "#0F172A",
-  textMid:    "#475569",
-  textLight:  "#94A3B8",
-  border:     "#E2E8F0",
-  bg:         "#F8FAFC",
-  white:      "#FFFFFF",
+  text: "#1a1d2e",
+  textMid: "#6b7280",
+  textLight: "#9ca3af",
+  border: "#eeeff5",
+  border2: "#f0f0f5",
+  bg: "#f8f9fc",
+  white: "#ffffff",
 };
 
 const inputSx = {
   "& .MuiOutlinedInput-root": {
-    borderRadius: "8px",
+    borderRadius: "10px",
     backgroundColor: C.white,
     fontSize: "0.875rem",
+    fontFamily: "'DM Sans', sans-serif",
     "& fieldset": { borderColor: C.border },
-    "&:hover fieldset": { borderColor: "#93C5FD" },
-    "&.Mui-focused fieldset": { borderColor: C.brand, borderWidth: 2 },
+    "&:hover fieldset": { borderColor: "#c7d2fe" },
+    "&.Mui-focused fieldset": { borderColor: C.brand, borderWidth: 1.5 },
   },
+  "& .MuiInputLabel-root": { fontFamily: "'DM Sans', sans-serif" },
 };
 
 const selectSx = {
-  borderRadius: "8px",
+  borderRadius: "10px",
   fontSize: "0.875rem",
+  fontFamily: "'DM Sans', sans-serif",
   backgroundColor: C.white,
   "& fieldset": { borderColor: C.border },
-  "&:hover fieldset": { borderColor: "#93C5FD" },
-  "&.Mui-focused fieldset": { borderColor: C.brand, borderWidth: 2 },
+  "&:hover fieldset": { borderColor: "#c7d2fe" },
+  "&.Mui-focused fieldset": { borderColor: C.brand, borderWidth: 1.5 },
 };
+
+const cardSx = {
+  borderRadius: "16px",
+  border: `1px solid ${C.border}`,
+  boxShadow: "0 4px 24px rgba(0,0,0,0.04)",
+  overflow: "hidden",
+  bgcolor: C.white,
+};
+
+function SectionHeader({ icon: Icon, title, subtitle }: { icon: any; title: string; subtitle?: string }) {
+  return (
+    <Box sx={{ p: 3, borderBottom: `1px solid ${C.border2}`, bgcolor: "#fafbff", display: "flex", alignItems: "center", gap: 1.5 }}>
+      <Box sx={{ width: 30, height: 30, borderRadius: "9px", background: C.gradient, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Icon size={15} color="white" />
+      </Box>
+      <Box>
+        <Typography sx={{ fontSize: "0.9375rem", fontWeight: 700, color: C.text, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.2 }}>{title}</Typography>
+        {subtitle && <Typography sx={{ fontSize: "0.75rem", color: C.textLight, fontFamily: "'DM Sans', sans-serif", mt: 0.2 }}>{subtitle}</Typography>}
+      </Box>
+    </Box>
+  );
+}
 
 // ─── Small helpers ─────────────────────────────────────────────────────────────
 
 function Label({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <Typography variant="subtitle2" sx={{ mb: 0.75, fontWeight: 600, fontSize: "0.8rem", color: C.text }}>
+    <Typography variant="subtitle2" sx={{ mb: 0.75, fontWeight: 700, fontSize: "0.78rem", color: C.text, fontFamily: "'DM Sans', sans-serif" }}>
       {children}
       {required && <span style={{ color: C.danger, marginLeft: 2 }}>*</span>}
     </Typography>
@@ -480,34 +509,92 @@ export default function CreateProductPage() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <Box sx={{ minHeight: "100vh", backgroundColor: C.bg, pb: 6 }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: C.bg, fontFamily: "'DM Sans', sans-serif" }}>
+      {/* Sticky page header */}
+      <Box
+        sx={{
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          px: 3,
+          pt: 2.5,
+          pb: 2,
+          bgcolor: C.white,
+          borderBottom: `1px solid ${C.border2}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 2,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box
+            sx={{
+              width: 42,
+              height: 42,
+              borderRadius: "12px",
+              background: C.gradient,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 4px 14px rgba(14,165,233,0.3)",
+              flexShrink: 0,
+            }}
+          >
+            <Package size={20} color="white" />
+          </Box>
 
-      {/* Top bar */}
-      <Box sx={{ backgroundColor: C.white, borderBottom: `1px solid ${C.border}`, px: 4, py: 2, position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <Button startIcon={<ArrowLeft size={16} />} onClick={() => router.back()}
-              sx={{ color: C.textMid, textTransform: "none", fontSize: "0.85rem", fontWeight: 500 }}>
-              Products
-            </Button>
-            <Box sx={{ width: 1, height: 20, backgroundColor: C.border }} />
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Box sx={{ width: 32, height: 32, borderRadius: "8px", backgroundColor: C.brandSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Package size={16} color={C.brand} />
-              </Box>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1rem", color: C.text }}>New Product</Typography>
-            </Stack>
-          </Stack>
-          <Typography variant="caption" sx={{ color: C.textLight }}>Step {step + 1} of {STEPS.length}</Typography>
-        </Stack>
+          <Box>
+            <Typography
+              sx={{
+                fontSize: "1.25rem",
+                fontWeight: 800,
+                color: C.text,
+                fontFamily: "'DM Sans', sans-serif",
+                letterSpacing: "-0.3px",
+                lineHeight: 1.2,
+              }}
+            >
+              New Product
+            </Typography>
+            <Typography sx={{ fontSize: "0.78rem", color: C.textLight, fontFamily: "'DM Sans', sans-serif", mt: 0.2 }}>
+              Create product details, pricing, inventory and variants
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+          <BBButton
+            variant="outlined"
+            onClick={() => router.back()}
+            startIcon={<ArrowLeft size={16} />}
+            disabled={loading}
+            sx={{
+              borderRadius: "10px",
+              textTransform: "none",
+              fontFamily: "'DM Sans', sans-serif",
+              fontWeight: 600,
+              fontSize: "0.875rem",
+              color: C.textMid,
+              borderColor: "#e5e7eb",
+              "&:hover": { borderColor: "#d1d5db", bgcolor: "#f9fafb" },
+            }}
+          >
+            Products
+          </BBButton>
+
+          <Typography sx={{ fontSize: "0.78rem", fontWeight: 700, color: C.brand, fontFamily: "'DM Sans', sans-serif", bgcolor: C.brandSoft, border: "1px solid #c7d2fe", px: 1.5, py: 0.75, borderRadius: "999px" }}>
+            Step {step + 1} of {STEPS.length}
+          </Typography>
+        </Box>
       </Box>
 
-      <Box sx={{ maxWidth: 960, mx: "auto", px: 3, pt: 4 }}>
+      <Box sx={{ px: 3, pt: 2.5, pb: 4 }}>
 
         {/* Step tracker */}
-        <Card sx={{ mb: 4, borderRadius: "16px", border: `1px solid ${C.border}`, boxShadow: "none", overflow: "hidden" }}>
+        <Card sx={{ ...cardSx, mb: 2.5 }}>
           <LinearProgress variant="determinate" value={((step + 1) / STEPS.length) * 100}
-            sx={{ height: 3, backgroundColor: C.border, "& .MuiLinearProgress-bar": { backgroundColor: C.brand } }} />
+            sx={{ height: 3, backgroundColor: C.border2, "& .MuiLinearProgress-bar": { background: C.gradient } }} />
           <Stack direction="row">
             {STEPS.map((s, i) => {
               const Icon = s.icon;
@@ -516,13 +603,13 @@ export default function CreateProductPage() {
               return (
                 <Box key={i} onClick={() => isDone && setStep(i)} sx={{
                   flex: 1, p: 2.5, cursor: isDone ? "pointer" : "default",
-                  borderRight: i < STEPS.length - 1 ? `1px solid ${C.border}` : "none",
+                  borderRight: i < STEPS.length - 1 ? `1px solid ${C.border2}` : "none",
                   backgroundColor: isActive ? C.brandSoft : C.white,
                   transition: "background 0.2s",
                   "&:hover": isDone ? { backgroundColor: C.brandMid } : {},
                 }}>
                   <Stack direction="row" alignItems="center" spacing={1.5}>
-                    <Box sx={{ width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: isDone ? C.brand : isActive ? C.brandMid : C.bg, flexShrink: 0 }}>
+                    <Box sx={{ width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: isDone ? C.gradient : isActive ? C.brandMid : C.bg, flexShrink: 0 }}>
                       {isDone ? <Check size={14} color={C.white} /> : <Icon size={14} color={isActive ? C.brand : C.textLight} />}
                     </Box>
                     <Box sx={{ display: { xs: "none", sm: "block" } }}>
@@ -592,11 +679,8 @@ export default function CreateProductPage() {
 
                 {/* ══ STEP 0: Product Info ═══════════════════════════════════════════ */}
                 {step === 0 && (
-                  <Card sx={{ borderRadius: "16px", border: `1px solid ${C.border}`, boxShadow: "none", overflow: "hidden" }}>
-                    <Box sx={{ p: 3, borderBottom: `1px solid ${C.border}` }}>
-                      <Typography variant="h6" sx={{ fontWeight: 700, color: C.text, fontSize: "1rem" }}>Product Information</Typography>
-                      <Typography variant="caption" sx={{ color: C.textMid }}>Basic details, identifiers and description.</Typography>
-                    </Box>
+                  <Card sx={cardSx}>
+                    <SectionHeader icon={Package} title="Product Information" subtitle="Basic details, identifiers and description" />
                     <Box sx={{ p: 3 }}>
                       <Stack spacing={3}>
                         {/* Product Name + Type Selection */}
@@ -848,10 +932,8 @@ export default function CreateProductPage() {
                 {/* ══ STEP 1: Pricing ═══════════════════════════════════════════════ */}
                 {step === 1 && !values.is_resource && !values.is_raw && (
                   <Stack spacing={3}>
-                    <Card sx={{ borderRadius: "16px", border: `1px solid ${C.border}`, boxShadow: "none", overflow: "hidden" }}>
-                      <Box sx={{ p: 3, borderBottom: `1px solid ${C.border}` }}>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: C.text, fontSize: "1rem" }}>Sales Information</Typography>
-                      </Box>
+                    <Card sx={cardSx}>
+                      <SectionHeader icon={DollarSign} title="Sales Information" />
                       <Box sx={{ p: 3 }}>
                         <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
                           <Box sx={{ flex: 1 }}>
@@ -871,10 +953,8 @@ export default function CreateProductPage() {
                       </Box>
                     </Card>
 
-                    <Card sx={{ borderRadius: "16px", border: `1px solid ${C.border}`, boxShadow: "none", overflow: "hidden" }}>
-                      <Box sx={{ p: 3, borderBottom: `1px solid ${C.border}` }}>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: C.text, fontSize: "1rem" }}>Purchase Information</Typography>
-                      </Box>
+                    <Card sx={cardSx}>
+                      <SectionHeader icon={DollarSign} title="Purchase Information" />
                       <Box sx={{ p: 3 }}>
                         <Stack spacing={2} direction={{ xs: "column", sm: "row" }}>
                           <Box sx={{ flex: 1 }}>
@@ -917,11 +997,8 @@ export default function CreateProductPage() {
                 {/* ══ STEP 2: Inventory ═════════════════════════════════════════════ */}
                 {step === 2 && !values.is_resource && !values.is_raw && (
                   <Stack spacing={3}>
-                    <Card sx={{ borderRadius: "16px", border: `1px solid ${C.border}`, boxShadow: "none", overflow: "hidden" }}>
-                      <Box sx={{ p: 3, borderBottom: `1px solid ${C.border}` }}>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: C.text, fontSize: "1rem" }}>Inventory Configuration</Typography>
-                        <Typography variant="caption" sx={{ color: C.textMid }}>Setup inventory tracking, valuation method, and reorder points</Typography>
-                      </Box>
+                    <Card sx={cardSx}>
+                      <SectionHeader icon={Settings} title="Inventory Configuration" subtitle="Setup inventory tracking, valuation method, and reorder points" />
                       <Box sx={{ p: 3 }}>
                         <Stack spacing={3}>
                           {/* Inventory Tracking */}
@@ -1002,7 +1079,7 @@ export default function CreateProductPage() {
                   <Stack spacing={3}>
 
                     {/* Attribute definitions */}
-                    <Card sx={{ borderRadius: "16px", border: `1px solid ${C.border}`, boxShadow: "none", overflow: "hidden" }}>
+                    <Card sx={cardSx}>
                       <Box sx={{ p: 3, borderBottom: `1px solid ${C.border}` }}>
                         <Stack direction="row" alignItems="center" justifyContent="space-between">
                           <Box>
@@ -1223,7 +1300,7 @@ export default function CreateProductPage() {
                     )}
 
                     {/* Variant table */}
-                    <Card sx={{ borderRadius: "16px", border: `1px solid ${C.border}`, boxShadow: "none", overflow: "hidden" }}>
+                    <Card sx={cardSx}>
                       <Box sx={{ p: 3, borderBottom: `1px solid ${C.border}` }}>
                         <Stack direction="row" alignItems="center" justifyContent="space-between">
                           <Box>
@@ -1563,9 +1640,9 @@ export default function CreateProductPage() {
 
                 {/* Navigation */}
                 <Stack direction="row" justifyContent="space-between" alignItems="center" mt={4}
-                  sx={{ backgroundColor: C.white, borderRadius: "12px", border: `1px solid ${C.border}`, p: 2.5 }}>
+                  sx={{ bgcolor: C.white, borderRadius: "16px", border: `1px solid ${C.border}`, p: 2.5, boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
                   <Button variant="outlined" onClick={() => step > 0 ? setStep(step - 1) : router.back()} disabled={loading}
-                    sx={{ borderColor: C.border, color: C.textMid, borderRadius: "8px", textTransform: "none", fontWeight: 600, "&:hover": { borderColor: C.textMid, backgroundColor: C.bg } }}>
+                    sx={{ borderColor: "#e5e7eb", color: C.textMid, borderRadius: "10px", textTransform: "none", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, "&:hover": { borderColor: "#d1d5db", backgroundColor: "#f9fafb" } }}>
                     {step === 0 ? "Cancel" : "Back"}
                   </Button>
 
@@ -1587,12 +1664,12 @@ export default function CreateProductPage() {
                           });
                         }
                       }}
-                      sx={{ backgroundColor: C.brand, borderRadius: "8px", textTransform: "none", fontWeight: 600, px: 3, "&:hover": { backgroundColor: "#1D4ED8" } }}>
+                      sx={{ background: C.gradient, borderRadius: "10px", textTransform: "none", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, px: 3, boxShadow: "0 4px 14px rgba(14,165,233,0.3)", "&:hover": { background: C.gradientHover, transform: "translateY(-1px)" } }}>
                       Next: {STEPS[step + 1].label}
                     </Button>
                   ) : (
                     <BBButton type="submit" disabled={loading} loading={loading}
-                      sx={{ backgroundColor: C.brand, borderRadius: "8px", textTransform: "none", fontWeight: 700, px: 4, "&:hover": { backgroundColor: "#1D4ED8" } }}>
+                      sx={{ background: C.gradient, borderRadius: "10px", textTransform: "none", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, px: 4, boxShadow: "0 4px 14px rgba(14,165,233,0.3)", "&:hover": { background: C.gradientHover, transform: "translateY(-1px)" } }}>
                       {loading ? "Creating…" : values.is_resource ? "Create Resource" : values.is_raw ? "Create Raw Product" : "Create Product"}
                     </BBButton>
                   )}
