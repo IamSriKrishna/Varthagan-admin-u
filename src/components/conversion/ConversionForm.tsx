@@ -1,3 +1,5 @@
+
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -36,6 +38,7 @@ import {
   Zap,
   Plus,
   Trash2,
+  Factory,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
@@ -48,51 +51,53 @@ import { IConversionRule, IConversionRuleForm, IRawMaterialBagInput } from '@/mo
 import { RawMaterialBag } from '@/models/rawMaterial.model';
 
 const T = {
-  primary: '#2563eb',
-  primarySoft: '#eff6ff',
-  success: '#16a34a',
-  successSoft: '#f0fdf4',
+  primary: '#4f63d2',
+  primarySoft: '#f0f4ff',
+  success: '#15803d',
+  successSoft: '#f0fdf6',
   warning: '#d97706',
-  warningSoft: '#fffbeb',
+  warningSoft: '#fff8eb',
   purple: '#7c3aed',
-  bg: '#f8fafc',
+  bg: '#f8f9fc',
   surface: '#ffffff',
-  mutedSurface: '#f9fafb',
-  border: '#e5e7eb',
-  borderDark: '#cbd5e1',
-  text: '#111827',
+  mutedSurface: '#f8f9fc',
+  border: '#eeeff5',
+  borderDark: '#c7d2fe',
+  text: '#1a1d2e',
   sub: '#6b7280',
   faint: '#9ca3af',
 };
 
 const cardSx = {
   border: `1px solid ${T.border}`,
-  borderRadius: '16px',
+  borderRadius: '14px',
   background: T.surface,
-  boxShadow: '0 8px 24px rgba(15,23,42,0.04)',
+  boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
   overflow: 'hidden',
 };
 
 const inputSx = {
   '& .MuiOutlinedInput-root': {
-    borderRadius: '12px',
-    fontSize: '0.875rem',
-    fontFamily: "'Inter', sans-serif",
-    background: '#ffffff',
-    '& fieldset': { borderColor: T.border },
-    '&:hover fieldset': { borderColor: T.borderDark },
+    borderRadius: '10px',
+    fontSize: '0.8125rem',
+    fontFamily: "'DM Sans', sans-serif",
+    background: '#f8f9fc',
+    '& fieldset': { borderColor: '#e8eaf0' },
+    '&:hover fieldset': { borderColor: '#c7d2fe' },
     '&.Mui-focused fieldset': {
-      borderColor: T.primary,
+      borderColor: '#6366f1',
       borderWidth: '1.5px',
     },
   },
   '& .MuiInputLabel-root': {
-    fontFamily: "'Inter', sans-serif",
-    fontSize: '0.85rem',
+    fontFamily: "'DM Sans', sans-serif",
+    fontSize: '0.8rem',
+    color: '#9ca3af',
+    '&.Mui-focused': { color: '#6366f1' },
   },
   '& .MuiFormHelperText-root': {
-    fontFamily: "'Inter', sans-serif",
-    fontSize: '0.74rem',
+    fontFamily: "'DM Sans', sans-serif",
+    fontSize: '0.72rem',
   },
 };
 
@@ -136,7 +141,7 @@ function SectionHeader({
             fontWeight: 800,
             color: T.text,
             lineHeight: 1.2,
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: "'DM Sans', sans-serif",
           }}
         >
           {title}
@@ -149,7 +154,7 @@ function SectionHeader({
               color: T.sub,
               mt: 0.2,
               fontWeight: 500,
-              fontFamily: "'Inter', sans-serif",
+              fontFamily: "'DM Sans', sans-serif",
             }}
           >
             {subtitle}
@@ -198,7 +203,7 @@ function ProductPlaceholder({
             fontSize: '0.8rem',
             fontWeight: 800,
             color,
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: "'DM Sans', sans-serif",
           }}
         >
           {label}
@@ -209,7 +214,7 @@ function ProductPlaceholder({
             fontSize: '0.72rem',
             color: T.sub,
             fontWeight: 500,
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: "'DM Sans', sans-serif",
           }}
         >
           Select product to view details
@@ -398,86 +403,100 @@ export default function ConversionForm({
       sx={{
         minHeight: '100vh',
         bgcolor: T.bg,
-        p: { xs: 2, md: 3 },
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "'DM Sans', sans-serif",
       }}
     >
       <Box
         sx={{
-          mb: 2.5,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 2,
-          flexWrap: 'wrap',
+          px: 3,
+          pt: 3,
+          pb: 2.5,
+          bgcolor: '#ffffff',
+          borderBottom: '1px solid #f0f0f5',
         }}
       >
-        <Box>
-          <Typography
-            sx={{
-              fontSize: '0.78rem',
-              color: T.sub,
-              fontWeight: 700,
-              mb: 0.45,
-              fontFamily: "'Inter', sans-serif",
-            }}
-          >
-            Conversion Rules / {isEdit ? 'Edit Rule' : 'New Rule'}
-          </Typography>
-
-          <Typography
-            sx={{
-              fontSize: '1.6rem',
-              fontWeight: 800,
-              color: T.text,
-              letterSpacing: '-0.025em',
-              lineHeight: 1.15,
-              fontFamily: "'Inter', sans-serif",
-            }}
-          >
-            {isEdit ? 'Edit Conversion Rule' : 'New Conversion Rule'}
-          </Typography>
-
-          <Typography
-            sx={{
-              fontSize: '0.88rem',
-              color: T.sub,
-              mt: 0.45,
-              fontWeight: 500,
-              fontFamily: "'Inter', sans-serif",
-            }}
-          >
-            {isEdit
-              ? 'Update conversion settings and production parameters.'
-              : 'Create a clean raw material to finished goods rule.'}
-          </Typography>
-        </Box>
-
-        <BBButton
-          variant="outlined"
-          startIcon={<X size={15} />}
-          onClick={() => router.push('/conversion')}
+        <Box
           sx={{
-            borderRadius: '10px',
-            borderColor: T.border,
-            color: T.sub,
-            textTransform: 'none',
-            fontWeight: 800,
-            fontSize: '0.82rem',
-            px: 2,
-            '&:hover': {
-              borderColor: T.borderDark,
-              bgcolor: '#ffffff',
-              color: T.text,
-            },
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 2,
+            flexWrap: 'wrap',
           }}
         >
-          Discard
-        </BBButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+              sx={{
+                width: 46,
+                height: 46,
+                borderRadius: '13px',
+                background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 6px 20px rgba(14, 165, 233, 0.3)',
+                flexShrink: 0,
+              }}
+            >
+              <Factory size={22} color="white" />
+            </Box>
+
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: '1.5rem',
+                  fontWeight: 800,
+                  color: '#1a1d2e',
+                  fontFamily: "'DM Sans', sans-serif",
+                  letterSpacing: '-0.4px',
+                  lineHeight: 1.15,
+                }}
+              >
+                {isEdit ? 'Edit Conversion Rule' : 'New Conversion Rule'}
+              </Typography>
+
+              <Typography
+                sx={{
+                  fontSize: '0.8rem',
+                  color: '#9ca3af',
+                  fontFamily: "'DM Sans', sans-serif",
+                  mt: 0.25,
+                }}
+              >
+                {isEdit
+                  ? 'Update conversion settings and production parameters'
+                  : 'Create a raw material to finished goods conversion rule'}
+              </Typography>
+            </Box>
+          </Box>
+
+          <BBButton
+            variant="outlined"
+            startIcon={<X size={15} />}
+            onClick={() => router.push('/conversion')}
+            sx={{
+              borderRadius: '10px',
+              borderColor: '#eeeff5',
+              color: '#6b7280',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              px: 2,
+              fontFamily: "'DM Sans', sans-serif",
+              '&:hover': {
+                borderColor: '#c7d2fe',
+                bgcolor: '#f8fbff',
+                color: '#4f63d2',
+              },
+            }}
+          >
+            Discard
+          </BBButton>
+        </Box>
       </Box>
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ mx: 3, mt: 2.5, mb: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Box
             sx={{
               display: 'grid',
@@ -558,13 +577,13 @@ export default function ConversionForm({
                   width: 38,
                   height: 38,
                   borderRadius: '12px',
-                  bgcolor: T.primary,
+                  background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
                   color: '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   transform: { xs: 'rotate(90deg)', md: 'none' },
-                  boxShadow: '0 8px 18px rgba(37,99,235,0.22)',
+                  boxShadow: '0 4px 14px rgba(14,165,233,0.35)',
                 }}
               >
                 <ArrowRight size={18} />
@@ -675,7 +694,7 @@ export default function ConversionForm({
                     startIcon={<Plus size={14} />}
                     onClick={() => setBagDialogOpen(true)}
                     sx={{
-                      bgcolor: T.primary,
+                      background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
                       borderRadius: '8px',
                       fontWeight: 700,
                       fontSize: '0.75rem',
@@ -690,8 +709,8 @@ export default function ConversionForm({
                 {selectedBags.length === 0 ? (
                   <Box
                     sx={{
-                      bgcolor: alpha(T.primary, 0.05),
-                      border: `1px dashed ${T.primary}`,
+                      bgcolor: '#f0f4ff',
+                      border: '1px dashed #c7d2fe',
                       borderRadius: '12px',
                       px: 2,
                       py: 2,
@@ -706,7 +725,7 @@ export default function ConversionForm({
                   <Box sx={{ overflowX: 'auto' }}>
                     <Table size="small" sx={{ minWidth: 500 }}>
                       <TableHead>
-                        <TableRow sx={{ bgcolor: alpha(T.primary, 0.08) }}>
+                        <TableRow sx={{ bgcolor: '#f8fbff' }}>
                           <TableCell sx={{ fontWeight: 700, fontSize: '0.8rem', color: T.text }}>
                             Bag Number
                           </TableCell>
@@ -725,7 +744,7 @@ export default function ConversionForm({
                         {selectedBags.map((bag) => {
                           const bagDetail = availableBags.find((b) => b.id === bag.bag_id);
                           return (
-                            <TableRow key={bag.bag_id} sx={{ '&:hover': { bgcolor: alpha(T.primary, 0.03) } }}>
+                            <TableRow key={bag.bag_id} sx={{ '&:hover': { bgcolor: '#f8fbff' } }}>
                               <TableCell sx={{ fontSize: '0.8rem', color: T.text, fontWeight: 600 }}>
                                 {bagDetail?.bag_number || 'N/A'}
                               </TableCell>
@@ -759,7 +778,19 @@ export default function ConversionForm({
           )}
 
           {/* Add Bag Dialog */}
-          <Dialog open={bagDialogOpen} onClose={() => setBagDialogOpen(false)} maxWidth="sm" fullWidth>
+          <Dialog
+            open={bagDialogOpen}
+            onClose={() => setBagDialogOpen(false)}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{
+              sx: {
+                borderRadius: '16px',
+                border: '1px solid #e8eaf0',
+                boxShadow: '0 20px 60px rgba(79,99,210,0.15)',
+              },
+            }}
+          >
             <DialogTitle sx={{ fontWeight: 800, fontSize: '1.1rem', color: T.text }}>
               Select Raw Material Bag
             </DialogTitle>
@@ -836,7 +867,7 @@ export default function ConversionForm({
                 variant="contained"
                 onClick={handleAddBag}
                 sx={{
-                  bgcolor: T.primary,
+                  background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
                   textTransform: 'none',
                   fontWeight: 600,
                   fontSize: '0.8rem',
@@ -941,7 +972,7 @@ export default function ConversionForm({
                       width: 30,
                       height: 30,
                       borderRadius: '9px',
-                      bgcolor: T.primary,
+                      background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
                       color: '#fff',
                       display: 'flex',
                       alignItems: 'center',
@@ -956,7 +987,7 @@ export default function ConversionForm({
                       fontSize: '0.82rem',
                       fontWeight: 800,
                       color: T.text,
-                      fontFamily: "'Inter', sans-serif",
+                      fontFamily: "'DM Sans', sans-serif",
                     }}
                   >
                     Example
@@ -977,7 +1008,7 @@ export default function ConversionForm({
                       fontSize: '1.1rem',
                       fontWeight: 800,
                       color: T.warning,
-                      fontFamily: "'Inter', sans-serif",
+                      fontFamily: "'DM Sans', sans-serif",
                     }}
                   >
                     1,000
@@ -1021,7 +1052,7 @@ export default function ConversionForm({
                       fontSize: '1.1rem',
                       fontWeight: 800,
                       color: T.success,
-                      fontFamily: "'Inter', sans-serif",
+                      fontFamily: "'DM Sans', sans-serif",
                     }}
                   >
                     {finishedUnits.toLocaleString()}
@@ -1047,7 +1078,7 @@ export default function ConversionForm({
                         : lossPercentage <= 15
                           ? T.warning
                           : '#dc2626',
-                    fontFamily: "'Inter', sans-serif",
+                    fontFamily: "'DM Sans', sans-serif",
                     fontWeight: 800,
                     fontSize: '0.74rem',
                     borderRadius: '8px',
@@ -1130,7 +1161,7 @@ export default function ConversionForm({
                                 fontSize: '0.85rem',
                                 fontWeight: 800,
                                 color: field.value ? T.success : T.sub,
-                                fontFamily: "'Inter', sans-serif",
+                                fontFamily: "'DM Sans', sans-serif",
                               }}
                             >
                               {field.value ? 'Active' : 'Inactive'}
@@ -1175,7 +1206,7 @@ export default function ConversionForm({
                 color: T.sub,
                 fontWeight: 600,
                 mr: 'auto',
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'DM Sans', sans-serif",
               }}
             >
               {isEdit
@@ -1209,16 +1240,16 @@ export default function ConversionForm({
               loading={loading}
               startIcon={<Save size={15} />}
               sx={{
-                bgcolor: T.primary,
+                background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
                 borderRadius: '10px',
                 fontWeight: 800,
                 fontSize: '0.82rem',
                 textTransform: 'none',
                 px: 2.5,
-                boxShadow: '0 8px 18px rgba(37,99,235,0.22)',
+                boxShadow: '0 4px 14px rgba(14,165,233,0.35)',
                 '&:hover': {
-                  bgcolor: '#1d4ed8',
-                  boxShadow: '0 10px 22px rgba(37,99,235,0.28)',
+                  background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)',
+                  boxShadow: '0 6px 20px rgba(14,165,233,0.45)',
                 },
               }}
             >
@@ -1229,7 +1260,7 @@ export default function ConversionForm({
       </form>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
       `}</style>
     </Box>
   );
