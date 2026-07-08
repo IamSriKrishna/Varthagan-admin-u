@@ -281,6 +281,7 @@ const Dashboard = () => {
   // ── Stock tab state: GET /api/stock/summary → StockSummaryItem[]
   const [summaryStocks,   setSummaryStocks]   = useState<StockSummaryItem[]>([]);
   const [summaryMeta,     setSummaryMeta]     = useState<{ total_stock_value: number; total_sold_product_value: number } | null>(null);
+  const [summaryMode,     setSummaryMode]     = useState<'all' | 'raw'>('all');
   const [summaryLoading,  setSummaryLoading]  = useState(false);
   const [summaryError,    setSummaryError]    = useState<string | null>(null);
 
@@ -333,7 +334,10 @@ const Dashboard = () => {
   const handleMarkDamagedSuccess = async () => {
     try {
       const userIdParam = currentUserRole === "superadmin" && viewUserId ? viewUserId : undefined;
-      const res: StockSummaryResponse = await stockService.getStockSummary(userIdParam);
+      const res: StockSummaryResponse =
+        summaryMode === 'raw'
+          ? await stockService.getRawMaterialStockSummary(userIdParam)
+          : await stockService.getStockSummary(userIdParam);
       setSummaryStocks(res.stocks);
       setSummaryMeta({
         total_stock_value: res.total_stock_value,
@@ -394,10 +398,13 @@ const Dashboard = () => {
         setSummaryLoading(true);
         setSummaryError(null);
 
-        // Calls GET /api/stock/summary
+        // Calls GET /api/stock/summary or /api/stock/summary/raw-materials
         // If superadmin with selected user, include view_user_id parameter
         const userIdParam = currentUserRole === "superadmin" && viewUserId ? viewUserId : undefined;
-        const res: StockSummaryResponse = await stockService.getStockSummary(userIdParam);
+        const res: StockSummaryResponse =
+          summaryMode === 'raw'
+            ? await stockService.getRawMaterialStockSummary(userIdParam)
+            : await stockService.getStockSummary(userIdParam);
 
         setSummaryStocks(res.stocks);
         setSummaryMeta({
@@ -413,7 +420,7 @@ const Dashboard = () => {
       }
     };
     run();
-  }, [activeTab, viewUserId, currentUserRole]);
+  }, [activeTab, viewUserId, currentUserRole, summaryMode]);
 
   /* ── Inventory tab: GET /dashboard/stock ────────────────────────────
      Response fields: purchased_stock, sold_stock, last_purchased_date,
@@ -1120,6 +1127,34 @@ const Dashboard = () => {
 
           {!summaryLoading && !summaryError && (
             <>
+              <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center" sx={{ mb: 2 }}>
+                <button
+                  className="db-btn"
+                  style={{
+                    borderColor: summaryMode === 'all' ? C.ink : C.border,
+                    background: summaryMode === 'all' ? C.ink : C.surface,
+                    color: summaryMode === 'all' ? '#fff' : C.ink,
+                  }}
+                  onClick={() => setSummaryMode('all')}
+                >
+                  All Stock
+                </button>
+                <button
+                  className="db-btn"
+                  style={{
+                    borderColor: summaryMode === 'raw' ? C.ink : C.border,
+                    background: summaryMode === 'raw' ? C.ink : C.surface,
+                    color: summaryMode === 'raw' ? '#fff' : C.ink,
+                  }}
+                  onClick={() => setSummaryMode('raw')}
+                >
+                  Raw Materials
+                </button>
+                <Typography sx={{ color: C.muted, fontSize: 12, fontWeight: 600 }}>
+                  Showing {summaryMode === 'raw' ? 'raw material' : 'all'} stock summary.
+                </Typography>
+              </Stack>
+
               {/* Totals from /api/stock/summary response */}
               {summaryMeta && (
                 <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -1145,7 +1180,7 @@ const Dashboard = () => {
                 <EmptyState msg="No stock data" sub="No variants returned from /api/stock/summary" />
               ) : (
                 <>
-                  <SectionHeading>Variant-Level Stock — {summaryStocks.length} variants</SectionHeading>
+                  <SectionHeading>{summaryMode === 'raw' ? 'Raw Material Stock' : 'Variant-Level Stock'} — {summaryStocks.length} {summaryMode === 'raw' ? 'items' : 'variants'}</SectionHeading>
 
                   {/* Table: uses StockSummaryItem field names */}
                   <Box className="db-card-flat db-fade" sx={{ mb: 3, overflowX: "auto", animationDelay: "0.18s" }}>

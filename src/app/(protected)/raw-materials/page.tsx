@@ -69,33 +69,47 @@ export default function RawMaterialsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [bags, setBags] = useState<RawMaterialBag[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [expandedPOs, setExpandedPOs] = useState<Set<string>>(new Set());
 
   const debouncedSearch = useDebounce(filters.search, 500);
 
   const fetchBags = useCallback(async () => {
     try {
       setLoading(true);
-      const response: RawMaterialListResponse = await rawMaterialService.getBags(
-        rowsPerPage,
-        page * rowsPerPage
-      );
+      let allBags: RawMaterialBag[] = [];
+      let offset = 0;
+      const limit = 100;
 
-      if (response.success) {
-        setBags(response.data?.bags || []);
-        setTotalCount(response.data?.total || 0);
-      } else {
-        showToastMessage('Failed to fetch raw materials', 'error');
+      while (true) {
+        const response: RawMaterialListResponse = await rawMaterialService.getBags(
+          limit,
+          offset
+        );
+
+        if (!response.success) {
+          showToastMessage('Failed to fetch raw materials', 'error');
+          return;
+        }
+
+        const fetchedBags = response.data?.bags || [];
+        allBags = [...allBags, ...fetchedBags];
+        const total = response.data?.total || 0;
+
+        if (allBags.length >= total || fetchedBags.length < limit) {
+          break;
+        }
+
+        offset += limit;
       }
+
+      setBags(allBags);
     } catch (error: any) {
       showToastMessage(error.message || 'Failed to fetch raw materials', 'error');
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage]);
+  }, []);
 
   useEffect(() => {
     fetchBags();
@@ -113,55 +127,37 @@ export default function RawMaterialsPage() {
     groupedBags[poId].push(bag);
   });
 
-  const displayBags = Object.keys(groupedBags).map((poId) => {
-    const poBags = groupedBags[poId].sort((a, b) => {
-      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
-      return bTime - aTime;
-    });
+  const getLatestCreatedTime = (bags: RawMaterialBag[]) =>
+    bags.reduce((max, bag) => {
+      const bagTime = bag.created_at ? new Date(bag.created_at).getTime() : 0;
+      return Math.max(max, bagTime);
+    }, 0);
 
-    return {
-      ...poBags[0],
-      _groupSize: poBags.length,
-      _allBags: poBags,
-    };
+  const groupedKeys = Object.keys(groupedBags).sort((a, b) => {
+    const aTime = getLatestCreatedTime(groupedBags[a]);
+    const bTime = getLatestCreatedTime(groupedBags[b]);
+    return bTime - aTime;
   });
 
+  const displayBags = groupedKeys
+    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+    .map((poId) => {
+      const poBags = groupedBags[poId].sort((a, b) => {
+        const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return bTime - aTime;
+      });
+
+      return {
+        ...poBags[0],
+        _groupSize: poBags.length,
+        _allBags: poBags,
+      };
+    });
+
+  const totalGroupCount = groupedKeys.length;
+
   const columns: ITableColumn<any>[] = [
-    {
-      key: 'action' as any,
-      label: '',
-      render: (row: any) =>
-        row._groupSize > 1 ? (
-          <IconButton
-            size="small"
-            onClick={() => {
-              const poId = row.purchase_order_id;
-              const newExpanded = new Set(expandedPOs);
-              newExpanded.has(poId)
-                ? newExpanded.delete(poId)
-                : newExpanded.add(poId);
-              setExpandedPOs(newExpanded);
-            }}
-            sx={{
-              width: 30,
-              height: 30,
-              borderRadius: '8px',
-              color: '#4f63d2',
-              bgcolor: '#f0f4ff',
-              transform: expandedPOs.has(row.purchase_order_id)
-                ? 'rotate(90deg)'
-                : 'rotate(0deg)',
-              transition: 'all 0.2s',
-              '&:hover': {
-                bgcolor: '#e0e7ff',
-              },
-            }}
-          >
-            <ChevronDown size={16} />
-          </IconButton>
-        ) : null,
-    },
     {
       key: 'product_name' as keyof RawMaterialBag,
       label: 'Product Name',
@@ -506,73 +502,30 @@ export default function RawMaterialsPage() {
               pagination
               page={page}
               rowsPerPage={rowsPerPage}
-              totalCount={totalCount}
+              totalCount={totalGroupCount}
               onPageChange={setPage}
               onRowsPerPageChange={setRowsPerPage}
-              sx={{
-                '& .MuiTableHead-root .MuiTableCell-root': {
-                  bgcolor: '#f8fbff',
-                  color: '#6b7280',
-                  fontWeight: 600,
-                  fontSize: '0.7rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  fontFamily: "'DM Sans', sans-serif",
-                  borderBottom: '1px solid #eeeff5',
-                  py: 1.5,
-                },
-                '& .MuiTableBody-root .MuiTableRow-root': {
-                  cursor: 'pointer',
-                  transition: 'background 0.12s ease',
-                  '&:hover': { bgcolor: '#f8fbff' },
-                },
-                '& .MuiTableBody-root .MuiTableCell-root': {
-                  borderBottom: '1px solid #f5f5fa',
-                  py: 1.5,
-                  fontFamily: "'DM Sans', sans-serif",
-                },
-              }}
-            />
-
-            {Array.from(expandedPOs).map((poId) => {
-              const poBags = groupedBags[poId] || [];
-              if (poBags.length <= 1) return null;
-
-              const sortedBags = poBags.sort((a, b) => {
-                const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
-                const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
-                return bTime - aTime;
-              });
-
-              return (
-                <Box
-                  key={`timeline-${poId}`}
-                  sx={{
-                    bgcolor: '#f8fbff',
-                    borderTop: '1px solid #eeeff5',
-                    p: 3,
-                  }}
-                >
+              renderAccordionContent={(row: any) => (
+                <Box sx={{ p: 2, bgcolor: '#f8fbff' }}>
                   <Typography
                     sx={{
                       fontSize: '0.875rem',
                       fontWeight: 800,
                       color: '#1a1d2e',
-                      mb: 2.5,
+                      mb: 2,
                       fontFamily: "'DM Sans', sans-serif",
                     }}
                   >
-                    Material Timeline for {poBags[0].purchase_order_no || 'PO'}
+                    Material Timeline for {row.purchase_order_no || 'PO'}
                   </Typography>
 
-                  <Stack spacing={0}>
-                    {sortedBags.map((bag, idx) => {
+                  <Stack spacing={2}>
+                    {row._allBags.map((bag: RawMaterialBag, idx: number) => {
                       const cfg =
                         MATERIAL_STATUS_CONFIG[
                           bag.status as keyof typeof MATERIAL_STATUS_CONFIG
                         ] || MATERIAL_STATUS_CONFIG.available;
-
-                      const isLast = idx === sortedBags.length - 1;
+                      const isLast = idx === row._allBags.length - 1;
 
                       return (
                         <Stack key={bag.id} direction="row" spacing={2}>
@@ -638,9 +591,7 @@ export default function RawMaterialsPage() {
                                     fontFamily: "'DM Mono', monospace",
                                   }}
                                 >
-                                  {dayjs(bag.created_at).format(
-                                    'DD MMM YYYY, hh:mm A'
-                                  )}
+                                  {dayjs(bag.created_at).format('DD MMM YYYY, hh:mm A')}
                                 </Typography>
                               </Box>
 
@@ -715,8 +666,31 @@ export default function RawMaterialsPage() {
                     })}
                   </Stack>
                 </Box>
-              );
-            })}
+              )}
+              sx={{
+                '& .MuiTableHead-root .MuiTableCell-root': {
+                  bgcolor: '#f8fbff',
+                  color: '#6b7280',
+                  fontWeight: 600,
+                  fontSize: '0.7rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  fontFamily: "'DM Sans', sans-serif",
+                  borderBottom: '1px solid #eeeff5',
+                  py: 1.5,
+                },
+                '& .MuiTableBody-root .MuiTableRow-root': {
+                  cursor: 'pointer',
+                  transition: 'background 0.12s ease',
+                  '&:hover': { bgcolor: '#f8fbff' },
+                },
+                '& .MuiTableBody-root .MuiTableCell-root': {
+                  borderBottom: '1px solid #f5f5fa',
+                  py: 1.5,
+                  fontFamily: "'DM Sans', sans-serif",
+                },
+              }}
+            />
           </>
         )}
       </Box>

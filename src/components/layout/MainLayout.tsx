@@ -46,12 +46,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     <Box sx={{ display: "flex", position: "relative", minHeight: "100vh" }}>
       {/* <CssBaseline /> */}
 
-      {/* <Navbar
+      <Navbar
         drawerOpen={drawerOpen}
         drawerWidth={drawerWidth}
         handleDrawerToggle={handleDrawerToggle}
         isMobile={isMobile}
-      /> */}
+      />
       <Box
         sx={{
           filter: blurActive ? "blur(4px)" : "none",

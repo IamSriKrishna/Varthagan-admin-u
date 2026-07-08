@@ -235,6 +235,33 @@ export const stockService = {
   },
 
   // ─────────────────────────────────────────────────────────────────
+  // GET /api/stock/summary/raw-materials
+  //
+  // Raw material stock summary. Same response shape as /api/stock/summary.
+  async getRawMaterialStockSummary(viewUserId?: number): Promise<StockSummaryResponse> {
+    const params = new URLSearchParams();
+    if (viewUserId) {
+      params.append('view_user_id', String(viewUserId));
+    }
+    const url = `${API_BASE_URL}/api/stock/summary/raw-materials${params.toString() ? `?${params.toString()}` : ''}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Raw material stock summary API error: ${response.status} ${response.statusText} — ${errorText}`
+      );
+    }
+
+    const result: StockSummaryResponse = await response.json();
+    return result;
+  },
+
+  // ─────────────────────────────────────────────────────────────────
   // GET /dashboard/stock
   //
   // Product-level rows with status flags. Key field names (different from summary):
