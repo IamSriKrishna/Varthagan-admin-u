@@ -125,6 +125,62 @@ export const calculateLineItemAmount = (quantity: number, rate: number): number 
   return quantity * rate;
 };
 
+export const calculateRawMaterialQuantity = ({
+  numberOfPacks,
+  quantityPerPack,
+  rawMaterialUnit,
+  requiredGramPerUnit,
+}: {
+  numberOfPacks: number;
+  quantityPerPack: number;
+  rawMaterialUnit?: string;
+  requiredGramPerUnit?: number;
+}): number => {
+  const packs = Number(numberOfPacks) || 0;
+  const perPack = Number(quantityPerPack) || 0;
+
+  if (!requiredGramPerUnit || requiredGramPerUnit <= 0) {
+    return packs * perPack;
+  }
+
+  const gramsPerPack = (() => {
+    const unit = (rawMaterialUnit || 'kg').toLowerCase();
+    switch (unit) {
+      case 'gm':
+      case 'gram':
+      case 'grams':
+        return perPack;
+      case 'kg':
+      case 'kilogram':
+      case 'kilograms':
+        return perPack * 1000;
+      default:
+        return perPack;
+    }
+  })();
+
+  // Total material in grams
+  const totalGrams = packs * gramsPerPack;
+
+  // When requiredGramPerUnit is provided we still compute how many pieces
+  // can be produced (for display elsewhere), but the quantity returned
+  // for the line item should represent the total material in the
+  // selected unit (kg/g) so pricing and display are correct.
+  const unit = (rawMaterialUnit || 'kg').toLowerCase();
+  switch (unit) {
+    case 'gm':
+    case 'gram':
+    case 'grams':
+      return totalGrams; // return grams
+    case 'kg':
+    case 'kilogram':
+    case 'kilograms':
+      return totalGrams / 1000; // return kilograms
+    default:
+      return packs * perPack;
+  }
+};
+
 export const calculateSubTotal = (lineItems: PurchaseOrderLineItemOutput[]): number => {
   return lineItems.reduce((total, item) => total + (item.amount || 0), 0);
 };

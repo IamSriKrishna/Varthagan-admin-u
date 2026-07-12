@@ -36,7 +36,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import { PurchaseOrder, PurchaseOrderLineItemInput } from "@/models/purchaseOrder.model";
 import { Product } from "@/models/product";
-import { calculateLineItemAmount } from "./purchaseOrderForm.utils";
+import { calculateLineItemAmount, calculateRawMaterialQuantity } from "./purchaseOrderForm.utils";
 import { productService } from "@/lib/api/productService";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -221,26 +221,51 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
 
     const items_ = [...formik.values.line_items];
 
-    // Calculate quantity for raw materials
     let calculatedQty = formData.quantity || 1;
+    let amountForLine = 0;
 
     if ((formData as any).is_raw_material) {
-      calculatedQty = ((formData as any).number_of_packs || 0) * ((formData as any).quantity_per_pack || 0);
-    }
+      // calculate total material (kg or gm depending on unit)
+      const materialQty = calculateRawMaterialQuantity({
+        numberOfPacks: (formData as any).number_of_packs || 0,
+        quantityPerPack: (formData as any).quantity_per_pack || 0,
+        rawMaterialUnit: (formData as any).raw_material_unit || "",
+        requiredGramPerUnit: (selectedProduct as any)?.required_gram_per_unit,
+      });
 
-    // Ensure quantity is at least 1 for non-raw materials
-    if (!((formData as any).is_raw_material) && calculatedQty < 1) {
-      calculatedQty = formData.quantity || 1;
-    }
+      calculatedQty = materialQty;
 
-    const amount = calculatedQty * formData.rate;
+      // If the product has required grams per unit, compute producible units
+      const requiredGram = (selectedProduct as any)?.required_gram_per_unit;
+      if (requiredGram && requiredGram > 0) {
+        // convert materialQty to grams for unit calculation
+        const unit = ((formData as any).raw_material_unit || "kg").toLowerCase();
+        let totalGrams = materialQty;
+        if (unit === "kg" || unit === "kilogram" || unit === "kilograms") {
+          totalGrams = materialQty * 1000;
+        }
+        // producible units (pieces)
+        const producibleUnits = totalGrams / requiredGram;
+        amountForLine = calculateLineItemAmount(producibleUnits, formData.rate);
+      } else {
+        // no requiredGram — rate is per material unit
+        amountForLine = calculateLineItemAmount(materialQty, formData.rate);
+      }
+    } else {
+      if (!formData.quantity || formData.quantity <= 0) {
+        calculatedQty = formData.quantity || 1;
+      } else {
+        calculatedQty = formData.quantity || 1;
+      }
+      amountForLine = calculateLineItemAmount(calculatedQty, formData.rate);
+    }
 
     const lineItem: any = {
       ...formData,
       quantity: calculatedQty,
       purchase_unit: (formData as any).is_raw_material ? (formData as any).raw_material_unit : (formData as any).purchase_unit || "",
       raw_material_unit: (formData as any).raw_material_unit || "",
-      amount,
+      amount: amountForLine,
     };
 
     if (editingIndex !== null) {
@@ -1106,7 +1131,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                                                 borderRadius: "4px",
                                               }}
                                             >
-                                              {totalUnits.toLocaleString("en-IN", { maximumFractionDigits: 0 })} units
+                                              {totalUnits.toLocaleString("en-IN", { maximumFractionDigits: 0 })} pieces
                                             </Typography>
                                           </Box>
                                           <Typography
@@ -1306,13 +1331,30 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                 >
                   ₹{" "}
                   {(() => {
-                    let qty = formData.quantity || 0;
+                    let qtyForAmount = formData.quantity || 0;
 
                     if ((formData as any).is_raw_material) {
-                      qty = ((formData as any).number_of_packs || 0) * ((formData as any).quantity_per_pack || 0);
+                      const materialQty = calculateRawMaterialQuantity({
+                        numberOfPacks: (formData as any).number_of_packs || 0,
+                        quantityPerPack: (formData as any).quantity_per_pack || 0,
+                        rawMaterialUnit: (formData as any).raw_material_unit || "",
+                        requiredGramPerUnit: (selectedProduct as any)?.required_gram_per_unit,
+                      });
+
+                      const requiredGram = (selectedProduct as any)?.required_gram_per_unit;
+                      if (requiredGram && requiredGram > 0) {
+                        const unit = ((formData as any).raw_material_unit || "kg").toLowerCase();
+                        let totalGrams = materialQty;
+                        if (unit === "kg" || unit === "kilogram" || unit === "kilograms") {
+                          totalGrams = materialQty * 1000;
+                        }
+                        qtyForAmount = totalGrams / requiredGram;
+                      } else {
+                        qtyForAmount = materialQty;
+                      }
                     }
 
-                    return (qty * formData.rate).toLocaleString("en-IN", {
+                    return calculateLineItemAmount(qtyForAmount, formData.rate).toLocaleString("en-IN", {
                       minimumFractionDigits: 2,
                     });
                   })()}

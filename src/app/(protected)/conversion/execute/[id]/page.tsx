@@ -180,7 +180,7 @@ export default function ExecuteConversionPage() {
       const response = await rawMaterialService.getBagsByProduct(productId);
 
       if (response.success && response.data) {
-        setBags(response.data.filter((bag) => Number(bag.remaining_kg) > 0));
+        setBags(response.data.filter((bag) => Number(bag.remaining_kg || 0) > 0));
       }
     } catch (error) {
       console.error('Error fetching bags:', error);
@@ -367,7 +367,8 @@ export default function ExecuteConversionPage() {
             <BBLoader />
           </Box>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <>
+            <form onSubmit={handleSubmit(onSubmit)}>
             {conversionRule && (
               <Card sx={{ ...cardSx, mb: 2 }}>
                 <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
@@ -476,8 +477,11 @@ export default function ExecuteConversionPage() {
                     const newQuantities = { ...finishedQuantities };
 
                     newValue.forEach((bag) => {
-                      if (!(bag.id in newQuantities)) {
-                        newQuantities[bag.id] = 0;
+                      const availableKg = Number(bag.remaining_kg || 0);
+                      const maxQty = getPossibleFinishedQty(availableKg);
+
+                      if (!(bag.id in newQuantities) || newQuantities[bag.id] === 0) {
+                        newQuantities[bag.id] = maxQty;
                       }
                     });
 
@@ -690,7 +694,7 @@ export default function ExecuteConversionPage() {
             <Card sx={cardSx}>
               <CardContent sx={{ p: 2 }}>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="flex-end">
-                  <BBButton variant="outlined" onClick={() => router.push('/conversion')}>
+                  <BBButton variant="outlined" onClick={() => router.push('/conversion')}> 
                     Cancel
                   </BBButton>
 
@@ -706,7 +710,31 @@ export default function ExecuteConversionPage() {
               </CardContent>
             </Card>
           </form>
-        )}
+
+          {executeLoading && (
+            <Box
+              sx={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 1300,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'rgba(255, 255, 255, 0.72)',
+              }}
+            >
+              <Card sx={{ p: 3, borderRadius: '16px', boxShadow: '0 12px 32px rgba(15, 23, 42, 0.18)' }}>
+                <Stack direction="column" spacing={2} alignItems="center">
+                  <CircularProgress />
+                  <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#1a1d2e' }}>
+                    Executing conversion...
+                  </Typography>
+                </Stack>
+              </Card>
+            </Box>
+          )}
+        </>
+      )}
       </Container>
     </Box>
   );

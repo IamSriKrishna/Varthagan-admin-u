@@ -57,6 +57,7 @@ export interface BankDetail {
   bank_id?: number | string;
   account_holder_name?: string;
   account_number?: string;
+  confirm_account_number?: string;
   reenter_account_number?: string;
   ifsc_code?: string;
   branch_name?: string;

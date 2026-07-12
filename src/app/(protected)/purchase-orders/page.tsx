@@ -360,15 +360,9 @@ const PurchaseOrderList: React.FC = () => {
             </Tooltip>
           )}
           <Tooltip title="View details" arrow>
-            <IconButton size="small" onClick={() => router.push(`/purchase-orders/purchase-order/${row.id}`)}
+            <IconButton size="small" onClick={() => router.push(`/purchase-orders/purchase-order/${row.id}?mode=view`)}
               sx={{ width: 30, height: 30, borderRadius: '8px', color: '#0369a1', bgcolor: '#e0f2fe', '&:hover': { bgcolor: '#bae6fd', transform: 'scale(1.05)' }, transition: 'all 0.15s ease' }}>
               <Eye size={14} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Edit" arrow>
-            <IconButton size="small" onClick={() => router.push(`/purchase-orders/purchase-order/${row.id}`)}
-              sx={{ width: 30, height: 30, borderRadius: '8px', color: '#4f63d2', bgcolor: '#f0f4ff', '&:hover': { bgcolor: '#e0e7ff', transform: 'scale(1.05)' }, transition: 'all 0.15s ease' }}>
-              <Edit size={14} />
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete" arrow>

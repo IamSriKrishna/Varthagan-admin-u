@@ -22,7 +22,7 @@ import { VendorBankDetails } from "./VendorBankDetails";
 
 import { BBButton, BBLoader } from "@/lib";
 import { Vendor } from "@/models/vendor.model";
-import { initialVendorValues, transformVendorToPayload } from "./vendorForm.utils";
+import { initialVendorValues, normalizeVendorData, transformVendorToPayload } from "./vendorForm.utils";
 import { vendorValidationSchema } from "./vendorForm.validation";
 import { useVendor } from "@/hooks/useVendor";
 import { showToastMessage } from "@/utils/toastUtil";
@@ -46,7 +46,7 @@ export const VendorForm: React.FC = () => {
   const vendorId = Array.isArray(vendorIdRaw) ? vendorIdRaw[0] : vendorIdRaw;
   const isEdit = !!vendorId && vendorId !== "new";
 
-  const [initialData, setInitialData] = useState<Vendor>(initialVendorValues);
+  const [initialData, setInitialData] = useState<Vendor>(normalizeVendorData(initialVendorValues));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -62,7 +62,7 @@ export const VendorForm: React.FC = () => {
       setLoading(true);
       setError(null);
       const data = await getVendor(vendorId!);
-      setInitialData(data);
+      setInitialData(normalizeVendorData(data));
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || "Failed to load vendor";
       setError(msg);

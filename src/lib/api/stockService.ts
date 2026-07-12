@@ -99,6 +99,7 @@ export interface StockSummaryItem {
   purchased_total: number;
   /** Total units ever sold — API field name: sold_total */
   sold_total:      number;
+  total_pieces?:   number;
   average_cost:    number;
   stock_value:     number;
   /** ISO date string — API field name: last_purchased */

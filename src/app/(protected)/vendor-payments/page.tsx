@@ -1107,17 +1107,19 @@ function CreateVendorPaymentDialog({ open, onClose, purchaseOrders, loading, pay
               onChange={(e) => handlePoChange(e.target.value)}
               disabled={loading}
             >
-              {purchaseOrders.map((po) => (
-                <MenuItem key={po.id} value={po.id} sx={{ fontFamily: "'DM Sans', sans-serif", fontSize: '13px' }}>
-                  <Stack direction="row" justifyContent="space-between" sx={{ width: '100%' }}>
-                    <span>{po.purchase_order_no}</span>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <span style={{ color: '#9ca3af', fontSize: '12px' }}>{po.vendor?.display_name}</span>
-                      <span style={{ fontWeight: 700, color: '#1a1d2e' }}>₹{po.total.toLocaleString('en-IN')}</span>
+              {purchaseOrders
+                .filter((po) => calculateRemainingBalance(po.id) > 0)
+                .map((po) => (
+                  <MenuItem key={po.id} value={po.id} sx={{ fontFamily: "'DM Sans', sans-serif", fontSize: '13px' }}>
+                    <Stack direction="row" justifyContent="space-between" sx={{ width: '100%' }}>
+                      <span>{po.purchase_order_no}</span>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <span style={{ color: '#9ca3af', fontSize: '12px' }}>{po.vendor?.display_name}</span>
+                        <span style={{ fontWeight: 700, color: '#1a1d2e' }}>₹{po.total.toLocaleString('en-IN')}</span>
+                      </Stack>
                     </Stack>
-                  </Stack>
-                </MenuItem>
-              ))}
+                  </MenuItem>
+                ))}
             </Select>
           </FormControl>
 

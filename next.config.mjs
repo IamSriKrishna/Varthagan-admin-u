@@ -1,10 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  compiler: {
-    styledComponents: true,
+  turbopack: {
+    root: "/home/sri-krishna/Projects/deepak/Varthagan-admin-u",
   },
-  reactStrictMode: true,
-  output: "standalone",
 };
 
 export default nextConfig;

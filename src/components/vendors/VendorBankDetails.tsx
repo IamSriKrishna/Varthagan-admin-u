@@ -102,13 +102,13 @@ export const VendorBankDetails: React.FC<VendorBankDetailsProps> = ({ values, pu
                 <BBInput name={`bank_details[${index}].account_number`} label="Account Number*" fullWidth />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }} component="div">
-                <BBInput name={`bank_details[${index}].confirm_account_number`} label="Re Enter Account Number*" />
+                <BBInput name={`bank_details[${index}].confirm_account_number`} label="Re-enter Account Number*" />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }} component="div">
-                <BBInput name={`bank_details[${index}].ifsc_code`} label="IFSC Code" fullWidth />
+                <BBInput name={`bank_details[${index}].ifsc_code`} label="IFSC Code*" fullWidth />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }} component="div">
-                <BBInput name={`bank_details[${index}].branch_name`} label="Branch Name" fullWidth />
+                <BBInput name={`bank_details[${index}].branch_name`} label="Branch Name*" fullWidth />
               </Grid>{" "}
             </Grid>
           </Box>

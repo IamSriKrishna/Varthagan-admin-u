@@ -70,6 +70,7 @@ export interface IResourceProduct {
 export interface IProductForm {
   name: string;
   is_resource?: boolean; // Indicates if this is a resource product
+  is_raw?: boolean; // Indicates if this is a raw product
   // Resource product fields (only when is_resource: true)
   resource_name?: string;
   resource_unit?: string;

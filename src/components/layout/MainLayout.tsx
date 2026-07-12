@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import * as classes from "./Layout.styles";
-import Navbar from "./Navbar/Navbar";
+// import Navbar from "./Navbar/Navbar";
 import Sidebar from "./SideBar/Sidebar";
 
 const drawerWidth = 240;
@@ -46,12 +46,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     <Box sx={{ display: "flex", position: "relative", minHeight: "100vh" }}>
       {/* <CssBaseline /> */}
 
-      <Navbar
-        drawerOpen={drawerOpen}
-        drawerWidth={drawerWidth}
-        handleDrawerToggle={handleDrawerToggle}
-        isMobile={isMobile}
-      />
+     
       <Box
         sx={{
           filter: blurActive ? "blur(4px)" : "none",
@@ -81,58 +76,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           }}
         >
           <Box component="main" sx={classes.mainLayoutBox}>
-            <Toolbar />
+            
             {children}
           </Box>
         </Box>
       </Box>
-      {blurActive && (
-        <Box sx={classes.overlayTextStyle}>
-          <Box>
-            <Box sx={{ display: { xs: "block", md: "none" }, mb: 1, fontSize: "0.9rem", opacity: 0.8 }}>
-              Tap the menu icon to select a vendor
-            </Box>
-            <Box>Select Vendor to Continue</Box>
-          </Box>
-
-          <Box sx={classes.arrowStyle(mobileOpen)}>
-            <svg
-              width="90"
-              height="90"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#764ba2"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M17 7L7 17"></path>
-              <path d="M17 17H7V7"></path>
-            </svg>
-          </Box>
-
-          <style>{`
-      @keyframes arrowBounce {
-        0% { transform: translateY(0) rotate(-180deg); opacity: 0.7; }
-        50% { transform: translateY(-10px) rotate(-180deg); opacity: 1; }
-        100% { transform: translateY(0) rotate(-180deg); opacity: 0.7; }
-      }
-
-      @media (max-width: 900px) {
-        @keyframes arrowBounce {
-          0% { transform: translateY(0) rotate(80deg); opacity: 0.7; }
-          50% { transform: translateY(-10px) rotate(80deg); opacity: 1; }
-          100% { transform: translateY(0) rotate(80deg); opacity: 0.7; }
-        }
-      }
-
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-    `}</style>
-        </Box>
-      )}
+      
     </Box>
   );
 }

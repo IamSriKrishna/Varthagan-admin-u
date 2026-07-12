@@ -48,6 +48,7 @@ const TABS = [
 const validationSchema = Yup.object().shape({
   name: Yup.string().required("Product name is required"),
   is_resource: Yup.boolean(),
+  is_raw: Yup.boolean(),
   resource_name: Yup.string().when("is_resource", {
     is: true,
     then: (s) => s.required("Resource Name is required"),
@@ -64,8 +65,8 @@ const validationSchema = Yup.object().shape({
       s.typeError("Must be a number").required("Required").min(0, "Must be ≥ 0"),
     otherwise: (s) => s.notRequired(),
   }),
-  product_details: Yup.object().when("is_resource", {
-    is: false,
+  product_details: Yup.object().when(["is_resource", "is_raw"], {
+    is: (isResource: boolean, isRaw: boolean) => !isResource && !isRaw,
     then: (s) =>
       s.shape({
         unit: Yup.string().required("Unit is required"),
@@ -73,8 +74,8 @@ const validationSchema = Yup.object().shape({
       }),
     otherwise: (s) => s.notRequired(),
   }),
-  sales_info: Yup.object().when("is_resource", {
-    is: false,
+  sales_info: Yup.object().when(["is_resource", "is_raw"], {
+    is: (isResource: boolean, isRaw: boolean) => !isResource && !isRaw,
     then: (s) =>
       s.shape({
         selling_price: Yup.number()
@@ -86,8 +87,8 @@ const validationSchema = Yup.object().shape({
       }),
     otherwise: (s) => s.notRequired(),
   }),
-  purchase_info: Yup.object().when("is_resource", {
-    is: false,
+  purchase_info: Yup.object().when(["is_resource", "is_raw"], {
+    is: (isResource: boolean, isRaw: boolean) => !isResource && !isRaw,
     then: (s) =>
       s.shape({
         cost_price: Yup.number().typeError("Must be a number").min(0, "Must be ≥ 0"),
@@ -123,6 +124,7 @@ const convertUIVariantToProductVariant = (v: IVariant): any => ({
 const initialValues: IProductForm = {
   name: "",
   is_resource: false,
+  is_raw: false,
   resource_name: "",
   resource_unit: "",
   resource_cost_per_unit: 0,
@@ -353,9 +355,19 @@ const AddProduct = () => {
         return {
           name: product.name ?? "",
           is_resource: true,
+          is_raw: false,
           resource_name: product.resource_name ?? "",
           resource_unit: product.resource_unit ?? "",
           resource_cost_per_unit: product.resource_cost_per_unit ?? 0,
+          has_style: false,
+        } as IProductForm;
+      }
+
+      if (product.is_raw) {
+        return {
+          name: product.name ?? "",
+          is_resource: false,
+          is_raw: true,
           has_style: false,
         } as IProductForm;
       }
@@ -410,11 +422,15 @@ const AddProduct = () => {
 
   const handleProductSubmit = async (values: IProductForm) => {
     try {
-      let submitValues = values;
+      let submitValues: IProductForm = {
+        ...values,
+        is_resource: values.is_resource === true,
+        is_raw: values.is_raw === true,
+      };
 
-      if (!values.is_resource && initialVariantData?.variants?.length) {
+      if (!values.is_resource && !values.is_raw && initialVariantData?.variants?.length) {
         submitValues = {
-          ...values,
+          ...submitValues,
           product_details: {
             ...(values.product_details || {}),
             variants: initialVariantData.variants.map(convertUIVariantToProductVariant),
@@ -426,6 +442,7 @@ const AddProduct = () => {
         submitValues = {
           name: values.name,
           is_resource: true,
+          is_raw: false,
           resource_name: values.resource_name || "",
           resource_unit: values.resource_unit || "",
           resource_cost_per_unit: values.resource_cost_per_unit || 0,
@@ -433,8 +450,21 @@ const AddProduct = () => {
         } as IProductForm;
       }
 
+      if (values.is_raw) {
+        submitValues = {
+          name: values.name,
+          is_resource: false,
+          is_raw: true,
+          product_details: {
+            ...(values.product_details || {}),
+            unit: values.product_details?.unit || "",
+          },
+        } as IProductForm;
+      }
+
       const response = await addOrUpdateProduct(submitValues, isEdit ? productId : undefined);
-      if (response.success) {
+      const isSuccessfulResponse = response?.success !== false && (!!response?.id || !!response?.data || !!response?.message);
+      if (isSuccessfulResponse) {
         showToastMessage(response.message || (isEdit ? "Product updated!" : "Product created!"), "success");
         setTimeout(() => router.push("/products"), 100);
       } else {

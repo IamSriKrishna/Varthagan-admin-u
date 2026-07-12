@@ -1193,6 +1193,7 @@ const Dashboard = () => {
                           <TH align="center">Current</TH>
                           <TH align="center">Available</TH>
                           <TH align="center">Reserved</TH>
+                          {summaryMode === 'raw' && <TH align="center">Total Pieces</TH>}
                           {/* purchased_total — NOT purchased_stock */}
                           <TH align="center">Purchased Total</TH>
                           {/* sold_total — NOT sold_stock */}
@@ -1233,6 +1234,13 @@ const Dashboard = () => {
                             <td style={{ padding: "13px 16px", textAlign: "center" }}>
                               <Typography className="db-num" sx={{ fontSize: 12, color: stock.reserved_stock > 0 ? C.gold : C.subtle }}>{stock.reserved_stock}</Typography>
                             </td>
+                            {summaryMode === 'raw' && (
+                              <td style={{ padding: "13px 16px", textAlign: "center" }}>
+                                <Typography className="db-num" sx={{ fontSize: 12, fontWeight: 600, color: C.ink }}>
+                                  {stock.total_pieces !== undefined ? stock.total_pieces.toLocaleString() : '—'}
+                                </Typography>
+                              </td>
+                            )}
                             {/* purchased_total from /api/stock/summary */}
                             <td style={{ padding: "13px 16px", textAlign: "center" }}>
                               <Typography className="db-num" sx={{ fontSize: 12, color: C.inkMid }}>{stock.purchased_total.toLocaleString()}</Typography>

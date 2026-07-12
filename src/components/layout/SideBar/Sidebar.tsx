@@ -376,11 +376,7 @@ export default function Sidebar({
 
   const drawerContent = (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-      <Box sx={{ display: "flex", alignItems: "center", height: 64 }}>
-        <BrandLogo open={drawerOpen} onClose={handleDrawerToggle} isSmallScreen={isMobile} />
-      </Box>
 
-      <Divider />
 
       <Box sx={{ flex: 1, minHeight: 0, overflowY: "hidden", overflowX: "hidden", pr: drawerOpen ? 2 : 1, py: 2 }}>
         <List>
@@ -516,29 +512,6 @@ export default function Sidebar({
         </List>
       </Box>
 
-      <Box sx={{ borderTop: "1px solid #E0E0E0", p: 1 }}>
-        {drawerOpen && (
-          <Box
-            sx={{
-              mb: 2,
-              display: userType === "superadmin" ? { xs: "block", md: "none" } : "none",
-            }}
-          >
-            <VendorsSelect
-              label=""
-              blurOnSelect={true}
-              value={selectedVendorId}
-              disableClear={true}
-              onChange={(a: string | number | null, b?: string | number | null) => {
-                const v = b !== undefined ? b : a;
-                dispatch(setSelectedVendor(v));
-              }}
-            />
-          </Box>
-        )}
-
-        <ProfileMenu drawerOpen={drawerOpen} userName={userName} userType={userType} handleLogout={handleLogout} />
-      </Box>
       <Popover
         open={Boolean(popoverAnchor)}
         anchorEl={popoverAnchor?.element}

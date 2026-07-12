@@ -75,6 +75,7 @@ export const initialVendorValues: Vendor = {
       bank_id: "",
       account_holder_name: "",
       account_number: "",
+      confirm_account_number: "",
       ifsc_code: "",
       branch_name: "",
       is_primary: true,
@@ -82,6 +83,27 @@ export const initialVendorValues: Vendor = {
     },
   ],
   documents: [],
+};
+
+export const normalizeVendorData = (vendor: Vendor): Vendor => {
+  const normalizedBankDetails = Array.isArray(vendor.bank_details)
+    ? vendor.bank_details.map((bank: any) => ({
+        ...bank,
+        confirm_account_number:
+          bank.confirm_account_number ??
+          bank.reenter_account_number ??
+          bank.re_enter_account_number ??
+          bank.account_number ??
+          "",
+        ifsc_code: bank.ifsc_code ?? bank.ifsc ?? bank.ifscCode ?? "",
+        branch_name: bank.branch_name ?? bank.branch ?? bank.branchName ?? "",
+      }))
+    : [];
+
+  return {
+    ...vendor,
+    bank_details: normalizedBankDetails.length > 0 ? normalizedBankDetails : initialVendorValues.bank_details,
+  };
 };
 
 export const transformVendorToPayload = (vendor: Vendor): any => {
@@ -107,7 +129,13 @@ export const transformVendorToPayload = (vendor: Vendor): any => {
       address_type: "shipping",
     },
     contact_persons: vendor.contact_persons,
-    bank_details: vendor.bank_details,
+    bank_details: (vendor.bank_details ?? []).map((bank: any) => {
+      const { confirm_account_number, ...rest } = bank;
+      return {
+        ...rest,
+        ...(confirm_account_number ? { reenter_account_number: confirm_account_number } : {}),
+      };
+    }),
   };
   
   return payload;

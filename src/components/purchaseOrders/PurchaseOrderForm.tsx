@@ -14,7 +14,7 @@ import {
   Tooltip,
   Fade,
 } from "@mui/material";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
 import DescriptionIcon from "@mui/icons-material/Description";
@@ -122,7 +122,12 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
   const [pageError, setPageError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
+  const searchParams = useSearchParams();
+  const mode = searchParams ? searchParams.get("mode") : null;
+  const isViewMode = mode === "view";
+
   const isEdit = purchaseOrderId && purchaseOrderId !== "new";
+  const isEditable = isEdit && !isViewMode;
 
   useEffect(() => {
     if (!isEdit) return;
@@ -214,10 +219,10 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
 
             <Box>
               <Typography sx={{ fontSize: "1.25rem", fontWeight: 800, color: tokens.neutral900, letterSpacing: "-0.3px", lineHeight: 1.2 }}>
-                {isEdit ? "Edit Purchase Order" : "New Purchase Order"}
+                {isViewMode ? "View Purchase Order" : isEdit ? "Edit Purchase Order" : "New Purchase Order"}
               </Typography>
               <Typography sx={{ fontSize: "0.78rem", color: tokens.neutral500, mt: 0.2 }}>
-                {isEdit ? "Update purchase order information" : "Create a new purchase order in three simple sections"}
+                {isViewMode ? "View purchase order details" : isEdit ? "Update purchase order information" : "Create a new purchase order in three simple sections"}
               </Typography>
             </Box>
           </Box>
@@ -241,23 +246,24 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
               Cancel
             </BBButton>
 
-            <Tooltip title={!formik.isValid ? "Please fix all errors before saving" : ""} arrow>
-              <span>
-                <BBButton
-                  type="button"
-                  variant="contained"
-                  disabled={loading || !formik.isValid}
-                  loading={loading}
-                  startIcon={!loading && (saved ? <CheckCircleIcon sx={{ fontSize: 16 }} /> : <SaveIcon sx={{ fontSize: 16 }} />)}
-                  onClick={() => formik.handleSubmit()}
-                  sx={{
-                    borderRadius: "10px",
-                    textTransform: "none",
-                    fontWeight: 700,
-                    fontSize: "0.875rem",
-                    px: 2.5,
-                    background: saved
-                      ? tokens.success
+            {!isViewMode && (
+              <Tooltip title={!formik.isValid ? "Please fix all errors before saving" : ""} arrow>
+                <span>
+                  <BBButton
+                    type="button"
+                    variant="contained"
+                    disabled={loading || !formik.isValid}
+                    loading={loading}
+                    startIcon={!loading && (saved ? <CheckCircleIcon sx={{ fontSize: 16 }} /> : <SaveIcon sx={{ fontSize: 16 }} />)}
+                    onClick={() => formik.handleSubmit()}
+                    sx={{
+                      borderRadius: "10px",
+                      textTransform: "none",
+                      fontWeight: 700,
+                      fontSize: "0.875rem",
+                      px: 2.5,
+                      background: saved
+                        ? tokens.success
                       : `linear-gradient(135deg, ${tokens.brand} 0%, ${tokens.brandDark} 100%)`,
                     boxShadow: formik.isValid ? "0 4px 14px rgba(14,165,233,0.35)" : "none",
                     "&:hover": {
@@ -270,9 +276,10 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
                 >
                   {saved ? "Saved!" : isEdit ? "Update Purchase Order" : "Create Purchase Order"}
                 </BBButton>
-              </span>
-            </Tooltip>
-          </Box>
+                </span>
+              </Tooltip>
+            )}
+            </Box>
         </Box>
 
         {/* Error banners */}
@@ -474,35 +481,37 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
                     Cancel
                   </BBButton>
 
-                  <Tooltip title={!formik.isValid ? "Please fix all errors before saving" : ""} arrow>
-                    <span>
-                      <BBButton
-                        type="submit"
-                        variant="contained"
-                        disabled={loading || !formik.isValid}
-                        startIcon={loading ? undefined : saved ? <CheckCircleIcon sx={{ fontSize: 16 }} /> : <SaveIcon sx={{ fontSize: 16 }} />}
-                        sx={{
-                          borderRadius: "10px",
-                          textTransform: "none",
-                          fontWeight: 700,
-                          px: 3,
-                          minWidth: 160,
-                          background: saved
-                            ? tokens.success
-                            : `linear-gradient(135deg, ${tokens.brand} 0%, ${tokens.brandDark} 100%)`,
-                          boxShadow: formik.isValid ? "0 4px 14px rgba(14,165,233,0.3)" : "none",
-                          "&:hover": {
-                            background: saved ? tokens.success : "linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)",
-                            transform: "translateY(-1px)",
-                          },
-                          "&:disabled": { opacity: 0.65 },
-                          transition: "all 0.2s ease",
-                        }}
-                      >
-                        {loading ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : saved ? "Saved!" : "Save Purchase Order"}
-                      </BBButton>
-                    </span>
-                  </Tooltip>
+                  {!isViewMode && (
+                    <Tooltip title={!formik.isValid ? "Please fix all errors before saving" : ""} arrow>
+                      <span>
+                        <BBButton
+                          type="submit"
+                          variant="contained"
+                          disabled={loading || !formik.isValid}
+                          startIcon={loading ? undefined : saved ? <CheckCircleIcon sx={{ fontSize: 16 }} /> : <SaveIcon sx={{ fontSize: 16 }} />}
+                          sx={{
+                            borderRadius: "10px",
+                            textTransform: "none",
+                            fontWeight: 700,
+                            px: 3,
+                            minWidth: 160,
+                            background: saved
+                              ? tokens.success
+                              : `linear-gradient(135deg, ${tokens.brand} 0%, ${tokens.brandDark} 100%)`,
+                            boxShadow: formik.isValid ? "0 4px 14px rgba(14,165,233,0.3)" : "none",
+                            "&:hover": {
+                              background: saved ? tokens.success : "linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)",
+                              transform: "translateY(-1px)",
+                            },
+                            "&:disabled": { opacity: 0.65 },
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          {loading ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : saved ? "Saved!" : "Save Purchase Order"}
+                        </BBButton>
+                      </span>
+                    </Tooltip>
+                  )}
                 </Box>
               </Box>
             </form>

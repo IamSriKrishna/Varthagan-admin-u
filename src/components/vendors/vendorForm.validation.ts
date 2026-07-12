@@ -57,6 +57,10 @@ export const vendorValidationSchema = (isEdit: boolean) => {
           account_number: Yup.string()
             .matches(/^\d+$/, "Account number must contain only digits")
             .required("Account number is required"),
+          ifsc_code: Yup.string()
+            .required("IFSC code is required")
+            .matches(/^[A-Z]{4}0[A-Z0-9]{6}$/i, "Invalid IFSC format"),
+          branch_name: Yup.string().required("Branch name is required"),
           is_primary: Yup.boolean(),
           is_active: Yup.boolean(),
         }),
