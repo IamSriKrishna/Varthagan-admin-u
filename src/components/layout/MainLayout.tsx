@@ -1,14 +1,12 @@
 "use client";
 
-import { Box, CssBaseline, Toolbar, useMediaQuery, useTheme } from "@mui/material";
+import { Box, IconButton, useMediaQuery, useTheme } from "@mui/material";
+import { Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import * as classes from "./Layout.styles";
-// import Navbar from "./Navbar/Navbar";
 import Sidebar from "./SideBar/Sidebar";
-
-const drawerWidth = 240;
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -46,7 +44,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     <Box sx={{ display: "flex", position: "relative", minHeight: "100vh" }}>
       {/* <CssBaseline /> */}
 
-     
       <Box
         sx={{
           filter: blurActive ? "blur(4px)" : "none",
@@ -75,13 +72,31 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             marginLeft: { xs: 0, md: drawerOpen ? "240px" : "70px" },
           }}
         >
+          <Box
+            sx={{
+              display: { xs: "flex", md: "none" },
+              alignItems: "center",
+              justifyContent: "flex-start",
+              px: 2,
+              py: 1,
+              position: "sticky",
+              top: 0,
+              zIndex: 1200,
+              backgroundColor: "background.paper",
+              borderBottom: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            <IconButton onClick={handleDrawerToggle} aria-label="Open menu">
+              <Menu size={20} />
+            </IconButton>
+          </Box>
+
           <Box component="main" sx={classes.mainLayoutBox}>
-            
             {children}
           </Box>
         </Box>
       </Box>
-      
     </Box>
   );
 }
