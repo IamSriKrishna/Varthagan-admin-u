@@ -624,3 +624,12 @@ export const metricLabel: SxProps<Theme> = {
   fontWeight: 500,
   mt: 0.2,
 };
+
+// Aliases for backward compatibility with old import names
+export const loginContainer = loginPage;
+export const loginFormBox = formSection;
+export const loginFormContainerBox = loginShell;
+export const loginImageBox = mediaSection;
+export const textTypography = heading;
+export const textParagraph = description;
+export const textForgotPassword = forgotPassword;
