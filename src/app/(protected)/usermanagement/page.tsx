@@ -2,225 +2,127 @@
 
 import ResetUserManagementPassword from "@/components/usermanagement/ResetUserManagementPassword";
 import UserManagementForm from "@/components/usermanagement/UserForm/UserForm";
-import { BBLoader, BBTable } from "@/lib";
+import { BBButton, BBDialog, BBInputBase, BBLoader, BBTable } from "@/lib";
 import { ITableColumn } from "@/lib/BBTable/BBTable";
 import HighlightedCell from "@/lib/BBTable/HighlightedCell";
 import { userApi, User } from "@/lib/api/userApi";
-import { getStatusTypeBadge } from "@/styles/listtable.styles";
+import { useDebounce } from "@/hooks/useDebounce";
 import { showToastMessage } from "@/utils/toastUtil";
 import {
+  Avatar,
   Box,
   Button,
   Chip,
-  Container,
   Dialog,
   DialogContent,
-  Divider,
   IconButton,
   Paper,
   Stack,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import {
-  ListRestart,
-  PencilLine,
-  Plus,
-  Trash2,
   Eye,
+  ListRestart,
+  Mail,
+  PencilLine,
+  Phone,
+  Plus,
+  Search,
+  ShieldCheck,
+  Trash2,
   Users,
   X,
-  AlertTriangle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-type ApiResponse<T> = {
-  success: boolean;
-  message: string;
-  data: T;
-  meta: {
-    total: number;
-    current_page: number;
-    per_page: number;
-    total_pages: number;
-  };
-};
+const AVATAR_PALETTE = [
+  { bg: "#e8edff", color: "#3d52c7" },
+  { bg: "#fce7f3", color: "#be185d" },
+  { bg: "#d1fae5", color: "#065f46" },
+  { bg: "#fff3cd", color: "#92400e" },
+  { bg: "#ede9fe", color: "#6d28d9" },
+  { bg: "#fee2e2", color: "#991b1b" },
+  { bg: "#e0f2fe", color: "#0369a1" },
+];
 
-// ─── Status chip ────────────────────────────────────────────────────────────
-function StatusChip({ status }: { status: string }) {
-  const label = status.charAt(0).toUpperCase() + status.slice(1);
-  const palette: Record<string, { bg: string; color: string; dot: string }> = {
-    active:   { bg: "#dcfce7", color: "#166534", dot: "#22c55e" },
-    inactive: { bg: "#fee2e2", color: "#991b1b", dot: "#ef4444" },
-    pending:  { bg: "#fef9c3", color: "#854d0e", dot: "#eab308" },
-  };
-  const p = palette[status] ?? { bg: "#f1f5f9", color: "#475569", dot: "#94a3b8" };
-
-  return (
-    <Box
-      sx={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 0.6,
-        px: 1.2,
-        py: 0.35,
-        borderRadius: "20px",
-        backgroundColor: p.bg,
-        color: p.color,
-        fontWeight: 600,
-        fontSize: "0.72rem",
-        letterSpacing: "0.02em",
-      }}
-    >
-      <Box
-        sx={{
-          width: 6,
-          height: 6,
-          borderRadius: "50%",
-          backgroundColor: p.dot,
-          flexShrink: 0,
-        }}
-      />
-      {label}
-    </Box>
-  );
+function getAvatarStyle(name: string) {
+  const index =
+    name.split("").reduce((total, character) => total + character.charCodeAt(0), 0) %
+    AVATAR_PALETTE.length;
+  return AVATAR_PALETTE[index];
 }
 
-// ─── Action icon button ──────────────────────────────────────────────────────
-function ActionBtn({
-  onClick,
-  title,
-  icon,
-  hoverColor = "#4f63d2",
-}: {
-  onClick: () => void;
-  title: string;
-  icon: React.ReactNode;
-  hoverColor?: string;
-}) {
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase())
+    .join("");
+}
+
+function StatusChip({ status }: { status?: string }) {
+  const normalizedStatus = (status || "unknown").toLowerCase();
+  const styles: Record<string, { bg: string; color: string; border: string; dot: string }> = {
+    active: {
+      bg: "#ecfdf5",
+      color: "#047857",
+      border: "#a7f3d0",
+      dot: "#10b981",
+    },
+    inactive: {
+      bg: "#fef2f2",
+      color: "#b91c1c",
+      border: "#fecaca",
+      dot: "#ef4444",
+    },
+    pending: {
+      bg: "#fffbeb",
+      color: "#b45309",
+      border: "#fde68a",
+      dot: "#f59e0b",
+    },
+  };
+
+  const current = styles[normalizedStatus] || {
+    bg: "#f8fafc",
+    color: "#64748b",
+    border: "#e2e8f0",
+    dot: "#94a3b8",
+  };
+
   return (
-    <IconButton
+    <Chip
       size="small"
-      onClick={onClick}
-      title={title}
+      label={normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1)}
+      icon={
+        <Box
+          component="span"
+          sx={{
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            bgcolor: current.dot,
+          }}
+        />
+      }
       sx={{
-        width: 30,
-        height: 30,
-        borderRadius: "8px",
-        color: "#94a3b8",
-        border: "1px solid #e2e8f0",
-        backgroundColor: "#fff",
-        transition: "all 0.15s ease",
-        "&:hover": {
-          color: hoverColor,
-          borderColor: hoverColor,
-          backgroundColor: `${hoverColor}12`,
-          transform: "translateY(-1px)",
-          boxShadow: `0 3px 8px ${hoverColor}30`,
-        },
+        height: 23,
+        borderRadius: "7px",
+        bgcolor: current.bg,
+        color: current.color,
+        border: `1px solid ${current.border}`,
+        fontFamily: "'DM Sans', sans-serif",
+        fontWeight: 700,
+        fontSize: "0.7rem",
+        "& .MuiChip-icon": { ml: 0.9, mr: -0.25 },
+        "& .MuiChip-label": { px: 1 },
       }}
-    >
-      {icon}
-    </IconButton>
+    />
   );
 }
 
-// ─── Delete confirmation dialog ──────────────────────────────────────────────
-function DeleteDialog({
-  open,
-  onClose,
-  onConfirm,
-  loading,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  loading: boolean;
-}) {
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="xs"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: "20px",
-          overflow: "hidden",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.13)",
-          border: "1px solid #f1f5f9",
-        },
-      }}
-    >
-      <Box sx={{ height: 4, background: "linear-gradient(90deg,#ef4444,#f97316)" }} />
-      <DialogContent sx={{ px: 3, py: 3 }}>
-        <Stack alignItems="center" spacing={2} sx={{ textAlign: "center" }}>
-          <Box
-            sx={{
-              width: 52,
-              height: 52,
-              borderRadius: "14px",
-              background: "#fee2e2",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <AlertTriangle size={24} color="#ef4444" />
-          </Box>
-          <Box>
-            <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "#0f172a" }}>
-              Delete User?
-            </Typography>
-            <Typography sx={{ fontSize: "0.83rem", color: "#64748b", mt: 0.5, lineHeight: 1.5 }}>
-              This action <strong>cannot be undone</strong>. All data associated with this user
-              will be permanently removed.
-            </Typography>
-          </Box>
-          <Stack direction="row" spacing={1.5} sx={{ width: "100%", pt: 1 }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={onClose}
-              sx={{
-                borderRadius: "10px",
-                textTransform: "none",
-                fontWeight: 600,
-                borderColor: "#e2e8f0",
-                color: "#475569",
-                fontFamily: "'DM Sans', sans-serif",
-                "&:hover": { borderColor: "#cbd5e1", backgroundColor: "#f8fafc" },
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={onConfirm}
-              disabled={loading}
-              sx={{
-                borderRadius: "10px",
-                textTransform: "none",
-                fontWeight: 600,
-                fontFamily: "'DM Sans', sans-serif",
-                background: "linear-gradient(135deg,#ef4444,#f97316)",
-                boxShadow: "none",
-                "&:hover": {
-                  background: "linear-gradient(135deg,#dc2626,#ea580c)",
-                  boxShadow: "0 4px 14px rgba(239,68,68,.35)",
-                },
-              }}
-            >
-              {loading ? "Deleting…" : "Delete"}
-            </Button>
-          </Stack>
-        </Stack>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ─── View user dialog ────────────────────────────────────────────────────────
 function ViewUserDialog({
   open,
   onClose,
@@ -232,113 +134,166 @@ function ViewUserDialog({
 }) {
   if (!user) return null;
 
-  const field = (label: string, value: string | number | undefined | null) => (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 0.3,
-        p: 1.5,
-        borderRadius: "10px",
-        backgroundColor: "#f8fafc",
-        border: "1px solid #f1f5f9",
-      }}
-    >
-      <Typography sx={{ fontSize: "0.7rem", fontWeight: 600, color: "#94a3b8", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-        {label}
-      </Typography>
-      <Typography sx={{ fontSize: "0.875rem", fontWeight: 500, color: "#0f172a" }}>
-        {value || "—"}
-      </Typography>
-    </Box>
-  );
+  const details = [
+    { label: "Username", value: user.username },
+    { label: "Email", value: user.email },
+    { label: "Phone", value: user.phone },
+    { label: "Company", value: user.company_name },
+    { label: "User Type", value: user.user_type },
+    { label: "Role", value: user.role },
+  ];
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="xs"
+      maxWidth="sm"
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: "20px",
+          borderRadius: "16px",
           overflow: "hidden",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.12)",
-          border: "1px solid #f1f5f9",
+          border: "1px solid #eeeff5",
+          boxShadow: "0 20px 70px rgba(26,29,46,0.16)",
+          fontFamily: "'DM Sans', sans-serif",
         },
       }}
     >
-      <Box sx={{ height: 4, background: "linear-gradient(90deg,#4f63d2,#7c3aed)" }} />
-
-      {/* Header */}
       <Box
         sx={{
           px: 3,
-          pt: 2.5,
-          pb: 2,
+          py: 2.5,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           borderBottom: "1px solid #f0f0f5",
+          bgcolor: "#ffffff",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box
             sx={{
-              width: 36,
-              height: 36,
-              borderRadius: "10px",
-              background: "linear-gradient(135deg,#4f63d2,#7c3aed)",
+              width: 38,
+              height: 38,
+              borderRadius: "11px",
+              background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 4px 12px rgba(79,99,210,.3)",
+              boxShadow: "0 5px 14px rgba(14,165,233,0.28)",
             }}
           >
-            <Eye size={17} color="white" />
+            <Eye size={18} color="white" />
           </Box>
           <Box>
-            <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a", letterSpacing: "-0.2px" }}>
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: "1rem",
+                color: "#1a1d2e",
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
               User Details
             </Typography>
-            <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>
-              #{user.id}
+            <Typography
+              sx={{
+                fontSize: "0.72rem",
+                color: "#9ca3af",
+                fontFamily: "'DM Mono', monospace",
+              }}
+            >
+              #{String(user.id).padStart(5, "0")}
             </Typography>
           </Box>
         </Box>
+
         <IconButton
           onClick={onClose}
           size="small"
           sx={{
-            color: "#9ca3af",
-            backgroundColor: "#f3f4f6",
-            borderRadius: "8px",
             width: 30,
             height: 30,
-            "&:hover": { backgroundColor: "#fee2e2", color: "#ef4444" },
-            transition: "all 0.15s ease",
+            borderRadius: "8px",
+            bgcolor: "#f8f9fc",
+            color: "#9ca3af",
+            "&:hover": { bgcolor: "#fef2f2", color: "#ef4444" },
           }}
         >
           <X size={15} />
         </IconButton>
       </Box>
 
-      {/* Content */}
-      <DialogContent sx={{ px: 3, py: 2.5 }}>
-        <Stack spacing={1.5}>
-          {field("Username", user.username)}
-          {field("Email", user.email)}
-          {field("Phone", user.phone)}
-          {field("Company", user.company_name)}
-          {field("User Type", user.user_type)}
-          {field("Role", user.role)}
-          <Box sx={{ p: 1.5, borderRadius: "10px", backgroundColor: "#f8fafc", border: "1px solid #f1f5f9" }}>
-            <Typography sx={{ fontSize: "0.7rem", fontWeight: 600, color: "#94a3b8", letterSpacing: "0.06em", textTransform: "uppercase", mb: 0.5 }}>
+      <DialogContent sx={{ p: 3, bgcolor: "#ffffff" }}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+            gap: 1.5,
+          }}
+        >
+          {details.map((item) => (
+            <Box
+              key={item.label}
+              sx={{
+                p: 1.75,
+                borderRadius: "11px",
+                bgcolor: "#f8fbff",
+                border: "1px solid #eef2ff",
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: "0.68rem",
+                  color: "#9ca3af",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  fontFamily: "'DM Sans', sans-serif",
+                  mb: 0.45,
+                }}
+              >
+                {item.label}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "0.84rem",
+                  color: "#374151",
+                  fontWeight: 600,
+                  fontFamily: "'DM Sans', sans-serif",
+                  wordBreak: "break-word",
+                }}
+              >
+                {item.value || "—"}
+              </Typography>
+            </Box>
+          ))}
+
+          <Box
+            sx={{
+              p: 1.75,
+              borderRadius: "11px",
+              bgcolor: "#f8fbff",
+              border: "1px solid #eef2ff",
+              gridColumn: { xs: "auto", sm: "1 / -1" },
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: "0.68rem",
+                color: "#9ca3af",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                fontFamily: "'DM Sans', sans-serif",
+                mb: 0.65,
+              }}
+            >
               Status
             </Typography>
             <StatusChip status={user.status} />
           </Box>
-        </Stack>
+        </Box>
       </DialogContent>
 
       <Box sx={{ px: 3, py: 2, borderTop: "1px solid #f0f0f5" }}>
@@ -348,12 +303,12 @@ function ViewUserDialog({
           onClick={onClose}
           sx={{
             borderRadius: "10px",
+            borderColor: "#dfe3ee",
+            color: "#4b5563",
             textTransform: "none",
-            fontWeight: 600,
+            fontWeight: 700,
             fontFamily: "'DM Sans', sans-serif",
-            borderColor: "#e2e8f0",
-            color: "#475569",
-            "&:hover": { borderColor: "#cbd5e1", backgroundColor: "#f8fafc" },
+            "&:hover": { borderColor: "#c7d2fe", bgcolor: "#f8fbff" },
           }}
         >
           Close
@@ -363,7 +318,6 @@ function ViewUserDialog({
   );
 }
 
-// ─── Main page ───────────────────────────────────────────────────────────────
 export default function UserManagement() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -380,17 +334,22 @@ export default function UserManagement() {
   const [openViewDialog, setOpenViewDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const fetchUsers = async () => {
+  const debouncedSearch = useDebounce(search, 500);
+
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const response = await userApi.listUsers({
         page: page + 1,
         limit: rowsPerPage,
-        search: search || undefined,
+        search: debouncedSearch.trim() || undefined,
       });
+
       if (response.success) {
-        setUsers(response.data);
-        setTotalCount(response.meta.total);
+        setUsers(response.data || []);
+        setTotalCount(response.meta?.total || 0);
+      } else {
+        showToastMessage("Failed to fetch users", "error");
       }
     } catch (error: any) {
       showToastMessage(
@@ -400,14 +359,20 @@ export default function UserManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, rowsPerPage, debouncedSearch]);
 
   useEffect(() => {
     fetchUsers();
-  }, [page, rowsPerPage, search]);
+  }, [fetchUsers]);
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPage(0);
+  };
 
   const handleDelete = async () => {
     if (!deleteUserId) return;
+
     try {
       setLoading(true);
       const response = await userApi.deleteUser(deleteUserId);
@@ -415,7 +380,9 @@ export default function UserManagement() {
         showToastMessage("User deleted successfully", "success");
         setDeleteOpen(false);
         setDeleteUserId(null);
-        fetchUsers();
+        await fetchUsers();
+      } else {
+        showToastMessage("Failed to delete user", "error");
       }
     } catch (error: any) {
       showToastMessage(
@@ -430,49 +397,152 @@ export default function UserManagement() {
   const columns: ITableColumn<User>[] = [
     {
       key: "username",
-      label: "Name",
-      render: (row) => (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          {/* Avatar circle */}
-          <Box
-            sx={{
-              width: 32,
-              height: 32,
-              borderRadius: "10px",
-              background: "linear-gradient(135deg,#4f63d2,#7c3aed)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-              color: "#fff",
-              fontWeight: 700,
-              fontSize: "0.75rem",
-              letterSpacing: "0.02em",
-            }}
-          >
-            {(row.username?.[0] ?? "U").toUpperCase()}
+      label: "User",
+      render: (row) => {
+        const name = row.username || "Unknown User";
+        const avatarStyle = getAvatarStyle(name);
+
+        return (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Avatar
+              sx={{
+                width: 34,
+                height: 34,
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                bgcolor: avatarStyle.bg,
+                color: avatarStyle.color,
+                fontFamily: "'DM Sans', sans-serif",
+                border: "1.5px solid",
+                borderColor: `${avatarStyle.color}33`,
+              }}
+            >
+              {getInitials(name) || "U"}
+            </Avatar>
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  color: "#1a1d2e",
+                  fontFamily: "'DM Sans', sans-serif",
+                  lineHeight: 1.3,
+                }}
+              >
+                <HighlightedCell value={name} search={search} />
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "0.7rem",
+                  color: "#9ca3af",
+                  fontFamily: "'DM Mono', monospace",
+                  letterSpacing: "0.02em",
+                }}
+              >
+                #{String(row.id || "").padStart(5, "0")}
+              </Typography>
+            </Box>
           </Box>
-          <HighlightedCell value={row.username} search={search} />
-        </Box>
-      ),
+        );
+      },
     },
     {
       key: "email",
       label: "Email",
-      render: (row) => <HighlightedCell value={row.email || "—"} search={search} />,
+      render: (row) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {row.email ? (
+            <>
+              <Mail size={13} color="#9ca3af" />
+              <Typography
+                sx={{
+                  fontSize: "0.8rem",
+                  color: "#4f63d2",
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                <HighlightedCell value={row.email} search={search} />
+              </Typography>
+            </>
+          ) : (
+            <Typography sx={{ fontSize: "0.8rem", color: "#d1d5db" }}>—</Typography>
+          )}
+        </Box>
+      ),
     },
     {
       key: "phone",
       label: "Phone",
-      render: (row) => <HighlightedCell value={row.phone || "—"} search={search} />,
+      render: (row) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {row.phone && <Phone size={13} color="#9ca3af" />}
+          <Typography
+            sx={{
+              fontSize: "0.8rem",
+              fontFamily: "'DM Mono', monospace",
+              color: row.phone ? "#374151" : "#d1d5db",
+              letterSpacing: "0.02em",
+            }}
+          >
+            <HighlightedCell value={row.phone || "—"} search={search} />
+          </Typography>
+        </Box>
+      ),
     },
     {
-      key: "company_name" as any,
+      key: "company_name" as keyof User,
       label: "Company",
-      render: (row) => <HighlightedCell value={row.company_name || "—"} search={search} />,
+      render: (row) => (
+        <Typography
+          sx={{
+            fontSize: "0.8rem",
+            color: row.company_name ? "#374151" : "#d1d5db",
+            fontFamily: "'DM Sans', sans-serif",
+          }}
+        >
+          <HighlightedCell value={row.company_name || "—"} search={search} />
+        </Typography>
+      ),
     },
-    { key: "user_type", label: "User Type" },
-    { key: "role", label: "Role" },
+    {
+      key: "user_type",
+      label: "User Type",
+      render: (row) => (
+        <Chip
+          label={row.user_type || "—"}
+          size="small"
+          sx={{
+            height: 22,
+            borderRadius: "6px",
+            bgcolor: "#f0f4ff",
+            color: "#4f63d2",
+            border: "1px solid #c7d2fe",
+            fontSize: "0.7rem",
+            fontWeight: 700,
+            fontFamily: "'DM Sans', sans-serif",
+          }}
+        />
+      ),
+    },
+    {
+      key: "role",
+      label: "Role",
+      render: (row) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+          <ShieldCheck size={13} color="#9ca3af" />
+          <Typography
+            sx={{
+              fontSize: "0.8rem",
+              color: "#374151",
+              fontFamily: "'DM Sans', sans-serif",
+              textTransform: "capitalize",
+            }}
+          >
+            {row.role || "—"}
+          </Typography>
+        </Box>
+      ),
+    },
     {
       key: "status",
       label: "Status",
@@ -480,32 +550,101 @@ export default function UserManagement() {
     },
     {
       key: "action" as any,
-      label: "Actions",
+      label: "",
       render: (row) => (
-        <Stack direction="row" spacing={0.75}>
-          <ActionBtn
-            title="View"
-            icon={<Eye size={14} />}
-            onClick={() => { setSelectedUser(row); setOpenViewDialog(true); }}
-          />
-          <ActionBtn
-            title="Edit"
-            icon={<PencilLine size={14} />}
-            onClick={() => { setEditUserId(row.id); setOpenForm(true); }}
-          />
-          <ActionBtn
-            title="Delete"
-            hoverColor="#ef4444"
-            icon={<Trash2 size={14} />}
-            onClick={() => { setDeleteUserId(row.id); setDeleteOpen(true); }}
-          />
-          <ActionBtn
-            title="Reset Password"
-            hoverColor="#f59e0b"
-            icon={<ListRestart size={14} />}
-            onClick={() => { setResetPasswordUserId(row.id); setResetPasswordOpen(true); }}
-          />
-        </Stack>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 0.5,
+            opacity: 0,
+            transition: "opacity 0.15s ease",
+            ".MuiTableRow-root:hover &": { opacity: 1 },
+          }}
+        >
+          <Tooltip title="View user" arrow>
+            <IconButton
+              size="small"
+              onClick={() => {
+                setSelectedUser(row);
+                setOpenViewDialog(true);
+              }}
+              sx={{
+                width: 30,
+                height: 30,
+                borderRadius: "8px",
+                color: "#0369a1",
+                bgcolor: "#e0f2fe",
+                "&:hover": { bgcolor: "#bae6fd", transform: "scale(1.05)" },
+                transition: "all 0.15s ease",
+              }}
+            >
+              <Eye size={14} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Edit user" arrow>
+            <IconButton
+              size="small"
+              onClick={() => {
+                setEditUserId(row.id);
+                setOpenForm(true);
+              }}
+              sx={{
+                width: 30,
+                height: 30,
+                borderRadius: "8px",
+                color: "#4f63d2",
+                bgcolor: "#f0f4ff",
+                "&:hover": { bgcolor: "#e0e7ff", transform: "scale(1.05)" },
+                transition: "all 0.15s ease",
+              }}
+            >
+              <PencilLine size={14} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Reset password" arrow>
+            <IconButton
+              size="small"
+              onClick={() => {
+                setResetPasswordUserId(row.id);
+                setResetPasswordOpen(true);
+              }}
+              sx={{
+                width: 30,
+                height: 30,
+                borderRadius: "8px",
+                color: "#b45309",
+                bgcolor: "#fffbeb",
+                "&:hover": { bgcolor: "#fef3c7", transform: "scale(1.05)" },
+                transition: "all 0.15s ease",
+              }}
+            >
+              <ListRestart size={14} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Delete user" arrow>
+            <IconButton
+              size="small"
+              onClick={() => {
+                setDeleteUserId(row.id);
+                setDeleteOpen(true);
+              }}
+              sx={{
+                width: 30,
+                height: 30,
+                borderRadius: "8px",
+                color: "#ef4444",
+                bgcolor: "#fef2f2",
+                "&:hover": { bgcolor: "#fee2e2", transform: "scale(1.05)" },
+                transition: "all 0.15s ease",
+              }}
+            >
+              <Trash2 size={14} />
+            </IconButton>
+          </Tooltip>
+        </Box>
       ),
     },
   ];
@@ -513,141 +652,292 @@ export default function UserManagement() {
   return (
     <Box
       sx={{
+        display: "flex",
+        flexDirection: "column",
         minHeight: "100vh",
-        fontFamily: "'DM Sans', sans-serif",
+        bgcolor: "#f8f9fc",
       }}
     >
       <BBLoader enabled={loading} />
 
-      <Container maxWidth="lg" sx={{ py: 5 }}>
-        {/* ── Page Header ── */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-end",
-            mb: 5,
-            flexWrap: "wrap",
-            gap: 3,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2.5 }}>
-            {/* Icon badge */}
+      <Box
+        sx={{
+          px: 3,
+          pt: 3,
+          pb: 2.5,
+          bgcolor: "#ffffff",
+          borderBottom: "1px solid #f0f0f5",
+        }}
+      >
+        <Stack direction="row" justifyContent="space-between" alignItems="center" gap={2}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Box
               sx={{
-                width: 52,
-                height: 52,
-                borderRadius: "14px",
-                background: "linear-gradient(135deg,#4f63d2 0%,#7c3aed 100%)",
+                width: 46,
+                height: 46,
+                borderRadius: "13px",
+                background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 8px 24px rgba(79,99,210,.28)",
+                boxShadow: "0 6px 20px rgba(14, 165, 233, 0.3)",
                 flexShrink: 0,
-                mt: 0.5,
               }}
             >
-              <Users size={24} color="white" />
+              <Users size={22} color="white" />
             </Box>
 
             <Box>
               <Typography
                 sx={{
-                  fontSize: "1.75rem",
+                  fontSize: "1.5rem",
                   fontWeight: 800,
-                  letterSpacing: "-0.5px",
-                  lineHeight: 1.2,
                   color: "#1a1d2e",
                   fontFamily: "'DM Sans', sans-serif",
+                  letterSpacing: "-0.4px",
+                  lineHeight: 1.15,
                 }}
               >
                 User Management
               </Typography>
               <Typography
                 sx={{
-                  fontSize: "0.875rem",
-                  color: "#6b7280",
-                  mt: 0.5,
+                  fontSize: "0.8rem",
+                  color: "#9ca3af",
                   fontFamily: "'DM Sans', sans-serif",
-                  fontWeight: 400,
+                  mt: 0.25,
                 }}
               >
-                Manage users, roles, and access permissions
+                {totalCount} user{totalCount !== 1 ? "s" : ""} registered
               </Typography>
             </Box>
           </Box>
 
-          {/* Create button */}
-          <Button
+          <BBButton
             variant="contained"
-            startIcon={<Plus size={18} />}
-            onClick={() => { setEditUserId(null); setOpenForm(true); }}
+            color="primary"
+            startIcon={<Plus size={16} />}
+            onClick={() => {
+              setEditUserId(null);
+              setOpenForm(true);
+            }}
             sx={{
-              px: 3,
-              py: 1.25,
-              borderRadius: "12px",
-              background: "linear-gradient(135deg,#4f63d2 0%,#7c3aed 100%)",
-              boxShadow: "0 4px 16px rgba(79,99,210,.35)",
+              px: 2.5,
+              py: 1.1,
+              borderRadius: "11px",
+              background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
+              boxShadow: "0 4px 14px rgba(14, 165, 233, 0.35)",
               fontFamily: "'DM Sans', sans-serif",
-              fontWeight: 600,
+              fontWeight: 700,
               fontSize: "0.875rem",
               textTransform: "none",
-              letterSpacing: 0,
               "&:hover": {
-                background: "linear-gradient(135deg,#3d52c7 0%,#6d28d9 100%)",
-                boxShadow: "0 6px 22px rgba(79,99,210,.45)",
+                background: "linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)",
+                boxShadow: "0 6px 20px rgba(14, 165, 233, 0.45)",
                 transform: "translateY(-1px)",
               },
               transition: "all 0.2s ease",
             }}
           >
             Create User
-          </Button>
-        </Box>
+          </BBButton>
+        </Stack>
+      </Box>
 
-        {/* Thin accent rule */}
-        <Box
-          sx={{
-            height: 1,
-            background: "linear-gradient(90deg,rgba(79,99,210,.3) 0%,transparent 80%)",
-            mb: 4,
-          }}
-        />
-
-        {/* Table card */}
-        <Box
-          component={Paper}
-          elevation={0}
-          sx={{
-            borderRadius: "16px",
-            overflow: "hidden",
-            border: "1px solid #e8ecf4",
-            boxShadow: "0 4px 24px rgba(79,99,210,.06), 0 1px 4px rgba(0,0,0,.04)",
-          }}
-        >
-          <BBTable
-            data={users}
-            columns={columns}
-            page={page}
-            rowsPerPage={rowsPerPage}
-            totalCount={totalCount}
-            onPageChange={(newPage) => setPage(newPage)}
-            onRowsPerPageChange={(newRows) => { setRowsPerPage(newRows); setPage(0); }}
+      <Box
+        component={Paper}
+        elevation={0}
+        sx={{
+          mx: 3,
+          mt: 2.5,
+          borderRadius: "14px 14px 0 0",
+          border: "1px solid #eeeff5",
+          borderBottom: "none",
+          bgcolor: "#ffffff",
+          px: 2.5,
+          py: 2,
+          display: "flex",
+          alignItems: "center",
+          gap: 2,
+        }}
+      >
+        <Box sx={{ position: "relative", flexGrow: 1, maxWidth: 380 }}>
+          <Box
+            sx={{
+              position: "absolute",
+              left: 12,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#9ca3af",
+              display: "flex",
+              alignItems: "center",
+              pointerEvents: "none",
+              zIndex: 1,
+            }}
+          >
+            <Search size={15} />
+          </Box>
+          <BBInputBase
+            label=""
+            name="search"
+            value={search}
+            onChange={(event) => handleSearchChange(event.target.value)}
+            placeholder="Search by name, email, phone, or company…"
+            sx={{ pl: 4.5 }}
           />
         </Box>
-      </Container>
 
-      {/* ── Dialogs ── */}
-      <DeleteDialog
+        {search && (
+          <Chip
+            label={`${users.length} result${users.length !== 1 ? "s" : ""}`}
+            size="small"
+            sx={{
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              fontFamily: "'DM Sans', sans-serif",
+              bgcolor: "#e0f2fe",
+              color: "#0369a1",
+              border: "1px solid #bae6fd",
+              borderRadius: "8px",
+            }}
+          />
+        )}
+      </Box>
+
+      <Box
+        sx={{
+          mx: 3,
+          mb: 3,
+          borderRadius: "0 0 14px 14px",
+          border: "1px solid #eeeff5",
+          borderTop: "none",
+          bgcolor: "#ffffff",
+          overflow: "hidden",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.04)",
+        }}
+      >
+        <BBTable
+          data={users}
+          columns={columns}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          totalCount={totalCount}
+          onPageChange={(newPage) => setPage(newPage)}
+          onRowsPerPageChange={(newRows) => {
+            setRowsPerPage(newRows);
+            setPage(0);
+          }}
+          sx={{
+            "& .MuiTableHead-root .MuiTableCell-root": {
+              bgcolor: "#f8fbff",
+              color: "#6b7280",
+              fontWeight: 600,
+              fontSize: "0.7rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              fontFamily: "'DM Sans', sans-serif",
+              borderBottom: "1px solid #eeeff5",
+              py: 1.5,
+            },
+            "& .MuiTableBody-root .MuiTableRow-root": {
+              cursor: "pointer",
+              transition: "background 0.12s ease",
+              "&:hover": { bgcolor: "#f8fbff" },
+            },
+            "& .MuiTableBody-root .MuiTableCell-root": {
+              borderBottom: "1px solid #f5f5fa",
+              py: 1.5,
+              fontFamily: "'DM Sans', sans-serif",
+            },
+          }}
+        />
+      </Box>
+
+      <BBDialog
         open={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
+        onClose={() => {
+          setDeleteOpen(false);
+          setDeleteUserId(null);
+        }}
+        title="Delete User"
+        maxWidth="sm"
+        content={
+          <Box sx={{ pt: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 2,
+                p: 2,
+                bgcolor: "#fff5f5",
+                border: "1px solid #fee2e2",
+                borderRadius: "10px",
+                mb: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "8px",
+                  bgcolor: "#fee2e2",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  mt: 0.25,
+                }}
+              >
+                <Trash2 size={16} color="#ef4444" />
+              </Box>
+              <Box>
+                <Typography
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: "0.875rem",
+                    color: "#991b1b",
+                    fontFamily: "'DM Sans', sans-serif",
+                    mb: 0.5,
+                  }}
+                >
+                  This action cannot be undone
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "0.8125rem",
+                    color: "#b91c1c",
+                    fontFamily: "'DM Sans', sans-serif",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  The selected user and all data associated with their account will be permanently
+                  removed.
+                </Typography>
+              </Box>
+            </Box>
+            <Typography
+              sx={{
+                fontSize: "0.875rem",
+                color: "#6b7280",
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              Are you sure you want to permanently delete this user?
+            </Typography>
+          </Box>
+        }
         onConfirm={handleDelete}
-        loading={loading}
+        confirmText="Delete User"
+        cancelText="Keep User"
+        confirmColor="error"
       />
 
       <ViewUserDialog
         open={openViewDialog}
-        onClose={() => { setOpenViewDialog(false); setSelectedUser(null); }}
+        onClose={() => {
+          setOpenViewDialog(false);
+          setSelectedUser(null);
+        }}
         user={selectedUser}
       />
 

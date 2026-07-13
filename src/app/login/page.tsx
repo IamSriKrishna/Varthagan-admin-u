@@ -20,7 +20,6 @@ export default function LoginPage() {
 
   return (
     <>
-      <BrandLogo />
       <LoginForm />
     </>
   );
