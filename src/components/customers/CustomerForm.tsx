@@ -1,9 +1,9 @@
 // src/components/customers/CustomerForm.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Formik, Form, FieldArray, FormikHelpers } from "formik";
+import { Formik, Form, FieldArray, FormikHelpers, FormikProps } from "formik";
 import { useSelector } from "react-redux";
 import { ArrowLeft, UserRound, AlertCircle, ChevronRight } from "lucide-react";
 import {
@@ -49,6 +49,7 @@ const CustomerForm: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const formikRef = useRef<FormikProps<Customer> | null>(null);
 
   useEffect(() => {
     if (isEdit && customerId) loadCustomerData();
@@ -67,6 +68,27 @@ const CustomerForm: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFormSubmit = async (event?: React.FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
+
+    const formik = formikRef.current;
+    if (!formik) return;
+
+    const errors = await formik.validateForm();
+    if (Object.keys(errors).length > 0) {
+      showToastMessage("Please check and fix the errors in the form before submitting.", "error");
+      formik.setTouched(
+        Object.keys(errors).reduce((acc, field) => {
+          acc[field] = true;
+          return acc;
+        }, {} as Record<string, boolean>)
+      );
+      return;
+    }
+
+    formik.submitForm();
   };
 
   const handleSubmit = async (values: Customer, helpers: FormikHelpers<Customer>) => {
@@ -113,6 +135,7 @@ const CustomerForm: React.FC = () => {
       <BBLoader enabled={authLoading || customerLoading} />
 
       <Formik
+        innerRef={formikRef}
         initialValues={initialData}
         validationSchema={customerValidationSchema(isEdit)}
         onSubmit={handleSubmit}
@@ -120,8 +143,8 @@ const CustomerForm: React.FC = () => {
         validateOnChange
         validateOnBlur
       >
-        {({ handleSubmit, dirty, values, setFieldValue, errors, touched, isSubmitting }) => (
-          <Form onSubmit={handleSubmit} noValidate>
+        {({ dirty, values, setFieldValue, errors, touched, isSubmitting }) => (
+          <Form onSubmit={handleFormSubmit} noValidate>
 
             {/* ── Sticky page header ─────────────────────────────────────── */}
             <Box

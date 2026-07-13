@@ -130,7 +130,7 @@ export const VendorBasicInfo: React.FC = () => {
                 <BBDropdown name="work_phone_code" label="Code" options={PHONE_CODE_OPTIONS} size="small" />
               </Grid>
               <Grid size={{ xs: 8 }} component="div">
-                <BBInput name="work_phone" label="Work Phone" fullWidth />
+                <BBInput name="work_phone" label="Work Phone" type="number" fullWidth />
               </Grid>
             </Grid>
           </Grid>
@@ -141,7 +141,7 @@ export const VendorBasicInfo: React.FC = () => {
                 <BBDropdown name="mobile_code" label="Code" options={PHONE_CODE_OPTIONS} size="small" />
               </Grid>
               <Grid size={{ xs: 8 }} component="div">
-                <BBInput name="mobile" label="Mobile" fullWidth />
+                <BBInput name="mobile" label="Mobile" type="number" fullWidth />
               </Grid>
             </Grid>
           </Grid>

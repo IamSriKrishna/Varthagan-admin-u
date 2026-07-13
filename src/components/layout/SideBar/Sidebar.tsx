@@ -512,6 +512,17 @@ export default function Sidebar({
         </List>
       </Box>
 
+      {/* Profile / Logout area */}
+      <Box sx={{ px: drawerOpen ? 2 : 1, py: 1, borderTop: "1px solid rgba(0,0,0,0.04)" }}>
+        <ProfileMenu
+          drawerOpen={drawerOpen}
+          userName={userName}
+          userType={userType}
+          handleLogout={handleLogout}
+          userAvatar={user?.avatar}
+        />
+      </Box>
+
       <Popover
         open={Boolean(popoverAnchor)}
         anchorEl={popoverAnchor?.element}

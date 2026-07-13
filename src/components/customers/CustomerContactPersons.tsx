@@ -305,7 +305,7 @@ export const CustomerContactPersons: React.FC<CustomerContactPersonsProps> = ({
                         />
                       </Grid>
                       <Grid size={{ xs: 8 }} component="div">
-                        <BBInput name={`contact_persons[${index}].work_phone`} label="Work Phone" fullWidth />
+                        <BBInput name={`contact_persons[${index}].work_phone`} label="Work Phone" type="number" fullWidth />
                       </Grid>
                     </Grid>
                   </Grid>
@@ -322,7 +322,7 @@ export const CustomerContactPersons: React.FC<CustomerContactPersonsProps> = ({
                         />
                       </Grid>
                       <Grid size={{ xs: 8 }} component="div">
-                        <BBInput name={`contact_persons[${index}].mobile`} label="Mobile" fullWidth />
+                        <BBInput name={`contact_persons[${index}].mobile`} label="Mobile" type="number" fullWidth />
                       </Grid>
                     </Grid>
                   </Grid>

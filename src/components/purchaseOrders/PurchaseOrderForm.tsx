@@ -28,6 +28,7 @@ import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import ArrowLeftIcon from "@mui/icons-material/ArrowBack";
 import { PurchaseOrder } from "@/models/purchaseOrder.model";
 import { purchaseOrderValidationSchema } from "./purchaseOrderForm.validation";
+import { showToastMessage } from "@/utils/toastUtil";
 import {
   initialPurchaseOrderValues,
   transformPOToPayload,
@@ -170,6 +171,22 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
     (k) => formik.touched[k as keyof typeof formik.touched]
   ).length;
 
+  const handleSubmitAttempt = async () => {
+    const errors = await formik.validateForm();
+    if (Object.keys(errors).length > 0) {
+      showToastMessage("Please check and fix the errors in the form before submitting.", "error");
+      formik.setTouched(
+        Object.keys(errors).reduce((acc, field) => {
+          acc[field] = true;
+          return acc;
+        }, {} as Record<string, boolean>)
+      );
+      return;
+    }
+
+    await formik.submitForm();
+  };
+
   if (loading && isEdit) {
     return (
       <Box sx={{ minHeight: "100vh", bgcolor: tokens.neutral50, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -255,7 +272,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
                     disabled={loading || !formik.isValid}
                     loading={loading}
                     startIcon={!loading && (saved ? <CheckCircleIcon sx={{ fontSize: 16 }} /> : <SaveIcon sx={{ fontSize: 16 }} />)}
-                    onClick={() => formik.handleSubmit()}
+                    onClick={() => handleSubmitAttempt()}
                     sx={{
                       borderRadius: "10px",
                       textTransform: "none",

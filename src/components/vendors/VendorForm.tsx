@@ -1,9 +1,9 @@
 // app/components/vendor/VendorForm.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Formik, Form, FieldArray, FormikHelpers } from "formik";
+import { Formik, Form, FieldArray, FormikHelpers, FormikProps } from "formik";
 import { useSelector } from "react-redux";
 import { ArrowLeft, Store, AlertCircle, Sparkles } from "lucide-react";
 import {
@@ -52,6 +52,7 @@ export const VendorForm: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const formikRef = useRef<FormikProps<Vendor> | null>(null);
 
   useEffect(() => {
     if (isEdit && vendorId) loadVendorData();
@@ -70,6 +71,27 @@ export const VendorForm: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFormSubmit = async (event?: React.FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
+
+    const formik = formikRef.current;
+    if (!formik) return;
+
+    const errors = await formik.validateForm();
+    if (Object.keys(errors).length > 0) {
+      showToastMessage("Please check and fix the errors in the form before submitting.", "error");
+      formik.setTouched(
+        Object.keys(errors).reduce((acc, field) => {
+          acc[field] = true;
+          return acc;
+        }, {} as Record<string, boolean>)
+      );
+      return;
+    }
+
+    formik.submitForm();
   };
 
   const handleGSTPrefill = async (gstin: string | undefined, setFieldValue: any) => {
@@ -143,6 +165,7 @@ export const VendorForm: React.FC = () => {
       <BBLoader enabled={authLoading || vendorLoading} />
 
       <Formik
+        innerRef={formikRef}
         initialValues={initialData}
         validationSchema={vendorValidationSchema(isEdit)}
         onSubmit={handleSubmit}
@@ -150,8 +173,8 @@ export const VendorForm: React.FC = () => {
         validateOnChange
         validateOnBlur
       >
-        {({ handleSubmit, dirty, values, setFieldValue, errors, touched, isSubmitting }) => (
-          <Form onSubmit={handleSubmit} noValidate>
+        {({ dirty, values, setFieldValue, errors, touched, isSubmitting }) => (
+          <Form onSubmit={handleFormSubmit} noValidate>
             {/* Sticky page header */}
             <Box
               sx={{

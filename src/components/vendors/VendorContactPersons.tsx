@@ -105,6 +105,7 @@ export const VendorContactPersons: React.FC<VendorContactPersonsProps> = ({
                   <BBInput 
                     name={`contact_persons[${index}].work_phone`}
                     label="Work Phone"
+                    type="number"
                     fullWidth
                   />
                 </Grid>
@@ -124,6 +125,7 @@ export const VendorContactPersons: React.FC<VendorContactPersonsProps> = ({
                   <BBInput 
                     name={`contact_persons[${index}].mobile`}
                     label="Mobile"
+                    type="number"
                     fullWidth
                   />
                 </Grid>
