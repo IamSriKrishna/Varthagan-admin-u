@@ -58,25 +58,25 @@ function AddressFields({ prefix }: { prefix: "billing_address" | "shipping_addre
         <BBInput name={`${prefix}.attention`} label="Attention" fullWidth />
       </Grid>
       <Grid size={{ xs: 12, md: 6 }} component="div">
-        <BBDropdown name={`${prefix}.country_region`} label="Country / Region" options={COUNTRY_OPTIONS} />
+        <BBDropdown name={`${prefix}.country_region`} label="Country / Region" required options={COUNTRY_OPTIONS} />
       </Grid>
 
       <Grid size={{ xs: 12 }} component="div">
-        <BBInput name={`${prefix}.address_line1`} label="Address Line 1" fullWidth />
+        <BBInput name={`${prefix}.address_line1`} label="Address Line 1" required fullWidth />
       </Grid>
       <Grid size={{ xs: 12 }} component="div">
         <BBInput name={`${prefix}.address_line2`} label="Address Line 2" fullWidth />
       </Grid>
 
       <Grid size={{ xs: 12, md: 6 }} component="div">
-        <BBInput name={`${prefix}.city`} label="City" fullWidth />
+        <BBInput name={`${prefix}.city`} label="City" required fullWidth />
       </Grid>
       <Grid size={{ xs: 12, md: 6 }} component="div">
-        <BBInput name={`${prefix}.state`} label="State" fullWidth />
+        <BBInput name={`${prefix}.state`} label="State" required fullWidth />
       </Grid>
 
       <Grid size={{ xs: 12, md: 6 }} component="div">
-        <BBInput name={`${prefix}.pin_code`} label="PIN Code" fullWidth />
+        <BBInput name={`${prefix}.pin_code`} label="PIN Code" required fullWidth />
       </Grid>
       <Grid size={{ xs: 12, md: 6 }} component="div">
         <Grid container spacing={1} component="div">

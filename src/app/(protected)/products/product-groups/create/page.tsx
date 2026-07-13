@@ -382,6 +382,18 @@ export default function CreateProductGroupPage() {
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [bulkQuantity, setBulkQuantity] = useState("");
+
+  const handleBulkQuantityChange = (value: string) => {
+    setBulkQuantity(value);
+
+    if (!value) return;
+
+    const parsedValue = parseInt(value, 10);
+    if (selectedProducts.length === 0 || Number.isNaN(parsedValue) || parsedValue < 1) return;
+
+    setSelectedProducts((prev) => prev.map((product) => ({ ...product, quantity: parsedValue })));
+  };
 
   const { data: productsData, loading: productsLoading, refetch: refetchProducts } =
     useFetch<{ products: any[]; total: number }>({ url: products.postProduct });
@@ -392,7 +404,9 @@ export default function CreateProductGroupPage() {
       sku: p.product_details?.base_sku || p.sku || "",
       name: p.name,
       cost_price: p.is_resource ? (p.resource_cost_per_unit || 0) : (p.purchase_info?.cost_price || 0),
-      selling_price: p.is_resource ? 0 : (p.sales_info?.selling_price || 0),
+      selling_price: p.is_resource
+        ? (p.resource_cost_per_unit || p.purchase_info?.cost_price || 0)
+        : (p.sales_info?.selling_price || 0),
       variants: p.product_details?.variants || [],
     })) || [];
 
@@ -710,6 +724,30 @@ export default function CreateProductGroupPage() {
                     </Button>
                   }
                 >
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1.5}
+                    alignItems={{ xs: "stretch", sm: "center" }}
+                    sx={{ mb: 2.5 }}
+                  >
+                    <TextField
+                      type="number"
+                      size="small"
+                      value={bulkQuantity}
+                      onChange={(e) => handleBulkQuantityChange(e.target.value)}
+                      placeholder="100"
+                      disabled={selectedProducts.length === 0}
+                      inputProps={{ min: "1", step: "1" }}
+                      sx={{
+                        width: { xs: "100%", sm: 140 },
+                        ...inputSx,
+                      }}
+                    />
+                    <Typography sx={{ color: T.textLight, fontSize: "0.78rem" }}>
+                      Enter a quantity to apply it to all added products
+                    </Typography>
+                  </Stack>
+
                   {/* Empty prompt */}
                   {selectedProducts.length === 0 ? (
                     <Box
@@ -957,147 +995,7 @@ export default function CreateProductGroupPage() {
                   )}
                 </SectionCard>
 
-                {/* ── Resources section ──────────────────────────────────── */}
-                <SectionCard
-                  icon={Zap}
-                  title="Resources Required"
-                  badge={selectedResources.length}
-                  topAction={
-                    <Button
-                      variant="contained"
-                      size="small"
-                      startIcon={<Plus size={14} strokeWidth={2.5} />}
-                      onClick={() => setShowResourceDialog(true)}
-                      sx={{
-                        background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
-                        borderRadius: "9px", textTransform: "none",
-                        fontWeight: 800, fontSize: "0.78rem",
-                        height: 32, px: 1.75,
-                        boxShadow: "0 4px 14px rgba(14,165,233,0.35)", border: "none",
-                        "&:hover": { boxShadow: "0 6px 20px rgba(14,165,233,0.45)", transform: "translateY(-1px)" },
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      Add Resource
-                    </Button>
-                  }
-                >
-                  {selectedResources.length === 0 ? (
-                    <Box
-                      onClick={() => setShowResourceDialog(true)}
-                      sx={{
-                        py: 5, textAlign: "center", cursor: "pointer",
-                        border: `2px dashed ${T.border}`,
-                        borderRadius: "14px",
-                        background: T.subtleBg,
-                        transition: "all 0.18s",
-                        "&:hover": {
-                          borderColor: T.brandMid,
-                          background: `linear-gradient(135deg, ${T.brandXSoft}, ${T.brandSoft})`,
-                        },
-                      }}
-                    >
-                      <Box sx={{
-                        width: 48, height: 48, borderRadius: "14px", mx: "auto", mb: 1.5,
-                        background: `linear-gradient(135deg, ${T.brandSoft}, #E0E7FF)`,
-                        border: `1.5px solid ${T.brandMid}`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                      }}>
-                        <Plus size={20} color={T.brand} strokeWidth={2.5} />
-                      </Box>
-                      <Typography sx={{ fontWeight: 700, color: T.textMid, fontSize: "0.875rem", mb: 0.5 }}>
-                        Add resources to this group
-                      </Typography>
-                      <Typography sx={{ color: T.textLight, fontSize: "0.78rem" }}>
-                        Click here or use the button above to add required resources
-                      </Typography>
-                    </Box>
-                  ) : (
-                    <>
-                      {/* Resources table */}
-                      <Box sx={{
-                        borderRadius: "14px", overflow: "hidden",
-                        border: `1.5px solid ${T.border}`,
-                        "& .MuiTableCell-root": { borderBottom: `1px solid ${T.border}`, py: 1.5, px: 2 },
-                        "& .MuiTableCell-head": {
-                          background: `linear-gradient(180deg, #F8F9FF, ${T.subtleBg})`,
-                          color: T.textLight, fontSize: "0.65rem", fontWeight: 800,
-                          textTransform: "uppercase", letterSpacing: "0.08em",
-                          borderBottom: `2px solid ${T.border}`,
-                        },
-                        "& .MuiTableRow-root:not(.MuiTableRow-head)": {
-                          transition: "background 0.12s",
-                          "&:hover": { background: `linear-gradient(90deg, ${T.brandXSoft}80, ${T.subtleBg}50)` },
-                        },
-                        "& .MuiTableRow-root:last-child td": { borderBottom: "none" },
-                      }}>
-                        <Table size="small">
-                          <TableHead>
-                            <TableRow>
-                              <TableCell>Resource Type</TableCell>
-                              <TableCell>Unit</TableCell>
-                              <TableCell align="center">Quantity</TableCell>
-                              <TableCell align="right">Cost</TableCell>
-                              <TableCell align="center">Remove</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {selectedResources.map((resource) => (
-                              <TableRow key={resource.id}>
-                                <TableCell>
-                                  <Typography sx={{ fontWeight: 700, color: T.text, fontSize: "0.82rem" }}>
-                                    {resource.resource_type}
-                                  </Typography>
-                                </TableCell>
-                                <TableCell>
-                                  <Typography sx={{ fontWeight: 600, color: T.textMid, fontSize: "0.82rem" }}>
-                                    {resource.unit}
-                                  </Typography>
-                                </TableCell>
-                                <TableCell align="center">
-                                  <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: "0.82rem", color: T.textMid }}>
-                                    {resource.quantity}
-                                  </Typography>
-                                </TableCell>
-                                <TableCell align="right">
-                                  <Typography sx={{ fontFamily: "'DM Mono', monospace", fontWeight: 800, fontSize: "0.82rem", color: T.text }}>
-                                    ₹{resource.cost.toFixed(2)}
-                                  </Typography>
-                                </TableCell>
-                                <TableCell align="center">
-                                  <Tooltip title="Remove" placement="top">
-                                    <IconButton
-                                      size="small" onClick={() => handleRemoveResource(resource.id)}
-                                      sx={{
-                                        color: T.danger,
-                                        background: `linear-gradient(135deg, ${T.dangerSoft}, #FEE2E2)`,
-                                        border: `1.5px solid ${T.dangerMid}`,
-                                        borderRadius: "8px", width: 30, height: 30,
-                                        "&:hover": { background: `linear-gradient(135deg, #FEE2E2, ${T.dangerMid}80)`, transform: "scale(1.08)" },
-                                        transition: "all 0.15s",
-                                      }}
-                                    >
-                                      <Trash2 size={13} />
-                                    </IconButton>
-                                  </Tooltip>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </Box>
-
-                      {/* Resource cost summary */}
-                      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} mt={2.5} flexWrap="wrap" useFlexGap>
-                        <SummaryPill
-                          label="Total Resource Cost" icon={Zap}
-                          value={`₹${totalResourceCost.toFixed(2)}`}
-                          accent={T.warning} bg={T.warningSoft}
-                        />
-                      </Stack>
-                    </>
-                  )}
-                </SectionCard>
+               
 
                 {/* ── Footer actions ─────────────────────────────────────── */}
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>

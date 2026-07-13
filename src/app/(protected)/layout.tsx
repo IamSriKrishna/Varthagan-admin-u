@@ -1,11 +1,12 @@
 "use client";
 
 import MainLayout from "@/components/layout/MainLayout";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import { RootState } from "@/store";
 import { userApi } from "@/lib/api/userApi";
+import { shouldRedirectSuperadminToCompanySettings } from "@/utils/superadminSetup";
 
 /* ─────────────────────────────────────────────
    LIGHT-THEME TRANSITIONS & LOADER ANIMATIONS
@@ -283,6 +284,7 @@ export default function DashboardRootLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const auth = useSelector((state: RootState) => state.auth);
   const [isCheckingUsers, setIsCheckingUsers] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -307,19 +309,16 @@ export default function DashboardRootLayout({
   const checkSuperadminSetup = async () => {
     setIsCheckingUsers(true);
     try {
-      const response = await userApi.listUsers({ role: "admin" });
-
-      if (!response.success || !response.data || response.data.length === 0) {
-        navigateWithAnimation("/company-settings");
+      if (pathname === "/company-settings") {
         return;
       }
 
-      const hasCompanyId = response.data.some(
-        (user) => user.company_id && user.company_id > 0
-      );
+      const response = await userApi.listUsers({ role: "admin" });
+      const users = Array.isArray(response?.data) ? response.data : [];
 
-      if (!hasCompanyId) {
+      if (!response.success || shouldRedirectSuperadminToCompanySettings("superadmin", users)) {
         navigateWithAnimation("/company-settings");
+        return;
       }
     } catch (error) {
       console.error("Error checking superadmin setup:", error);

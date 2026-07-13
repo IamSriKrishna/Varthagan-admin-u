@@ -73,6 +73,22 @@ export const VendorForm: React.FC = () => {
     }
   };
 
+  const buildTouchedStateFromErrors = (errors: Record<string, any>): Record<string, any> => {
+    if (!errors || typeof errors !== "object") return {};
+
+    return Object.entries(errors).reduce((acc, [key, value]) => {
+      if (Array.isArray(value)) {
+        acc[key] = value.map((item) => buildTouchedStateFromErrors(item && typeof item === "object" ? item : {}));
+      } else if (value && typeof value === "object") {
+        acc[key] = buildTouchedStateFromErrors(value);
+      } else {
+        acc[key] = true;
+      }
+
+      return acc;
+    }, {} as Record<string, any>);
+  };
+
   const handleFormSubmit = async (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
 
@@ -82,12 +98,7 @@ export const VendorForm: React.FC = () => {
     const errors = await formik.validateForm();
     if (Object.keys(errors).length > 0) {
       showToastMessage("Please check and fix the errors in the form before submitting.", "error");
-      formik.setTouched(
-        Object.keys(errors).reduce((acc, field) => {
-          acc[field] = true;
-          return acc;
-        }, {} as Record<string, boolean>)
-      );
+      formik.setTouched(buildTouchedStateFromErrors(errors));
       return;
     }
 

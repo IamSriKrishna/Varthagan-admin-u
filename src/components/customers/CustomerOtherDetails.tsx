@@ -59,10 +59,10 @@ export const CustomerOtherDetails: React.FC = () => {
       <SectionLabel icon={DollarSign} label="Financial Settings" />
       <Grid container spacing={2} component="div" sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, md: 6 }} component="div">
-          <BBDropdown name="other_details.currency" label="Currency" options={CURRENCY_OPTIONS} />
+          <BBDropdown name="other_details.currency" label="Currency" required options={CURRENCY_OPTIONS} />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }} component="div">
-          <BBDropdown name="other_details.payment_terms" label="Payment Terms" options={PAYMENT_TERMS_OPTIONS} />
+          <BBDropdown name="other_details.payment_terms" label="Payment Terms" required options={PAYMENT_TERMS_OPTIONS} />
         </Grid>
       </Grid>
 

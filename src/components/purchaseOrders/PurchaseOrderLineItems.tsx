@@ -126,6 +126,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
     purchase_unit: "",
     rate: 0,
     is_raw_material: false,
+    is_resource: false,
     raw_material_unit: "",
     number_of_packs: 0,
     quantity_per_pack: 0,
@@ -172,6 +173,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
         purchase_unit: "",
         rate: 0,
         is_raw_material: false,
+        is_resource: false,
         raw_material_unit: "",
         number_of_packs: 0,
         quantity_per_pack: 0,
@@ -263,6 +265,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
     const lineItem: any = {
       ...formData,
       quantity: calculatedQty,
+      is_resource: (formData as any).is_resource || false,
       purchase_unit: (formData as any).is_raw_material ? (formData as any).raw_material_unit : (formData as any).purchase_unit || "",
       raw_material_unit: (formData as any).raw_material_unit || "",
       amount: amountForLine,
@@ -284,8 +287,20 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
     );
   };
 
-  const selectedProductOption = products.find((p) => p.id === formData.product_id);
-  const total = formik.values.line_items.reduce((s: number, i: any) => s + (i.amount || 0), 0);
+  const visibleProducts = products.filter((product) => !Boolean((product as any)?.is_resource));
+  const selectedProductOption = visibleProducts.find((p) => p.id === formData.product_id);
+  const isResourceLineItem = (item: any) => {
+    if (item?.is_resource === true) return true;
+    if (item?.product_id) {
+      const matchedProduct = products.find((p) => p.id === item.product_id);
+      return Boolean((matchedProduct as any)?.is_resource);
+    }
+    return false;
+  };
+  const visibleLineItems = formik.values.line_items
+    .map((item, index) => ({ item, originalIndex: index }))
+    .filter(({ item }) => !isResourceLineItem(item));
+  const total = visibleLineItems.reduce((s: number, { item }: any) => s + (item.amount || 0), 0);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
@@ -294,7 +309,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
         <Box>
           <Typography sx={{ fontSize: "0.82rem", fontWeight: 700, color: T.text }}>
             Line items
-            {formik.values.line_items.length > 0 && (
+            {visibleLineItems.length > 0 && (
               <Box
                 component="span"
                 sx={{
@@ -309,7 +324,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                   border: `0.5px solid ${T.brandBorder}`,
                 }}
               >
-                {formik.values.line_items.length}
+                {visibleLineItems.length}
               </Box>
             )}
           </Typography>
@@ -362,7 +377,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
       )}
 
       {/* Table */}
-      {formik.values.line_items.length > 0 ? (
+      {visibleLineItems.length > 0 ? (
         <Fade in timeout={250}>
           <Box
             sx={{
@@ -400,13 +415,13 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {formik.values.line_items.map((item, idx) => (
+                  {visibleLineItems.map(({ item, originalIndex }, idx) => (
                     <TableRow
-                      key={idx}
+                      key={originalIndex}
                       sx={{
                         "&:hover": { background: T.bgMuted },
                         transition: "background 0.15s",
-                        borderBottom: idx < formik.values.line_items.length - 1 ? `0.5px solid ${T.border}` : "none",
+                        borderBottom: idx < visibleLineItems.length - 1 ? `0.5px solid ${T.border}` : "none",
                       }}
                     >
                       {/* Item */}
@@ -572,7 +587,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                           <Tooltip title="Edit" arrow>
                             <IconButton
                               size="small"
-                              onClick={() => handleOpen(idx)}
+                              onClick={() => handleOpen(originalIndex)}
                               sx={{
                                 width: 28,
                                 height: 28,
@@ -587,7 +602,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                           <Tooltip title="Remove" arrow>
                             <IconButton
                               size="small"
-                              onClick={() => handleDelete(idx)}
+                              onClick={() => handleDelete(originalIndex)}
                               sx={{
                                 width: 28,
                                 height: 28,
@@ -761,7 +776,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
               <Field label="Product" required>
                 <Autocomplete
                   size="small"
-                  options={products}
+                  options={visibleProducts}
                   getOptionLabel={(o) => `${o.name || ""}`}
                   value={selectedProductOption || null}
                   onChange={async (_, val) => {
@@ -774,6 +789,7 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                       product_id: val?.id || "",
                       product_name: val?.name || "",
                       is_raw_material: isRawMaterial,
+                      is_resource: isResource,
                       raw_material_unit: isRawMaterial ? (isResource ? (val as any)?.resource_unit : "kg") : "",
                       // Preserve quantity for non-raw materials
                       quantity: isRawMaterial ? 0 : (prev.quantity || 1),
@@ -805,8 +821,9 @@ export const PurchaseOrderLineItems: React.FC<PurchaseOrderLineItemsProps> = ({ 
                       if (isRaw || isResource) {
                         setFormData((prev) => ({ 
                           ...prev, 
-                          rate: rateValue, 
+                          rate: rateValue,
                           is_raw_material: isRawMaterial,
+                          is_resource: isResource,
                           quantity: 0,
                         }));
                       }

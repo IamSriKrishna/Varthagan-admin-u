@@ -4,7 +4,7 @@ import { Plus, Trash2, UserPlus, Users } from "lucide-react";
 import { BBDropdown, BBInput, BBButton } from "@/lib";
 import { SALUTATION_OPTIONS, PHONE_CODE_OPTIONS } from "@/constants/customer.constants";
 import { Customer } from "@/models/customer.model";
-import { ArrayHelpers } from "formik";
+import { ArrayHelpers, useFormikContext } from "formik";
 
 interface CustomerContactPersonsProps {
   values: Customer;
@@ -38,6 +38,8 @@ export const CustomerContactPersons: React.FC<CustomerContactPersonsProps> = ({
   remove,
 }) => {
   const contacts = values.contact_persons || [];
+  const { errors, touched } = useFormikContext<Customer>();
+  const contactPersonsError = typeof errors.contact_persons === "string" && touched.contact_persons ? errors.contact_persons : undefined;
 
   return (
     <Box>
@@ -111,6 +113,20 @@ export const CustomerContactPersons: React.FC<CustomerContactPersonsProps> = ({
           Add Contact
         </BBButton>
       </Box>
+
+      {contactPersonsError && (
+        <Typography
+          sx={{
+            color: "#d32f2f",
+            fontSize: "0.8rem",
+            fontWeight: 600,
+            fontFamily: "'DM Sans', sans-serif",
+            mb: 1.5,
+          }}
+        >
+          {contactPersonsError}
+        </Typography>
+      )}
 
       {/* ── Empty state ──────────────────────────────────────────────── */}
       {contacts.length === 0 && (
@@ -277,10 +293,10 @@ export const CustomerContactPersons: React.FC<CustomerContactPersonsProps> = ({
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 5 }} component="div">
-                    <BBInput name={`contact_persons[${index}].first_name`} label="First Name" fullWidth />
+                    <BBInput name={`contact_persons[${index}].first_name`} label="First Name" required fullWidth />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 5 }} component="div">
-                    <BBInput name={`contact_persons[${index}].last_name`} label="Last Name" fullWidth />
+                    <BBInput name={`contact_persons[${index}].last_name`} label="Last Name" required fullWidth />
                   </Grid>
 
                   {/* Email */}
@@ -288,6 +304,7 @@ export const CustomerContactPersons: React.FC<CustomerContactPersonsProps> = ({
                     <BBInput
                       name={`contact_persons[${index}].email_address`}
                       label="Email Address"
+                      required
                       type="email"
                       fullWidth
                     />
@@ -322,7 +339,7 @@ export const CustomerContactPersons: React.FC<CustomerContactPersonsProps> = ({
                         />
                       </Grid>
                       <Grid size={{ xs: 8 }} component="div">
-                        <BBInput name={`contact_persons[${index}].mobile`} label="Mobile" type="number" fullWidth />
+                        <BBInput name={`contact_persons[${index}].mobile`} label="Mobile" required type="number" fullWidth />
                       </Grid>
                     </Grid>
                   </Grid>

@@ -2,16 +2,23 @@ import axios from "axios";
 import { localStorageAuthKey } from "@/constants/localStorageConstant";
 import { LoginResponse } from "@/models/IUser";
 import { config } from "@/config";
+import { store } from "@/store";
 
 const API_BASE_URL = config.apiDomain || "http://127.0.0.1:8088";
 
-// Helper to get token from Redux persisted state
+// Helper to get token from Redux persisted state or current store state
 const getToken = () => {
   if (typeof window === "undefined") {
     return "";
   }
 
   try {
+    const rootState = store.getState?.();
+    const currentToken = rootState?.auth?.access_token;
+    if (currentToken) {
+      return currentToken;
+    }
+
     const persistedRoot = localStorage.getItem(localStorageAuthKey);
     if (!persistedRoot) return "";
 

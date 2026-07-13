@@ -13,6 +13,7 @@ export interface PurchaseOrderLineItemInput {
 
   // Raw Material Specific Fields - Used when purchasing raw materials
   is_raw_material?: boolean; // true if purchasing raw material
+  is_resource?: boolean; // true if this line item represents a resource product
   raw_material_unit?: string; // e.g., kg, liter, pieces
   number_of_packs?: number; // e.g., 10 packs
   quantity_per_pack?: number; // e.g., 20 kg per pack
@@ -120,6 +121,7 @@ export interface PurchaseOrderLineItemOutput {
   purchase_unit?: string;
   rate: number;
   amount: number;
+  is_resource?: boolean;
 }
 
 export interface PurchaseOrder {

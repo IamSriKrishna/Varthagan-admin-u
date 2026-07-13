@@ -11,6 +11,7 @@ interface BBInputProps extends Omit<OutlinedInputProps, "variant"> {
   loading?: boolean;
   isError?: boolean;
   errorMessage?: string;
+  required?: boolean;
   onInputChange?: (e: React.ChangeEvent<HTMLInputElement>, name: string, value: unknown) => void;
 }
 
@@ -22,6 +23,8 @@ const BBInputBase: React.FC<BBInputProps> = ({
   isError,
   errorMessage,
   rows,
+  required,
+  onBlur,
   ...props
 }) => {
   if (!props.name) {
@@ -44,6 +47,7 @@ const BBInputBase: React.FC<BBInputProps> = ({
   return (
     <FormControl fullWidth size="small" error={isError} disabled={loading}>
       <FormLabel
+        required={required}
         sx={{
           fontFamily: "Inter, sans-serif",
           fontWeight: 400,
@@ -61,6 +65,7 @@ const BBInputBase: React.FC<BBInputProps> = ({
         value={props.value ?? ""}
         type={type}
         onChange={handleChange}
+        onBlur={onBlur}
         startAdornment={props.startAdornment}
         multiline={!!rows}
         rows={rows}

@@ -12,6 +12,7 @@ interface BBInputProps extends Omit<OutlinedInputProps, "variant"> {
   rows?: number;
   isError?: boolean;
   errorMessage?: string;
+  required?: boolean;
 }
 
 const BBInput: React.FC<BBInputProps> = ({ label, loading = false, type, rows, ...props }) => {
@@ -25,6 +26,7 @@ const BBInput: React.FC<BBInputProps> = ({ label, loading = false, type, rows, .
 
   return (
     <BBInputBase
+      {...field}
       value={field.value}
       label={label}
       disabled={loading}
@@ -34,6 +36,7 @@ const BBInput: React.FC<BBInputProps> = ({ label, loading = false, type, rows, .
       multiline={Boolean(rows)}
       rows={rows}
       onInputChange={handleChange}
+      required={props.required}
       {...props}
     />
   );

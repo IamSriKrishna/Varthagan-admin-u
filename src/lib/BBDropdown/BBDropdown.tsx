@@ -15,6 +15,7 @@ interface BBDropdownProps extends Omit<SelectProps, "variant" | "name"> {
   label: string;
   options: Option[];
   loading?: boolean;
+  required?: boolean;
   onValueChange?: (value: string | number) => void;
 }
 
@@ -39,7 +40,9 @@ const BBDropdown: React.FC<BBDropdownProps> = ({ name, label, options, loading =
       isError={isError}
       errorMessage={isError ? meta.error : ""}
       onDropdownChange={handleChange}
+      onBlur={field.onBlur}
       loading={loading}
+      required={props.required}
       {...props}
     />
   );

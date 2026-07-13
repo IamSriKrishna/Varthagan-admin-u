@@ -21,7 +21,7 @@ import { CustomerContactPersons } from "./CustomerContactPersons";
 
 import { BBButton, BBLoader } from "@/lib";
 import { Customer } from "@/models/customer.model";
-import { initialCustomerValues, transformCustomerToPayload } from "./customerForm.utils";
+import { initialCustomerValues, normalizeCustomerData, transformCustomerToPayload } from "./customerForm.utils";
 import { customerValidationSchema } from "./customerForm.validation";
 import { useCustomer } from "@/hooks/useCustomer";
 import { showToastMessage } from "@/utils/toastUtil";
@@ -33,6 +33,54 @@ const TABS = [
   { label: "Contact Persons", index: 2 },
 ];
 
+const collectValidationErrorPaths = (errors: Record<string, any> | undefined, parentPath = ""): string[] => {
+  if (!errors || typeof errors !== "object" || Array.isArray(errors)) return [];
+
+  return Object.entries(errors).flatMap(([key, value]) => {
+    const nextPath = parentPath ? `${parentPath}.${key}` : key;
+
+    if (Array.isArray(value)) {
+      return value.flatMap((item, index) => {
+        const itemPath = `${nextPath}[${index}]`;
+        if (item && typeof item === "object") {
+          return collectValidationErrorPaths(item as Record<string, any>, itemPath);
+        }
+        return [itemPath];
+      });
+    }
+
+    if (value && typeof value === "object") {
+      return collectValidationErrorPaths(value as Record<string, any>, nextPath);
+    }
+
+    return [nextPath];
+  });
+};
+
+const buildTouchedObjectFromErrorPaths = (errorPaths: string[]) => {
+  const touched: Record<string, any> = {};
+
+  errorPaths.forEach((path) => {
+    const segments = path.match(/[^.[\]]+|\[\d+\]/g) ?? [];
+    let current: Record<string, any> = touched;
+
+    segments.forEach((segment, index) => {
+      const key = segment.startsWith("[") ? Number(segment.slice(1, -1)) : segment;
+
+      if (index === segments.length - 1) {
+        current[key] = true;
+      } else {
+        if (typeof current[key] !== "object" || current[key] === null || Array.isArray(current[key])) {
+          current[key] = {};
+        }
+        current = current[key];
+      }
+    });
+  });
+
+  return touched;
+};
+
 const CustomerForm: React.FC = () => {
   const router = useRouter();
   const params = useParams();
@@ -43,7 +91,7 @@ const CustomerForm: React.FC = () => {
   const customerId = Array.isArray(customerIdRaw) ? customerIdRaw[0] : customerIdRaw;
   const isEdit = !!customerId && customerId !== "new";
 
-  const [initialData, setInitialData] = useState<Customer>(initialCustomerValues);
+  const [initialData, setInitialData] = useState<Customer>(normalizeCustomerData(initialCustomerValues));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -60,7 +108,7 @@ const CustomerForm: React.FC = () => {
       setLoading(true);
       setError(null);
       const data = await getCustomer(customerId!);
-      setInitialData(data);
+      setInitialData(normalizeCustomerData(data));
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || "Failed to load customer";
       setError(msg);
@@ -77,14 +125,12 @@ const CustomerForm: React.FC = () => {
     if (!formik) return;
 
     const errors = await formik.validateForm();
-    if (Object.keys(errors).length > 0) {
+    const errorPaths = collectValidationErrorPaths(errors);
+
+    if (errorPaths.length > 0) {
+      formik.setErrors(errors);
+      formik.setTouched(buildTouchedObjectFromErrorPaths(errorPaths));
       showToastMessage("Please check and fix the errors in the form before submitting.", "error");
-      formik.setTouched(
-        Object.keys(errors).reduce((acc, field) => {
-          acc[field] = true;
-          return acc;
-        }, {} as Record<string, boolean>)
-      );
       return;
     }
 

@@ -100,6 +100,7 @@ export const CustomerBasicInfo: React.FC = () => {
             <BBDropdown
               name="customer_type"
               label="Type"
+              required
               options={[
                 { label: "Business", value: "Business" },
                 { label: "Individual", value: "Individual" },
@@ -110,13 +111,13 @@ export const CustomerBasicInfo: React.FC = () => {
             <BBDropdown name="salutation" label="Salutation" options={SALUTATION_OPTIONS} />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 4 }} component="div">
-            <BBInput name="first_name" label="First Name" fullWidth />
+            <BBInput name="first_name" label="First Name" required fullWidth />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 4 }} component="div">
-            <BBInput name="last_name" label="Last Name" fullWidth />
+            <BBInput name="last_name" label="Last Name" required fullWidth />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }} component="div">
-            <BBInput name="display_name" label="Display Name *" fullWidth />
+            <BBInput name="display_name" label="Display Name" required fullWidth />
           </Grid>
         </Grid>
 
@@ -126,7 +127,7 @@ export const CustomerBasicInfo: React.FC = () => {
         <SectionLabel icon={Phone} label="Contact Information" />
         <Grid container spacing={2} component="div" sx={{ mb: 3 }}>
           <Grid size={{ xs: 12, md: 6 }} component="div">
-            <BBInput name="email_address" label="Email Address" type="email" fullWidth />
+            <BBInput name="email_address" label="Email Address" required type="email" fullWidth />
           </Grid>
 
           <Grid size={{ xs: 12, md: 6 }} component="div">

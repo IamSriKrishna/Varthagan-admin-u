@@ -26,6 +26,7 @@ interface BBDropdownBaseProps extends Omit<SelectProps, "variant" | "name"> {
   loading?: boolean;
   isError?: boolean;
   errorMessage?: string;
+  required?: boolean;
   onDropdownChange?: (event: SelectChangeEvent<unknown>, name: string, value: unknown) => void;
 }
 
@@ -39,6 +40,8 @@ const BBDropdownBase: React.FC<BBDropdownBaseProps> = ({
   value,
   onDropdownChange,
   sx,
+  required,
+  onBlur,
   ...props
 }) => {
   const handleChange = (event: SelectChangeEvent<unknown>) => {
@@ -47,11 +50,12 @@ const BBDropdownBase: React.FC<BBDropdownBaseProps> = ({
 
   return (
     <FormControl fullWidth size="small" error={isError} disabled={loading} sx={sx}>
-      <FormLabel sx={bbDropdownLabelSx}>{label}</FormLabel>
+      <FormLabel required={required} sx={bbDropdownLabelSx}>{label}</FormLabel>
       <Select
         name={name}
         value={value ?? ""}
         onChange={handleChange}
+        onBlur={onBlur}
         displayEmpty
         sx={bbDropdownSelectSx}
         MenuProps={{
