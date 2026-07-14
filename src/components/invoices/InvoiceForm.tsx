@@ -246,16 +246,18 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ initialData, onSuccess
         // Extract line items from SO/PO and populate the invoice line items
         const populatedItems: ILineItem[] = lineItemsData.map((item: any, idx: number) => {
           console.log('Processing item:', item);
+          const lineName = item.manufacturer_name || item.product_name || item.description || '';
+          const lineId = item.manufacturer_id || item.product_id || item.item_id || item.id || '';
           return {
             id: idx,
-            item_id: item.product_id || item.item_id || item.id || '',
-            description: item.product_name || item.description || '',
+            item_id: lineId,
+            description: lineName,
             quantity: Number(item.quantity) || 0,
             rate: Number(item.rate) || 0,
             amount: (Number(item.quantity) || 0) * (Number(item.rate) || 0),
             item: {
-              id: item.product_id || item.item_id || item.id || '',
-              name: item.product_name || item.description || '',
+              id: lineId,
+              name: lineName,
               sku: item.sku || '',
             }
           };
@@ -712,8 +714,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ initialData, onSuccess
                                         <InventoryOutlinedIcon sx={{ fontSize: 16 }} />
                                       </Box>
                                       <Box>
-                                        <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "#0f172a" }}>{item.description || item.item_id}</Typography>
-                                        <Typography sx={{ fontSize: "0.72rem", color: "#94a3b8", fontFamily: "monospace" }}>ID: {item.item_id}</Typography>
+                                        <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "#0f172a" }}>{item.item?.name || item.description || item.item_id}</Typography>
+                                        <Typography sx={{ fontSize: "0.72rem", color: "#94a3b8", fontFamily: "monospace" }}>ID: {item.item?.id || item.item_id}</Typography>
                                       </Box>
                                     </Stack>
                                   </TableCell>

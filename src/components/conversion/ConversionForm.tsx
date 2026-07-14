@@ -290,7 +290,10 @@ export default function ConversionForm({
         const products: Product[] = response.products || [];
 
         setRawMaterials(products.filter((p) => p.is_raw === true));
-        setFinishedProducts(products.filter((p) => p.is_raw === false));
+        const filteredFinishedProducts = products.filter(
+          (p) => p.is_raw === false && /bottle/i.test(p.name || '')
+        );
+        setFinishedProducts(filteredFinishedProducts);
       } catch {
         showToastMessage('Failed to load products', 'error');
       } finally {
@@ -797,7 +800,10 @@ export default function ConversionForm({
             <DialogContent sx={{ pt: 2 }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Autocomplete
-                  options={availableBags.filter((b) => !selectedBags.some((sb) => sb.bag_id === b.id))}
+                  options={availableBags.filter((b) => {
+                    const remaining = Number(b.remaining_kg);
+                    return remaining > 0 && !selectedBags.some((sb) => sb.bag_id === b.id);
+                  })}
                   getOptionLabel={(option) => `Bag #${option.bag_number} (${option.id.substring(0, 15)}...)`}
                   value={selectedBagForAdd}
                   onChange={(_, newValue) => setSelectedBagForAdd(newValue)}

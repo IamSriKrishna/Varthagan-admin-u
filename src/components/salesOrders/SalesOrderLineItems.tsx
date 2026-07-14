@@ -252,6 +252,12 @@ export default function SalesOrderLineItems({
     return Number(product?.selling_price || product?.sales_info?.selling_price || 0);
   };
 
+  const isDisplayableProduct = (product: any) => {
+    const isResource = product?.is_resource === true || product?.is_resource === 1;
+    const isRaw = product?.is_raw === true || product?.is_raw === 1;
+    return !isResource && !isRaw;
+  };
+
   const findCustomerProductRate = (productId: string) => {
     return customerPricing?.line_items.find(
       (item) =>
@@ -276,22 +282,26 @@ export default function SalesOrderLineItems({
 
     if (!group?.components?.length) return null;
 
-    let totalRate = 0;
-    let hasCustomerPricing = false;
+    const visibleComponents = group.components.filter((component) =>
+      isDisplayableProduct(component.product)
+    );
 
-    for (const component of group.components) {
+    if (!visibleComponents.length) return null;
+
+    let totalRate = 0;
+
+    for (const component of visibleComponents) {
       const customerRate = findCustomerProductRate(component.product_id);
       const componentQty = Number(component.quantity || 1);
 
       if (customerRate !== undefined && customerRate !== null) {
         totalRate += Number(customerRate) * componentQty;
-        hasCustomerPricing = true;
       } else {
         totalRate += getProductSellingPrice(component.product) * componentQty;
       }
     }
 
-    return hasCustomerPricing ? totalRate : null;
+    return totalRate;
   };
 
   const getBestCustomerRate = async (
@@ -369,6 +379,7 @@ export default function SalesOrderLineItems({
       ...prev,
       manufacturer_id: value.id,
       manufacturer_name: value.name,
+      quantity: Number(value.quantity || 1),
       rate: Number(value.selling_price || 0),
     }));
 
@@ -470,8 +481,13 @@ export default function SalesOrderLineItems({
     manufacturers.find((m) => String(m.id) === String(formData.manufacturer_id)) ||
     null;
 
+  const visibleProductGroupComponents =
+    productGroupDetails?.components?.filter((component) =>
+      isDisplayableProduct(component.product)
+    ) ?? [];
+
   const bundleRate =
-    productGroupDetails?.components?.reduce((sum, component) => {
+    visibleProductGroupComponents.reduce((sum, component) => {
       const customerRate = findCustomerProductRate(component.product_id);
       const unitRate = customerRate ?? getProductSellingPrice(component.product);
       return sum + Number(unitRate || 0) * Number(component.quantity || 1);
@@ -687,7 +703,7 @@ export default function SalesOrderLineItems({
                 </Box>
               )}
 
-              {productGroupDetails?.components?.length ? (
+              {visibleProductGroupComponents.length ? (
                 <Box
                   sx={{
                     p: 2,
@@ -709,7 +725,7 @@ export default function SalesOrderLineItems({
                   </Typography>
 
                   <Stack spacing={1}>
-                    {productGroupDetails.components.map((component) => {
+                    {visibleProductGroupComponents.map((component) => {
                       const customerRate = findCustomerProductRate(component.product_id);
                       const unitRate =
                         customerRate ?? getProductSellingPrice(component.product);

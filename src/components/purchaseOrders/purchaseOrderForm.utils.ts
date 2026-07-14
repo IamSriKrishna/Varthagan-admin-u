@@ -73,6 +73,7 @@ export const transformPOToPayload = (
         quantity: item.quantity,
         purchase_unit: item.purchase_unit,
         rate: item.rate,
+        amount: item.amount !== undefined ? item.amount : calculateLineItemAmount(item.quantity || 0, item.rate),
       };
 
       // Add raw material fields if applicable

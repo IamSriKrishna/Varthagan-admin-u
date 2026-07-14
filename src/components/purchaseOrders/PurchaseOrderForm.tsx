@@ -155,6 +155,8 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ purchaseOrderId }
       try {
         setPageError(null);
         const payload = transformPOToPayload(values);
+        // Helpful debug log to inspect the exact payload sent
+        console.log('Submitting Purchase Order payload:', JSON.stringify(payload, null, 2));
 
         if (isEdit) await updatePurchaseOrder(purchaseOrderId!, payload);
         else await createPurchaseOrder(payload);

@@ -34,7 +34,19 @@ const handleResponse = async (response: Response) => {
     let errorMessage = 'An error occurred';
     try {
       const errorData = await response.json();
-      errorMessage = errorData.error || errorData.message || errorMessage;
+      if (errorData && typeof errorData.message === 'string' && errorData.message.trim()) {
+        errorMessage = errorData.message;
+      } else if (errorData && typeof errorData.error === 'string' && errorData.error.trim()) {
+        errorMessage = errorData.error;
+      } else if (
+        errorData &&
+        typeof errorData.error === 'object' &&
+        errorData.error !== null &&
+        typeof errorData.error.message === 'string' &&
+        errorData.error.message.trim()
+      ) {
+        errorMessage = errorData.error.message;
+      }
     } catch {
       try {
         const errorText = await response.text();

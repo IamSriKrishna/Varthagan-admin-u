@@ -411,6 +411,12 @@ export default function CustomerPricingForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const isDisplayableProduct = (product: any) => {
+    const isResource = product?.is_resource === true || product?.is_resource === 1;
+    const isRaw = product?.is_raw === true || product?.is_raw === 1;
+    return !isResource && !isRaw;
+  };
+
   async function fetchProducts() {
     try {
       const res = await apiService.get('/products?limit=100&offset=0');
@@ -426,8 +432,9 @@ export default function CustomerPricingForm({
         productsList = res.data;
       }
       
-      console.log('Extracted Products List:', productsList);
-      setProducts(productsList);
+      const visibleProducts = productsList.filter(isDisplayableProduct);
+      console.log('Extracted Products List:', visibleProducts);
+      setProducts(visibleProducts);
     } catch (err) { 
       console.error('Error fetching products:', err);
       setProducts([]); 

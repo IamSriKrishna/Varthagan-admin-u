@@ -10,6 +10,7 @@ export interface PurchaseOrderLineItemInput {
   quantity?: number; // Optional for raw materials (auto-calculated from packs)
   purchase_unit?: string; // e.g., kg, pcs, liter
   rate: number;
+  amount?: number;
 
   // Raw Material Specific Fields - Used when purchasing raw materials
   is_raw_material?: boolean; // true if purchasing raw material

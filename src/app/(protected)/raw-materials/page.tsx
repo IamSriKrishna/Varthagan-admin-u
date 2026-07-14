@@ -275,36 +275,36 @@ export default function RawMaterialsPage() {
         );
       },
     },
-    {
-      key: 'status' as keyof RawMaterialBag,
-      label: 'Status',
-      render: (row) => (
-        <Chip
-          label={row.status.charAt(0).toUpperCase() + row.status.slice(1)}
-          size="small"
-          sx={{
-            height: 22,
-            fontSize: '0.7rem',
-            fontWeight: 700,
-            fontFamily: "'DM Sans', sans-serif",
-            bgcolor:
-              RAW_MATERIAL_STATUS_COLORS[
-                row.status as keyof typeof RAW_MATERIAL_STATUS_COLORS
-              ] + '20',
-            color:
-              RAW_MATERIAL_STATUS_COLORS[
-                row.status as keyof typeof RAW_MATERIAL_STATUS_COLORS
-              ],
-            border: `1px solid ${
-              RAW_MATERIAL_STATUS_COLORS[
-                row.status as keyof typeof RAW_MATERIAL_STATUS_COLORS
-              ]
-            }`,
-            borderRadius: '6px',
-          }}
-        />
-      ),
-    },
+    // {
+    //   key: 'status' as keyof RawMaterialBag,
+    //   label: 'Status',
+    //   render: (row) => (
+    //     <Chip
+    //       label={row.status.charAt(0).toUpperCase() + row.status.slice(1)}
+    //       size="small"
+    //       sx={{
+    //         height: 22,
+    //         fontSize: '0.7rem',
+    //         fontWeight: 700,
+    //         fontFamily: "'DM Sans', sans-serif",
+    //         bgcolor:
+    //           RAW_MATERIAL_STATUS_COLORS[
+    //             row.status as keyof typeof RAW_MATERIAL_STATUS_COLORS
+    //           ] + '20',
+    //         color:
+    //           RAW_MATERIAL_STATUS_COLORS[
+    //             row.status as keyof typeof RAW_MATERIAL_STATUS_COLORS
+    //           ],
+    //         border: `1px solid ${
+    //           RAW_MATERIAL_STATUS_COLORS[
+    //             row.status as keyof typeof RAW_MATERIAL_STATUS_COLORS
+    //           ]
+    //         }`,
+    //         borderRadius: '6px',
+    //       }}
+    //     />
+    //   ),
+    // },
     {
       key: 'created_at' as keyof RawMaterialBag,
       label: 'Created',
