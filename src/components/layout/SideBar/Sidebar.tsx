@@ -32,6 +32,7 @@ import {
   IndianRupee,
   Landmark,
   Package,
+  PackageCheck,
   Receipt,
   Settings,
   Settings2,
@@ -172,6 +173,12 @@ const baseMenuItems: MenuItem[] = [
         icon: Package,
         label: "Purchase Claims",
         path: "/purchase-claims",
+      },
+      {
+        key: "purchase_dispenses",
+        icon: PackageCheck,
+        label: "Purchase Dispenses",
+        path: "/purchase-dispenses",
       },
       {
         key: "vendorPayments",
@@ -373,6 +380,7 @@ export default function Sidebar({
         const alwaysShowItems = [
           "purchaseOrders",
           "purchase_claims",
+          "purchase_dispenses",
           "vendors",
           "vendorPayments",
           "customerPayments",

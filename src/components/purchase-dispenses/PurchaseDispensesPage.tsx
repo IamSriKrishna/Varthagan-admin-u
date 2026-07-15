@@ -11,7 +11,7 @@ import { ITableColumn } from "@/lib/BBTable/BBTable";
 import { PurchaseDispense } from "@/models/purchaseDispense.model";
 import { PurchaseOrder } from "@/models/purchaseOrder.model";
 import { PurchaseClaim } from "@/models/purchaseClaim.model";
-import { purchaseDispenseService } from "@/services/purchaseDispenseService";
+import { purchaseDispenseService } from "@/lib/api/purchaseDispenseService";
 import { showToastMessage } from "@/utils/toastUtil";
 
 export default function PurchaseDispensesPage() {

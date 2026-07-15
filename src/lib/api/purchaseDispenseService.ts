@@ -1,6 +1,8 @@
 
-import { apiService } from "@/lib/api/api.service";
+import { apiService } from "./api.service";
+
 import { PURCHASE_DISPENSE_ENDPOINTS } from "@/constants/purchaseDispense.constants";
+
 import {
   CreatePurchaseDispenseRequest,
   PurchaseClaimApiResponse,
@@ -8,6 +10,7 @@ import {
   PurchaseDispenseResponse,
   PurchaseDispensesResponse,
 } from "@/models/purchaseDispense.model";
+
 import { PurchaseOrder } from "@/models/purchaseOrder.model";
 
 function extractPurchaseOrders(
@@ -34,9 +37,11 @@ function extractPurchaseOrders(
     value.data &&
     typeof value.data === "object" &&
     Array.isArray(
-      (value.data as {
-        purchase_orders?: unknown;
-      }).purchase_orders
+      (
+        value.data as {
+          purchase_orders?: unknown;
+        }
+      ).purchase_orders
     )
   ) {
     return (

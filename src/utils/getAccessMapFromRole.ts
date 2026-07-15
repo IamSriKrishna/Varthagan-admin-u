@@ -50,6 +50,7 @@ export const getAccessMapFromRole = (role?: string): IAccessMap => {
     nav["vendors"] = true;
     nav["purchaseOrders"] = true;  
     nav["purchase_claims"] = true;
+    nav["purchase_dispenses"] = true;
     nav["Manufacturing"] = true;
     nav["bills"] = true;  
 
@@ -102,6 +103,7 @@ export const getAccessMapFromRole = (role?: string): IAccessMap => {
     nav["vendors"] = true;         // ✅ Child menu
     nav["purchaseOrders"] = true;  // ✅ Child menu
     nav["purchase_claims"] = true; // ✅ Child menu
+    nav["purchase_dispenses"] = true; // ✅ Child menu
     nav["Manufacturing"] = true;   // ✅ Manufacturing menu
     nav["bills"] = true;           // ✅ Bills access
   }
