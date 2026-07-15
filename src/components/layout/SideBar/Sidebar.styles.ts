@@ -185,8 +185,8 @@ export const drawerBox = (
 
   transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
   position: "fixed",
-  height: "100vh",
   top: 0,
+  bottom: 0,
   left: 0,
   zIndex: 1200,
 });
@@ -262,8 +262,8 @@ export const largeScreenDrawer = (
     backdropFilter: "blur(24px)",
     WebkitBackdropFilter: "blur(24px)",
 
-    height: "100vh",
     top: 0,
+    bottom: 0,
     position: "fixed",
 
     borderRight:

@@ -4,8 +4,10 @@ export const mainLayoutBox: SxProps<Theme> = {
   flexGrow: 1,
   p: 3,
   width: "100%",
-  height: "100vh",
+  maxWidth: "100%",
+  minHeight: "100vh",
   overflow: "auto",
+  boxSizing: "border-box",
   backgroundColor: "#F5F5F5",
 };
 export const overlayTextStyle = {

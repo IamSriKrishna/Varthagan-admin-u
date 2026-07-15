@@ -41,7 +41,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }, [selectedVendorId]);
 
   return (
-    <Box sx={{ display: "flex", position: "relative", minHeight: "100vh" }}>
+    <Box sx={{ display: "flex", position: "relative", minHeight: "100vh", width: "100%", overflowX: "hidden" }}>
       {/* <CssBaseline /> */}
 
       <Box
@@ -53,6 +53,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           display: "flex",
           width: "100%",
           height: "100%",
+          overflowX: "hidden",
         }}
       >
         <Sidebar
@@ -68,8 +69,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             display: "flex",
             flexDirection: "column",
             flexGrow: 1,
-            transition: "margin-left 0.3s",
+            transition: "margin-left 0.3s, width 0.3s",
             marginLeft: { xs: 0, md: drawerOpen ? "240px" : "70px" },
+            width: {
+              xs: "100%",
+              md: drawerOpen ? "calc(100% - 240px)" : "calc(100% - 70px)",
+            },
+            minWidth: 0,
           }}
         >
           <Box
