@@ -38,6 +38,7 @@ type ITableProps<T> = {
   totalCount?: number;
   onPageChange?: (newPage: number) => void;
   onRowsPerPageChange?: (newRows: number) => void;
+  onRowClick?: (row: T) => void;
   renderAccordionContent?: (row: T) => React.ReactNode;
   sx?: SxProps<Theme>;
 };
@@ -53,6 +54,7 @@ export default function BBTable<T extends object>({
   totalCount = 0,
   onPageChange,
   onRowsPerPageChange,
+  onRowClick,
   renderAccordionContent,
   sx,
 }: ITableProps<T>) {
@@ -96,7 +98,11 @@ export default function BBTable<T extends object>({
 
                   return (
                     <React.Fragment key={rowKey}>
-                      <TableRow>
+                      <TableRow
+                        hover={Boolean(onRowClick)}
+                        onClick={onRowClick ? () => onRowClick(row) : undefined}
+                        sx={onRowClick ? { cursor: "pointer" } : undefined}
+                      >
                         {renderAccordionContent && (
                           <TableCell>
                             <IconButton size="small" onClick={() => toggleRow(rowKey)}>

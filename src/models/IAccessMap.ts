@@ -36,6 +36,8 @@ export interface IAccessMap {
     vendors?: boolean;
     // Purchase Orders management
     purchaseOrders?: boolean;
+    purchase_claims?:boolean;
+    purchase_dispenses?: boolean;
     vendorPrices?: boolean;
     // customer management
     customers?: boolean;

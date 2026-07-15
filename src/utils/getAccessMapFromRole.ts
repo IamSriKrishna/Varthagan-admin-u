@@ -2,11 +2,12 @@ import { Role } from "@/constants/authroizationConstants";
 import { IAccessMap } from "@/models/IAccessMap";
 
 // Utility to generate access map based on a single user role
-export const getAccessMapFromRole = (role?: Role): IAccessMap => {
+export const getAccessMapFromRole = (role?: string): IAccessMap => {
+  const normalizedRole = typeof role === "string" ? role.toLowerCase() : "";
   const nav: IAccessMap["nav"] = {};
-  if (role === undefined || role === null) return { nav };
+  if (!normalizedRole) return { nav };
   
-  if (role === Role.SuperAdmin) {
+  if (normalizedRole === Role.SuperAdmin || normalizedRole === "super_admin") {
     // Dashboard & Reports
     nav["dashboard"] = true;
     nav["orderreport"] = true;
@@ -48,6 +49,7 @@ export const getAccessMapFromRole = (role?: Role): IAccessMap => {
     // ============================================
     nav["vendors"] = true;
     nav["purchaseOrders"] = true;  
+    nav["purchase_claims"] = true;
     nav["Manufacturing"] = true;
     nav["bills"] = true;  
 
@@ -75,7 +77,7 @@ export const getAccessMapFromRole = (role?: Role): IAccessMap => {
     nav["banks"] = true;
     nav["companySettings"] = true;
   } 
-  else if (role === Role.User) {
+  else if (normalizedRole === Role.User || normalizedRole === "user") {
     nav["dashboard"] = true;
     nav["orders"] = true;
     nav["campaigns"] = true;
@@ -98,6 +100,8 @@ export const getAccessMapFromRole = (role?: Role): IAccessMap => {
     // Add parent menu access for regular users
     nav["purchases"] = true;       // ✅ Parent menu
     nav["vendors"] = true;         // ✅ Child menu
+    nav["purchaseOrders"] = true;  // ✅ Child menu
+    nav["purchase_claims"] = true; // ✅ Child menu
     nav["Manufacturing"] = true;   // ✅ Manufacturing menu
     nav["bills"] = true;           // ✅ Bills access
   }

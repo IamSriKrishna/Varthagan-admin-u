@@ -1083,7 +1083,6 @@ const Dashboard = () => {
             { id: "inventory", label: "Inventory", Icon: Package },
             { id: "activity", label: "Activity", Icon: Zap },
             { id: "stock", label: "Stock", Icon: Layers },
-            { id: "damaged", label: "Damaged", Icon: AlertTriangle },
           ] as const
         ).map(({ id, label, Icon }, i) => (
           <button
@@ -2302,139 +2301,7 @@ const Dashboard = () => {
         </>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════
-          DAMAGED TAB
-      ═══════════════════════════════════════════════════════════════ */}
-      {activeTab === "damaged" && (
-        <>
-          {damagedLoading && <LoadingSpinner label="Loading damaged products…" />}
-          {damagedError && <ErrorState msg={damagedError} />}
-
-          {!damagedLoading && !damagedError && (
-            <>
-              {/* Summary Stats */}
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                {[
-                  { label: "Total Damaged Items", val: damagedProducts.length, color: C.rust, icon: AlertTriangle },
-                  {
-                    label: "Total Damaged Value",
-                    val: `₹${damagedProducts.reduce((sum: number, item: any) => sum + (item.damaged_value || 0), 0).toLocaleString()}`,
-                    color: C.gold,
-                    icon: DollarSign,
-                  },
-                ].map(({ label, val, color, icon: Icon }, i) => (
-                  <Grid key={label} size={{ xs: 6, sm: 4, lg: "auto" }}>
-                    <Box className="db-card db-fade" sx={{ p: 2.5, animationDelay: `${0.05 * i}s` }}>
-                      <IconBox Icon={Icon} color={color} size={36} />
-                      <Typography className="db-num" sx={{ fontSize: 20, fontWeight: 700, color, mt: 1.5, mb: 0.3 }}>
-                        {typeof val === "number" ? val.toLocaleString() : val}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontSize: 10,
-                          color: C.muted,
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.07em",
-                        }}
-                      >
-                        {label}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-
-              {damagedProducts.length === 0 ? (
-                <EmptyState msg="No damaged products" sub="All products are in good condition" />
-              ) : (
-                <>
-                  <SectionHeading>Damaged Products — {damagedProducts.length} items</SectionHeading>
-                  <Box className="db-card-flat db-fade" sx={{ mb: 3, overflowX: "auto", animationDelay: "0.18s" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 720 }}>
-                      <thead>
-                        <tr>
-                          <TH align="left">Product</TH>
-                          <TH align="left">Variant</TH>
-                          <TH align="center">SKU</TH>
-                          <TH align="center">Quantity Damaged</TH>
-                          <TH align="left">Reason</TH>
-                          <TH align="center">Damaged Value</TH>
-                          <TH align="center">Date Marked</TH>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {damagedProducts.map((item: any, idx) => (
-                          <tr
-                            key={`${item.product_id}-${item.variant_sku}-${idx}`}
-                            className="db-tr"
-                            style={{
-                              borderBottom: `1px solid ${C.border}`,
-                              background: idx % 2 === 0 ? C.surface : C.bg,
-                            }}
-                          >
-                            <td style={{ padding: "14px 16px" }}>
-                              <Typography sx={{ fontWeight: 600, fontSize: 13, color: C.ink }}>
-                                {item.product_name}
-                              </Typography>
-                              <Typography className="db-num" sx={{ fontSize: 10, color: C.subtle, mt: 0.2 }}>
-                                {item.product_id}
-                              </Typography>
-                            </td>
-                            <td style={{ padding: "14px 16px" }}>
-                              <Typography sx={{ fontSize: 12, color: C.inkMid }}>{item.variant_name || "—"}</Typography>
-                            </td>
-                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                              <Typography className="db-num" sx={{ fontSize: 11, color: C.muted }}>
-                                {item.variant_sku || "—"}
-                              </Typography>
-                            </td>
-                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                              <span
-                                style={{
-                                  background: C.rustLt,
-                                  color: C.rust,
-                                  padding: "4px 12px",
-                                  borderRadius: 99,
-                                  fontSize: 12,
-                                  fontWeight: 700,
-                                  fontFamily: MONO,
-                                }}
-                              >
-                                {item.damaged_stock || 0}
-                              </span>
-                            </td>
-                            <td style={{ padding: "14px 16px" }}>
-                              <Typography sx={{ fontSize: 12, color: C.inkMid }}>
-                                {item.damage_reason
-                                  ? item.damage_reason
-                                      .replace(/_/g, " ")
-                                      .replace(/\b\w/g, (c: string) => c.toUpperCase())
-                                  : "—"}
-                              </Typography>
-                            </td>
-                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                              <Typography className="db-num" sx={{ fontSize: 12, fontWeight: 700, color: C.rust }}>
-                                ₹{(item.damaged_value || 0).toLocaleString()}
-                              </Typography>
-                            </td>
-                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                              <Typography sx={{ fontSize: 11, color: C.muted }}>
-                                {item.damaged_at ? new Date(item.damaged_at).toLocaleDateString("en-IN") : "—"}
-                              </Typography>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </Box>
-                </>
-              )}
-            </>
-          )}
-        </>
-      )}
-
+      
       {/* Mark Damaged Dialog */}
       {selectedProductForDamage && (
         <MarkDamagedDialog

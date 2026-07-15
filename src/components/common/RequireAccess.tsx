@@ -11,11 +11,23 @@ type PageKey = keyof IAccessMap["nav"];
 interface RequireAccessProps {
   pageKey: PageKey;
   children: React.ReactNode;
+  fallbackPageKey?: PageKey;
 }
 
-export function RequireAccess({ pageKey, children }: RequireAccessProps) {
+export function RequireAccess({
+  pageKey,
+  fallbackPageKey,
+  children,
+}: RequireAccessProps) {
   const accessMap = useSelector((state: RootState) => state.auth.accessMap);
-  if (!Boolean((accessMap?.nav as Record<string, boolean | undefined>)?.[pageKey])) {
+  const nav = accessMap?.nav as Record<string, boolean | undefined>;
+
+  const hasPermission = Boolean(nav?.[pageKey]);
+  const hasFallbackPermission = fallbackPageKey
+    ? Boolean(nav?.[fallbackPageKey])
+    : false;
+
+  if (!hasPermission && !hasFallbackPermission) {
     return <Forbidden />;
   }
   return <>{children}</>;

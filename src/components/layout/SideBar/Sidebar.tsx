@@ -168,6 +168,12 @@ const baseMenuItems: MenuItem[] = [
         path: "/purchase-orders",
       },
       {
+        key: "purchase_claims",
+        icon: Package,
+        label: "Purchase Claims",
+        path: "/purchase-claims",
+      },
+      {
         key: "vendorPayments",
         icon: CreditCard,
         label: "Vendor Payments",
@@ -366,6 +372,7 @@ export default function Sidebar({
       if (item.children && item.children.length > 0) {
         const alwaysShowItems = [
           "purchaseOrders",
+          "purchase_claims",
           "vendors",
           "vendorPayments",
           "customerPayments",

@@ -45,8 +45,11 @@ export const authSlice = createSlice({
       state.refresh_token = action.payload.refresh_token;
       state.loading = false;
       state.error = null;
-      const role = action.payload.user?.role || "";
-      state.accessMap = getAccessMapFromRole(role);
+      const role =
+        action.payload.user?.role ||
+        action.payload.user?.user_type ||
+        "";
+      state.accessMap = getAccessMapFromRole(role as any);
     },
     setStorageLoadedTrue: (state) => {
       state.isStorageDataLoaded = true;
