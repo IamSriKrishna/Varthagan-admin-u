@@ -2,6 +2,7 @@
 import dayjs from "dayjs";
 import {
   CreatePurchaseClaimRequest,
+  PurchaseClaim,
   PurchaseClaimFormValues,
   PurchaseOrderClaimSourceItem,
 } from "@/models/purchaseClaim.model";
@@ -103,6 +104,24 @@ export function transformPurchaseClaimToPayload(
       quantity: Number(item.quantity),
       unit: item.unit.trim(),
       reason: item.reason.trim(),
+      action: item.action,
+    })),
+  };
+}
+
+export function mapPurchaseClaimToFormValues(
+  claim: PurchaseClaim
+): PurchaseClaimFormValues {
+  return {
+    purchase_order_id: claim.purchase_order_id || "",
+    date: dayjs(claim.date).format("YYYY-MM-DD"),
+    notes: claim.notes || "",
+    items: (claim.items || []).map((item) => ({
+      purchase_order_item_id: item.purchase_order_item_id || "",
+      type: item.type,
+      quantity: item.quantity || "",
+      unit: item.unit || "",
+      reason: item.reason || "",
       action: item.action,
     })),
   };

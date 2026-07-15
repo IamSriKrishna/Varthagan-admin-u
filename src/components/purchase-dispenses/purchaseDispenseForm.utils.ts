@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { CreatePurchaseDispenseRequest, PurchaseDispenseFormValues } from "@/models/purchaseDispense.model";
+import { CreatePurchaseDispenseRequest, PurchaseDispense, PurchaseDispenseFormValues } from "@/models/purchaseDispense.model";
 
 export const initialPurchaseDispenseValues: PurchaseDispenseFormValues = {
   purchase_order_id: "",
@@ -18,6 +18,18 @@ export function transformPurchaseDispenseToPayload(values: PurchaseDispenseFormV
     unit: values.unit.trim(),
     dispense_date: dayjs(values.dispense_date).startOf("day").toISOString(),
     notes: values.notes.trim(),
+  };
+}
+
+export function mapPurchaseDispenseToFormValues(dispense: PurchaseDispense): PurchaseDispenseFormValues {
+  return {
+    purchase_order_id: dispense.purchase_order_id || "",
+    purchase_claim_id: dispense.purchase_claim_id || "",
+    purchase_claim_item_id: dispense.purchase_claim_item_id || "",
+    quantity: dispense.quantity || "",
+    unit: dispense.unit || "",
+    dispense_date: dayjs(dispense.dispense_date).format("YYYY-MM-DD"),
+    notes: dispense.notes || "",
   };
 }
 

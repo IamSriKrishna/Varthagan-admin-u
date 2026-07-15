@@ -13,7 +13,7 @@ import {
   FormikHelpers,
   FormikProps,
 } from "formik";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   Alert,
   AlertTitle,
@@ -50,12 +50,17 @@ import { purchaseClaimService } from "@/services/purchaseClaimService";
 import PurchaseClaimItems from "./PurchaseClaimItems";
 import {
   initialPurchaseClaimValues,
+  mapPurchaseClaimToFormValues,
   transformPurchaseClaimToPayload,
 } from "./purchaseClaimForm.utils";
 import { purchaseClaimValidationSchema } from "./purchaseClaimForm.validation";
 
 export default function PurchaseClaimForm() {
   const router = useRouter();
+  const params = useParams<{ claimId?: string }>();
+
+  const claimId = params?.claimId;
+  const isViewMode = Boolean(claimId && claimId !== "new");
 
   const formikRef =
     useRef<FormikProps<PurchaseClaimFormValues> | null>(
@@ -82,9 +87,21 @@ export default function PurchaseClaimForm() {
   const [pageError, setPageError] =
     useState<string | null>(null);
 
+  const [formValues, setFormValues] = useState<PurchaseClaimFormValues>(initialPurchaseClaimValues);
+
   useEffect(() => {
     void loadPurchaseOrders();
   }, []);
+
+  useEffect(() => {
+    if (!claimId || claimId === "new") {
+      setFormValues(initialPurchaseClaimValues);
+      setSource(null);
+      return;
+    }
+
+    void loadExistingClaim(claimId);
+  }, [claimId]);
 
   const loadPurchaseOrders = async () => {
     try {
@@ -152,10 +169,36 @@ export default function PurchaseClaimForm() {
     }
   };
 
+  const loadExistingClaim = async (id: string) => {
+    try {
+      setLoadingOrders(true);
+      setPageError(null);
+
+      const response = await purchaseClaimService.getClaimById(id);
+      const claim = response.data;
+
+      setFormValues(mapPurchaseClaimToFormValues(claim));
+
+      const sourceResponse = await purchaseClaimService.getPurchaseOrderClaimSource(claim.purchase_order_id);
+      setSource(sourceResponse.data);
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, "Failed to load purchase claim details");
+
+      setPageError(message);
+      showToastMessage(message, "error");
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
   const handleSubmit = async (
     values: PurchaseClaimFormValues,
     helpers: FormikHelpers<PurchaseClaimFormValues>
   ) => {
+    if (isViewMode) {
+      return;
+    }
+
     try {
       setSubmitting(true);
       setPageError(null);
@@ -209,10 +252,10 @@ export default function PurchaseClaimForm() {
       />
 
       <Formik<PurchaseClaimFormValues>
+        key={claimId || "new"}
         innerRef={formikRef}
-        initialValues={
-          initialPurchaseClaimValues
-        }
+        initialValues={formValues}
+        enableReinitialize
         validationSchema={
           purchaseClaimValidationSchema
         }
@@ -283,7 +326,7 @@ export default function PurchaseClaimForm() {
                         "'DM Sans', sans-serif",
                     }}
                   >
-                    New Purchase Claim
+                    {isViewMode ? "Purchase Claim Details" : "New Purchase Claim"}
                   </Typography>
 
                   <Typography
@@ -294,9 +337,7 @@ export default function PurchaseClaimForm() {
                         "'DM Sans', sans-serif",
                     }}
                   >
-                    Report missing or
-                    damaged purchase-order
-                    items
+                    {isViewMode ? "Review the recorded claim details" : "Report missing or damaged purchase-order items"}
                   </Typography>
                 </Box>
               </Box>
@@ -322,28 +363,30 @@ export default function PurchaseClaimForm() {
                   Cancel
                 </BBButton>
 
-                <BBButton
-                  type="submit"
-                  variant="contained"
-                  startIcon={
-                    <ClipboardCheck
-                      size={16}
-                    />
-                  }
-                  loading={
-                    submitting ||
-                    isSubmitting
-                  }
-                  disabled={
-                    submitting ||
-                    isSubmitting ||
-                    !source ||
-                    values.items.length === 0
-                  }
-                  sx={primaryButtonSx}
-                >
-                  Create Claim
-                </BBButton>
+                {!isViewMode && (
+                  <BBButton
+                    type="submit"
+                    variant="contained"
+                    startIcon={
+                      <ClipboardCheck
+                        size={16}
+                      />
+                    }
+                    loading={
+                      submitting ||
+                      isSubmitting
+                    }
+                    disabled={
+                      submitting ||
+                      isSubmitting ||
+                      !source ||
+                      values.items.length === 0
+                    }
+                    sx={primaryButtonSx}
+                  >
+                    Create Claim
+                  </BBButton>
+                )}
               </Box>
             </Box>
 

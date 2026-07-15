@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Form, Formik, FormikHelpers, FormikErrors } from "formik";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Alert, Box, Chip, Collapse, Grid, MenuItem, TextField, Typography } from "@mui/material";
 import {
   ArrowLeft,
@@ -26,6 +26,7 @@ import {
   convertDispenseToBaseQuantity,
   getDispenseDefaultUnit,
   initialPurchaseDispenseValues,
+  mapPurchaseDispenseToFormValues,
   transformPurchaseDispenseToPayload,
 } from "./purchaseDispenseForm.utils";
 import { purchaseDispenseValidationSchema } from "./purchaseDispenseForm.validation";
@@ -39,6 +40,10 @@ const RAW_UNIT_OPTIONS = [
 
 export default function PurchaseDispenseForm() {
   const router = useRouter();
+  const params = useParams<{ dispenseId?: string }>();
+
+  const dispenseId = params?.dispenseId;
+  const isViewMode = Boolean(dispenseId && dispenseId !== "new");
 
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
 
@@ -52,9 +57,22 @@ export default function PurchaseDispenseForm() {
 
   const [pageError, setPageError] = useState<string | null>(null);
 
+  const [formValues, setFormValues] = useState<PurchaseDispenseFormValues>(initialPurchaseDispenseValues);
+
   useEffect(() => {
     void loadPurchaseOrders();
   }, []);
+
+  useEffect(() => {
+    if (!dispenseId || dispenseId === "new") {
+      setFormValues(initialPurchaseDispenseValues);
+      setSelectedClaim(null);
+      setClaims([]);
+      return;
+    }
+
+    void loadExistingDispense(dispenseId);
+  }, [dispenseId]);
 
   const loadPurchaseOrders = async () => {
     try {
@@ -144,10 +162,46 @@ export default function PurchaseDispenseForm() {
     }
   };
 
+  const loadExistingDispense = async (id: string) => {
+    try {
+      setLoading(true);
+      setPageError(null);
+
+      const response = await purchaseDispenseService.getDispenseById(id);
+      const dispense = response.data;
+
+      setFormValues(mapPurchaseDispenseToFormValues(dispense));
+      setSelectedClaim(null);
+
+      const claimResponse = await purchaseDispenseService.getClaimsByPurchaseOrder(dispense.purchase_order_id);
+      const replacementClaims = (claimResponse.data ?? []).filter((claim) =>
+        claim.items.some((item) => item.action === "replacement" && Number(item.replacement_pending_base) > 0),
+      );
+
+      setClaims(replacementClaims);
+
+      if (dispense.purchase_claim_id) {
+        const selectedClaimResponse = await purchaseDispenseService.getClaimById(dispense.purchase_claim_id);
+        setSelectedClaim(selectedClaimResponse.data);
+      }
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, "Failed to load purchase dispense details");
+
+      setPageError(message);
+      showToastMessage(message, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (
     values: PurchaseDispenseFormValues,
     helpers: FormikHelpers<PurchaseDispenseFormValues>,
   ) => {
+    if (isViewMode) {
+      return;
+    }
+
     try {
       setSubmitting(true);
       setPageError(null);
@@ -185,7 +239,9 @@ export default function PurchaseDispenseForm() {
       <BBLoader enabled={loading || submitting} />
 
       <Formik<PurchaseDispenseFormValues>
-        initialValues={initialPurchaseDispenseValues}
+        key={dispenseId || "new"}
+        initialValues={formValues}
+        enableReinitialize
         validationSchema={purchaseDispenseValidationSchema}
         onSubmit={handleSubmit}
       >
@@ -247,7 +303,7 @@ export default function PurchaseDispenseForm() {
                         fontFamily: "'DM Sans', sans-serif",
                       }}
                     >
-                      New Purchase Dispense
+                      {isViewMode ? "Purchase Dispense Details" : "New Purchase Dispense"}
                     </Typography>
 
                     <Typography
@@ -257,7 +313,7 @@ export default function PurchaseDispenseForm() {
                         fontFamily: "'DM Sans', sans-serif",
                       }}
                     >
-                      Receive vendor replacement stock against a claim
+                      {isViewMode ? "Review the recorded replacement receipt" : "Receive vendor replacement stock against a claim"}
                     </Typography>
                   </Box>
                 </Box>
@@ -278,16 +334,18 @@ export default function PurchaseDispenseForm() {
                     Cancel
                   </BBButton>
 
-                  <BBButton
-                    type="submit"
-                    variant="contained"
-                    startIcon={<ClipboardCheck size={16} />}
-                    loading={submitting || isSubmitting}
-                    disabled={submitting || isSubmitting || !selectedItem || exceedsPending}
-                    sx={primaryButtonSx}
-                  >
-                    Receive Stock
-                  </BBButton>
+                  {!isViewMode && (
+                    <BBButton
+                      type="submit"
+                      variant="contained"
+                      startIcon={<ClipboardCheck size={16} />}
+                      loading={submitting || isSubmitting}
+                      disabled={submitting || isSubmitting || !selectedItem || exceedsPending}
+                      sx={primaryButtonSx}
+                    >
+                      Receive Stock
+                    </BBButton>
+                  )}
                 </Box>
               </Box>
 
@@ -393,6 +451,7 @@ export default function PurchaseDispenseForm() {
                           value={values.purchase_order_id}
                           error={Boolean(touched.purchase_order_id && errors.purchase_order_id)}
                           helperText={touched.purchase_order_id ? errors.purchase_order_id : undefined}
+                          disabled={isViewMode}
                           onChange={(event) => {
                             const id = event.target.value;
 
@@ -441,7 +500,7 @@ export default function PurchaseDispenseForm() {
                           required
                           label="Purchase Claim"
                           value={values.purchase_claim_id}
-                          disabled={!values.purchase_order_id}
+                          disabled={isViewMode || !values.purchase_order_id}
                           error={Boolean(touched.purchase_claim_id && errors.purchase_claim_id)}
                           helperText={touched.purchase_claim_id ? errors.purchase_claim_id : undefined}
                           onChange={(event) => {
@@ -492,7 +551,7 @@ export default function PurchaseDispenseForm() {
                           required
                           label="Claim Item"
                           value={values.purchase_claim_item_id}
-                          disabled={!selectedClaim}
+                          disabled={isViewMode || !selectedClaim}
                           error={Boolean(touched.purchase_claim_item_id && errors.purchase_claim_item_id)}
                           helperText={touched.purchase_claim_item_id ? errors.purchase_claim_item_id : undefined}
                           onChange={(event) => {
@@ -570,7 +629,7 @@ export default function PurchaseDispenseForm() {
                         }}
                         component="div"
                       >
-                        <BBInput name="dispense_date" label="Dispense Date" type="date" required fullWidth />
+                        <BBInput name="dispense_date" label="Dispense Date" type="date" required fullWidth disabled={isViewMode} />
                       </Grid>
                     </Grid>
                   </Box>
@@ -631,7 +690,7 @@ export default function PurchaseDispenseForm() {
                         }}
                         component="div"
                       >
-                        <BBInput name="quantity" label="Received Quantity" type="number" required fullWidth />
+                        <BBInput name="quantity" label="Received Quantity" type="number" required fullWidth disabled={isViewMode} />
                       </Grid>
 
                       <Grid
@@ -647,6 +706,7 @@ export default function PurchaseDispenseForm() {
                             fullWidth
                             label="Unit"
                             value={values.unit}
+                            disabled={isViewMode}
                             onChange={(event) => void setFieldValue("unit", event.target.value)}
                             sx={fieldSx}
                           >
@@ -706,7 +766,7 @@ export default function PurchaseDispenseForm() {
                       </Grid>
 
                       <Grid size={{ xs: 12 }} component="div">
-                        <BBInput name="notes" label="Notes" multiline rows={3} fullWidth />
+                        <BBInput name="notes" label="Notes" multiline rows={3} fullWidth disabled={isViewMode} />
                       </Grid>
                     </Grid>
 
@@ -766,15 +826,17 @@ export default function PurchaseDispenseForm() {
                     Cancel
                   </BBButton>
 
-                  <BBButton
-                    type="submit"
-                    variant="contained"
-                    loading={submitting || isSubmitting}
-                    disabled={submitting || isSubmitting || !selectedItem || exceedsPending}
-                    sx={primaryButtonSx}
-                  >
-                    Receive Replacement
-                  </BBButton>
+                  {!isViewMode && (
+                    <BBButton
+                      type="submit"
+                      variant="contained"
+                      loading={submitting || isSubmitting}
+                      disabled={submitting || isSubmitting || !selectedItem || exceedsPending}
+                      sx={primaryButtonSx}
+                    >
+                      Receive Replacement
+                    </BBButton>
+                  )}
                 </Box>
               </Box>
             </Form>

@@ -457,11 +457,6 @@ const Dashboard = () => {
     loadTrends();
   }, [fetchDashboardMetrics, fetchActivitySummary, fetchStockInfo, fetchEntityTrends, viewUserId]);
 
-  /* ── Stock tab: GET /api/stock/summary ──────────────────────────────
-     Response fields: purchased_total, sold_total, last_purchased, last_sold,
-                      sku, variant_name, type, stock_value
-     For superadmin: includes view_user_id parameter when user is selected
-  ─────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     if (activeTab !== "stock") return;
     const run = async () => {
@@ -469,8 +464,6 @@ const Dashboard = () => {
         setSummaryLoading(true);
         setSummaryError(null);
 
-        // Calls GET /api/stock/summary or /api/stock/summary/raw-materials
-        // If superadmin with selected user, include view_user_id parameter
         const userIdParam = currentUserRole === "superadmin" && viewUserId ? viewUserId : undefined;
         const res: StockSummaryResponse =
           summaryMode === "raw"
@@ -947,56 +940,7 @@ const Dashboard = () => {
                   </Tooltip>
                 )}
               </div>
-            ) : (
-              <select
-                value={selectedCustomerType}
-                onChange={(e) => setSelectedCustomerType(e.target.value)}
-                style={{
-                  background: "rgba(255,255,255,0.16)",
-                  border: "1px solid rgba(255,255,255,0.32)",
-                  color: "#FFFFFF",
-                  padding: "9px 14px",
-                  borderRadius: 11,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  fontFamily: BODY,
-                  cursor: "pointer",
-                  outline: "none",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                }}
-              >
-                <option
-                  value="mobile_user"
-                  style={{
-                    color: C.ink,
-                    background: "#FFFFFF",
-                  }}
-                >
-                  Mobile User
-                </option>
-
-                <option
-                  value="partner"
-                  style={{
-                    color: C.ink,
-                    background: "#FFFFFF",
-                  }}
-                >
-                  Partner
-                </option>
-
-                <option
-                  value="vendor"
-                  style={{
-                    color: C.ink,
-                    background: "#FFFFFF",
-                  }}
-                >
-                  Vendor
-                </option>
-              </select>
-            )}
+            ) : null}
 
             <Tooltip title="Refresh all metrics">
               <button
@@ -2053,7 +1997,6 @@ const Dashboard = () => {
                           <TH align="center">Last Purchased</TH>
                           {/* last_sold — NOT last_sold_date */}
                           <TH align="center">Last Sold</TH>
-                          <TH align="center">Actions</TH>
                         </tr>
                       </thead>
                       <tbody>
@@ -2154,24 +2097,7 @@ const Dashboard = () => {
                                 {stock.last_sold ? new Date(stock.last_sold).toLocaleDateString("en-IN") : "—"}
                               </Typography>
                             </td>
-                            {/* Actions Column */}
-                            <td style={{ padding: "13px 16px", textAlign: "center" }}>
-                              <Tooltip title="Mark as Damaged">
-                                <IconButton
-                                  size="small"
-                                  onClick={() => {
-                                    setSelectedProductForDamage(stock);
-                                    setMarkDamagedOpen(true);
-                                  }}
-                                  sx={{
-                                    color: C.rust,
-                                    "&:hover": { backgroundColor: C.rustLt },
-                                  }}
-                                >
-                                  <AlertTriangle size={18} />
-                                </IconButton>
-                              </Tooltip>
-                            </td>
+                           
                           </tr>
                         ))}
                       </tbody>
