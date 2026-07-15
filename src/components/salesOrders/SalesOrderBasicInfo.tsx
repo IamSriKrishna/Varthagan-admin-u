@@ -74,15 +74,15 @@ function generateReferenceNo(): string {
 
 const fieldSx = {
   '& .MuiOutlinedInput-root': {
-    borderRadius: 2,
+    borderRadius: '10px',
     fontSize: '0.9rem',
-    bgcolor: '#fff',
-    '& fieldset': { borderColor: '#e2e8f0' },
-    '&:hover fieldset': { borderColor: '#cbd5e1' },
-    '&.Mui-focused fieldset': { borderColor: '#0f172a', borderWidth: 1.5 },
+    bgcolor: '#ffffff',
+    '& fieldset': { borderColor: '#eeeff5' },
+    '&:hover fieldset': { borderColor: '#d1d5db' },
+    '&.Mui-focused fieldset': { borderColor: '#4f63d2', borderWidth: 1.5 },
   },
   '& .MuiInputLabel-root': { fontSize: '0.875rem' },
-  '& .MuiInputLabel-root.Mui-focused': { color: '#0f172a' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#4f63d2' },
   '& .MuiFormHelperText-root': { fontSize: '0.75rem' },
 };
 
@@ -91,10 +91,10 @@ const autoFieldSx = {
   ...fieldSx,
   '& .MuiOutlinedInput-root': {
     ...fieldSx['& .MuiOutlinedInput-root'],
-    bgcolor: '#f8fafc',
-    '& fieldset': { borderColor: '#e2e8f0', borderStyle: 'dashed' },
-    '&:hover fieldset': { borderColor: '#cbd5e1', borderStyle: 'dashed' },
-    '&.Mui-focused fieldset': { borderColor: '#0f172a', borderWidth: 1.5, borderStyle: 'dashed' },
+    bgcolor: '#f8f9fc',
+    '& fieldset': { borderColor: '#eeeff5', borderStyle: 'dashed' },
+    '&:hover fieldset': { borderColor: '#d1d5db', borderStyle: 'dashed' },
+    '&.Mui-focused fieldset': { borderColor: '#4f63d2', borderWidth: 1.5, borderStyle: 'dashed' },
   },
 };
 
@@ -105,21 +105,21 @@ function SectionHeader({ icon, title, subtitle }: { icon: React.ReactNode; title
         sx={{
           width: 36,
           height: 36,
-          borderRadius: 2,
-          bgcolor: '#f1f5f9',
+          borderRadius: '10px',
+          bgcolor: '#f0f0f5',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#64748b',
+          color: '#6b7280',
         }}
       >
         {icon}
       </Box>
       <Box>
-        <Typography sx={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>
+        <Typography sx={{ fontSize: '0.9rem', fontWeight: 700, color: '#4f63d2', lineHeight: 1.2 }}>
           {title}
         </Typography>
-        <Typography sx={{ fontSize: '0.775rem', color: '#94a3b8' }}>{subtitle}</Typography>
+        <Typography sx={{ fontSize: '0.775rem', color: '#9ca3af' }}>{subtitle}</Typography>
       </Box>
     </Stack>
   );
@@ -132,7 +132,7 @@ function FieldLabel({ label, optional }: { label: string; optional?: boolean }) 
         sx={{
           fontSize: '0.775rem',
           fontWeight: 600,
-          color: '#64748b',
+          color: '#6b7280',
           textTransform: 'uppercase',
           letterSpacing: '0.04em',
         }}
@@ -140,7 +140,7 @@ function FieldLabel({ label, optional }: { label: string; optional?: boolean }) 
         {label}
       </Typography>
       {optional && (
-        <Typography sx={{ fontSize: '0.7rem', color: '#cbd5e1', fontWeight: 500 }}>(optional)</Typography>
+        <Typography sx={{ fontSize: '0.7rem', color: '#d1d5db', fontWeight: 500 }}>(optional)</Typography>
       )}
     </Stack>
   );
@@ -205,18 +205,18 @@ function ReferenceNumberField({ value, onChange, onBlur, error, helperText, isVi
                   borderRadius: 1.5,
                   ...(isAuto
                     ? {
-                        bgcolor: '#0f172a',
+                        bgcolor: '#4f63d2',
                         color: '#fff',
-                        border: '1px solid #0f172a',
-                        '& .MuiChip-icon': { color: '#94a3b8' },
-                        '&:hover': { bgcolor: '#1e293b' },
+                        border: '1px solid #4f63d2',
+                        '& .MuiChip-icon': { color: '#9ca3af' },
+                        '&:hover': { bgcolor: '#3d52c7' },
                       }
                     : {
                         bgcolor: 'transparent',
-                        color: '#94a3b8',
-                        border: '1px solid #e2e8f0',
-                        '& .MuiChip-icon': { color: '#cbd5e1' },
-                        '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' },
+                        color: '#9ca3af',
+                        border: '1px solid #eeeff5',
+                        '& .MuiChip-icon': { color: '#d1d5db' },
+                        '&:hover': { bgcolor: '#f8f9fc', borderColor: '#d1d5db' },
                       }),
                 }}
               />
@@ -236,18 +236,18 @@ function ReferenceNumberField({ value, onChange, onBlur, error, helperText, isVi
                 borderRadius: 1.5,
                 ...(!isAuto
                   ? {
-                      bgcolor: '#0f172a',
+                      bgcolor: '#4f63d2',
                       color: '#fff',
-                      border: '1px solid #0f172a',
-                      '& .MuiChip-icon': { color: '#94a3b8' },
-                      '&:hover': { bgcolor: '#1e293b' },
+                      border: '1px solid #4f63d2',
+                      '& .MuiChip-icon': { color: '#9ca3af' },
+                      '&:hover': { bgcolor: '#3d52c7' },
                     }
                   : {
                       bgcolor: 'transparent',
-                      color: '#94a3b8',
-                      border: '1px solid #e2e8f0',
-                      '& .MuiChip-icon': { color: '#cbd5e1' },
-                      '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' },
+                      color: '#9ca3af',
+                      border: '1px solid #eeeff5',
+                      '& .MuiChip-icon': { color: '#d1d5db' },
+                      '&:hover': { bgcolor: '#f8f9fc', borderColor: '#d1d5db' },
                     }),
               }}
             />
@@ -269,7 +269,7 @@ function ReferenceNumberField({ value, onChange, onBlur, error, helperText, isVi
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <BadgeOutlinedIcon sx={{ fontSize: 17, color: '#94a3b8' }} />
+              <BadgeOutlinedIcon sx={{ fontSize: 17, color: '#9ca3af' }} />
             </InputAdornment>
           ),
           endAdornment: isAuto && !isViewMode ? (
@@ -281,8 +281,8 @@ function ReferenceNumberField({ value, onChange, onBlur, error, helperText, isVi
                   sx={{
                     width: 28,
                     height: 28,
-                    color: '#64748b',
-                    '&:hover': { bgcolor: '#f1f5f9', color: '#0f172a' },
+                    color: '#6b7280',
+                    '&:hover': { bgcolor: '#f0f0f5', color: '#4f63d2' },
                   }}
                 >
                   <AutorenewIcon sx={{ fontSize: 16 }} />
@@ -291,14 +291,14 @@ function ReferenceNumberField({ value, onChange, onBlur, error, helperText, isVi
             </InputAdornment>
           ) : (
             <InputAdornment position="end">
-              <LockOutlinedIcon sx={{ fontSize: 15, color: '#e2e8f0' }} />
+              <LockOutlinedIcon sx={{ fontSize: 15, color: '#eeeff5' }} />
             </InputAdornment>
           ),
         }}
         error={error}
         helperText={
           helperText || (
-            <Box component="span" sx={{ color: '#94a3b8', fontSize: '0.72rem' }}>
+            <Box component="span" sx={{ color: '#9ca3af', fontSize: '0.72rem' }}>
               {isViewMode ? 'Read-only' : isAuto ? 'Auto-generated — click ↺ to regenerate' : 'Type your own reference number'}
             </Box>
           )
@@ -400,9 +400,9 @@ export default function SalesOrderBasicInfo({
     salespersons.find((s) => String(s.id) === String(formik.values.salesperson_id)) || selectedSalesperson || null;
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={3} sx={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* ── People Card ── */}
-      <Card elevation={0} sx={{ border: '1px solid #f1f5f9', borderRadius: 3 }}>
+      <Card elevation={0} sx={{ border: '1px solid #eeeff5', borderRadius: '16px' }}>
         <CardContent sx={{ p: 3 }}>
           <SectionHeader
             icon={<PersonOutlineIcon sx={{ fontSize: 19 }} />}
@@ -416,7 +416,7 @@ export default function SalesOrderBasicInfo({
                 sx={{
                   fontSize: '0.775rem',
                   fontWeight: 600,
-                  color: '#64748b',
+                  color: '#6b7280',
                   mb: 0.75,
                   textTransform: 'uppercase',
                   letterSpacing: '0.04em',
@@ -455,7 +455,7 @@ export default function SalesOrderBasicInfo({
                         {option.display_name}
                       </Typography>
                       {option.email && (
-                        <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#9ca3af' }}>
                           {option.email}
                         </Typography>
                       )}
@@ -481,7 +481,7 @@ export default function SalesOrderBasicInfo({
                   sx={{
                     fontSize: '0.775rem',
                     fontWeight: 600,
-                    color: '#64748b',
+                    color: '#6b7280',
                     textTransform: 'uppercase',
                     letterSpacing: '0.04em',
                   }}
@@ -497,13 +497,13 @@ export default function SalesOrderBasicInfo({
                       fontSize: '0.72rem',
                       fontWeight: 600,
                       textTransform: 'none',
-                      color: '#0f172a',
-                      bgcolor: '#f1f5f9',
+                      color: '#4f63d2',
+                      bgcolor: '#f0f0f5',
                       borderRadius: 1.5,
                       px: 1.25,
                       py: 0.4,
                       minHeight: 0,
-                      '&:hover': { bgcolor: '#e2e8f0' },
+                      '&:hover': { bgcolor: '#eeeff5' },
                     }}
                   >
                     Add New
@@ -527,7 +527,7 @@ export default function SalesOrderBasicInfo({
                     placeholder="Select salesperson…"
                     helperText="Optional"
                     sx={fieldSx}
-                    FormHelperTextProps={{ sx: { color: '#94a3b8' } }}
+                    FormHelperTextProps={{ sx: { color: '#9ca3af' } }}
                   />
                 )}
               />
@@ -537,7 +537,7 @@ export default function SalesOrderBasicInfo({
       </Card>
 
       {/* ── Order Details Card ── */}
-      <Card elevation={0} sx={{ border: '1px solid #f1f5f9', borderRadius: 3 }}>
+      <Card elevation={0} sx={{ border: '1px solid #eeeff5', borderRadius: '16px' }}>
         <CardContent sx={{ p: 3 }}>
           <SectionHeader
             icon={<TagOutlinedIcon sx={{ fontSize: 19 }} />}
@@ -571,7 +571,7 @@ export default function SalesOrderBasicInfo({
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <CalendarTodayOutlinedIcon sx={{ fontSize: 17, color: '#94a3b8' }} />
+                      <CalendarTodayOutlinedIcon sx={{ fontSize: 17, color: '#9ca3af' }} />
                     </InputAdornment>
                   ),
                 }}
@@ -595,7 +595,7 @@ export default function SalesOrderBasicInfo({
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LocalShippingOutlinedIcon sx={{ fontSize: 17, color: '#94a3b8' }} />
+                      <LocalShippingOutlinedIcon sx={{ fontSize: 17, color: '#9ca3af' }} />
                     </InputAdornment>
                   ),
                 }}
@@ -623,7 +623,7 @@ export default function SalesOrderBasicInfo({
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <PaymentsOutlinedIcon sx={{ fontSize: 17, color: '#94a3b8' }} />
+                      <PaymentsOutlinedIcon sx={{ fontSize: 17, color: '#9ca3af' }} />
                     </InputAdornment>
                   ),
                 }}
@@ -646,7 +646,7 @@ export default function SalesOrderBasicInfo({
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LocalShippingOutlinedIcon sx={{ fontSize: 17, color: '#94a3b8' }} />
+                      <LocalShippingOutlinedIcon sx={{ fontSize: 17, color: '#9ca3af' }} />
                     </InputAdornment>
                   ),
                 }}
@@ -660,7 +660,7 @@ export default function SalesOrderBasicInfo({
       </Card>
 
       {/* ── Notes Card ── */}
-      <Card elevation={0} sx={{ border: '1px solid #f1f5f9', borderRadius: 3 }}>
+      <Card elevation={0} sx={{ border: '1px solid #eeeff5', borderRadius: '16px' }}>
         <CardContent sx={{ p: 3 }}>
           <SectionHeader
             icon={<NotesOutlinedIcon sx={{ fontSize: 19 }} />}

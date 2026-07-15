@@ -494,16 +494,16 @@ export default function SalesOrderLineItems({
     }, 0) || 0;
 
   return (
-    <Stack spacing={3}>
-      <Card elevation={0} sx={{ border: '1px solid #f1f5f9', borderRadius: 3 }}>
+    <Stack spacing={3} sx={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <Card elevation={0} sx={{ border: '1px solid #eeeff5', borderRadius: '16px' }}>
         <CardContent sx={{ p: 3 }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
             <Stack direction="row" alignItems="center" spacing={1.5}>
-              <ShoppingCartOutlinedIcon sx={{ color: '#64748b' }} />
+              <ShoppingCartOutlinedIcon sx={{ color: '#6b7280' }} />
 
               <Box>
-                <Typography sx={{ fontWeight: 800 }}>Line Items</Typography>
-                <Typography sx={{ fontSize: 13, color: '#64748b' }}>
+                <Typography sx={{ fontWeight: 700 }}>Line Items</Typography>
+                <Typography sx={{ fontSize: 13, color: '#6b7280' }}>
                   Customer pricing will auto-fill from selected manufacturer product group
                 </Typography>
               </Box>
@@ -515,10 +515,10 @@ export default function SalesOrderLineItems({
                 onClick={() => openDialog()}
                 sx={{
                   textTransform: 'none',
-                  bgcolor: '#0f172a',
+                  bgcolor: '#4f63d2',
                   color: '#fff',
-                  borderRadius: 2,
-                  '&:hover': { bgcolor: '#1e293b' },
+                  borderRadius: '10px',
+                  '&:hover': { bgcolor: '#3d52c7' },
                 }}
               >
                 Add Item
@@ -529,20 +529,20 @@ export default function SalesOrderLineItems({
           {formik.values.line_items.length === 0 ? (
             <Box
               sx={{
-                border: '2px dashed #e2e8f0',
-                borderRadius: 3,
+                border: '2px dashed #eeeff5',
+                borderRadius: '16px',
                 py: 7,
                 textAlign: 'center',
-                bgcolor: '#fafbfc',
+                bgcolor: '#fafbff',
               }}
             >
-              <ShoppingCartOutlinedIcon sx={{ fontSize: 38, color: '#94a3b8', mb: 1 }} />
+              <ShoppingCartOutlinedIcon sx={{ fontSize: 38, color: '#9ca3af', mb: 1 }} />
 
-              <Typography sx={{ fontWeight: 700, color: '#475569' }}>
+              <Typography sx={{ fontWeight: 700, color: '#374151' }}>
                 No items added yet
               </Typography>
 
-              <Typography sx={{ fontSize: 13, color: '#94a3b8', mb: 3 }}>
+              <Typography sx={{ fontSize: 13, color: '#9ca3af', mb: 3 }}>
                 Add manufacturer item to sales order
               </Typography>
 
@@ -552,10 +552,10 @@ export default function SalesOrderLineItems({
                   onClick={() => openDialog()}
                   sx={{
                     textTransform: 'none',
-                    bgcolor: '#0f172a',
+                    bgcolor: '#4f63d2',
                     color: '#fff',
-                    borderRadius: 2,
-                    '&:hover': { bgcolor: '#1e293b' },
+                    borderRadius: '10px',
+                    '&:hover': { bgcolor: '#3d52c7' },
                   }}
                 >
                   Add First Item
@@ -564,10 +564,10 @@ export default function SalesOrderLineItems({
             </Box>
           ) : (
             <>
-              <TableContainer sx={{ border: '1px solid #f1f5f9', borderRadius: 2 }}>
+              <TableContainer sx={{ border: '1px solid #eeeff5', borderRadius: '10px' }}>
                 <Table>
                   <TableHead>
-                    <TableRow sx={{ bgcolor: '#f8fafc' }}>
+                    <TableRow sx={{ bgcolor: '#f8f9fc' }}>
                       <TableCell>Manufacturer</TableCell>
                       <TableCell align="right">Qty</TableCell>
                       <TableCell align="right">Rate</TableCell>
@@ -617,12 +617,12 @@ export default function SalesOrderLineItems({
                 sx={{
                   mt: 2,
                   p: 2,
-                  bgcolor: '#f8fafc',
-                  borderRadius: 2,
-                  border: '1px solid #f1f5f9',
+                  bgcolor: '#f8f9fc',
+                  borderRadius: '10px',
+                  border: '1px solid #eeeff5',
                 }}
               >
-                <Typography color="#64748b">Subtotal</Typography>
+                <Typography color="#6b7280">Subtotal</Typography>
                 <Typography fontWeight={900}>₹{subtotal.toFixed(2)}</Typography>
               </Stack>
             </>
@@ -635,7 +635,7 @@ export default function SalesOrderLineItems({
           sx={{
             px: 3,
             py: 2,
-            borderBottom: '1px solid #f1f5f9',
+            borderBottom: '1px solid #f0f0f5',
             display: 'flex',
             justifyContent: 'space-between',
           }}
@@ -644,7 +644,7 @@ export default function SalesOrderLineItems({
             <Typography fontWeight={800}>
               {editIndex !== null ? 'Edit Line Item' : 'Add Line Item'}
             </Typography>
-            <Typography sx={{ fontSize: 13, color: '#64748b' }}>
+            <Typography sx={{ fontSize: 13, color: '#6b7280' }}>
               Select manufacturer and rate will apply automatically
             </Typography>
           </Box>
@@ -684,10 +684,10 @@ export default function SalesOrderLineItems({
                     p: 2,
                     bgcolor: '#ecfdf5',
                     border: '1px solid #6ee7b7',
-                    borderRadius: 2,
+                    borderRadius: '10px',
                   }}
                 >
-                  <Typography sx={{ color: '#047857', fontWeight: 800 }}>
+                  <Typography sx={{ color: '#047857', fontWeight: 700 }}>
                     Applied Rate: ₹{Number(formData.rate || 0).toFixed(2)}
                   </Typography>
 
@@ -707,16 +707,16 @@ export default function SalesOrderLineItems({
                 <Box
                   sx={{
                     p: 2,
-                    bgcolor: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 2,
+                    bgcolor: '#f8f9fc',
+                    border: '1px solid #eeeff5',
+                    borderRadius: '10px',
                   }}
                 >
                   <Typography
                     sx={{
                       fontSize: 12,
-                      fontWeight: 800,
-                      color: '#94a3b8',
+                      fontWeight: 700,
+                      color: '#9ca3af',
                       mb: 2,
                       textTransform: 'uppercase',
                     }}
@@ -737,9 +737,9 @@ export default function SalesOrderLineItems({
                           key={component.id}
                           sx={{
                             p: 1.5,
-                            bgcolor: '#fff',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: 2,
+                            bgcolor: '#ffffff',
+                            border: '1px solid #eeeff5',
+                            borderRadius: '10px',
                             display: 'flex',
                             justifyContent: 'space-between',
                             gap: 2,
@@ -750,15 +750,15 @@ export default function SalesOrderLineItems({
                               {component.product?.name || component.product_id}
                             </Typography>
 
-                            <Typography sx={{ fontSize: 13, color: '#64748b' }}>
+                            <Typography sx={{ fontSize: 13, color: '#6b7280' }}>
                               Qty: {component.quantity} × ₹{Number(unitRate).toFixed(2)}
                             </Typography>
 
                             <Typography
                               sx={{
                                 fontSize: 12,
-                                fontWeight: 800,
-                                color: customerRate != null ? '#047857' : '#64748b',
+                                fontWeight: 700,
+                                color: customerRate != null ? '#047857' : '#6b7280',
                               }}
                             >
                               {customerRate != null ? 'Customer Price' : 'Default Price'}
@@ -773,7 +773,7 @@ export default function SalesOrderLineItems({
                     <Box
                       sx={{
                         pt: 1.5,
-                        borderTop: '1px solid #e2e8f0',
+                        borderTop: '1px solid #eeeff5',
                         display: 'flex',
                         justifyContent: 'space-between',
                       }}
@@ -789,16 +789,16 @@ export default function SalesOrderLineItems({
                 <Box
                   sx={{
                     p: 2,
-                    bgcolor: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 2,
+                    bgcolor: '#f8f9fc',
+                    border: '1px solid #eeeff5',
+                    borderRadius: '10px',
                   }}
                 >
                   <Typography
                     sx={{
                       fontSize: 12,
-                      fontWeight: 800,
-                      color: '#94a3b8',
+                      fontWeight: 700,
+                      color: '#9ca3af',
                       mb: 1,
                       textTransform: 'uppercase',
                     }}
@@ -811,14 +811,14 @@ export default function SalesOrderLineItems({
                   ) : (
                     <Stack spacing={1}>
                       <Stack direction="row" justifyContent="space-between">
-                        <Typography color="#64748b">Quantity Available</Typography>
+                        <Typography color="#6b7280">Quantity Available</Typography>
                         <Typography fontWeight={800}>
                           {manufacturerDetails?.quantity ?? '-'}
                         </Typography>
                       </Stack>
 
                       <Stack direction="row" justifyContent="space-between">
-                        <Typography color="#64748b">Status</Typography>
+                        <Typography color="#6b7280">Status</Typography>
                         <Typography fontWeight={800}>
                           {manufacturerDetails?.status ?? '-'}
                         </Typography>
@@ -884,14 +884,14 @@ export default function SalesOrderLineItems({
               <Box
                 sx={{
                   p: 2,
-                  bgcolor: '#f8fafc',
-                  border: '1px solid #f1f5f9',
-                  borderRadius: 2,
+                  bgcolor: '#f8f9fc',
+                  border: '1px solid #eeeff5',
+                  borderRadius: '10px',
                   display: 'flex',
                   justifyContent: 'space-between',
                 }}
               >
-                <Typography color="#64748b">Line Total</Typography>
+                <Typography color="#6b7280">Line Total</Typography>
                 <Typography fontWeight={900}>
                   ₹{(Number(formData.quantity || 0) * Number(formData.rate || 0)).toFixed(2)}
                 </Typography>
@@ -903,7 +903,7 @@ export default function SalesOrderLineItems({
         <Box
           sx={{
             p: 3,
-            borderTop: '1px solid #f1f5f9',
+            borderTop: '1px solid #f0f0f5',
             display: 'flex',
             justifyContent: 'flex-end',
             gap: 1,
@@ -920,11 +920,11 @@ export default function SalesOrderLineItems({
               !formData.account
             }
             sx={{
-              bgcolor: '#0f172a',
+              bgcolor: '#4f63d2',
               color: '#fff',
               textTransform: 'none',
-              '&:hover': { bgcolor: '#1e293b' },
-              '&:disabled': { bgcolor: '#cbd5e1', color: '#fff' },
+              '&:hover': { bgcolor: '#3d52c7' },
+              '&:disabled': { bgcolor: '#d1d5db', color: '#fff' },
             }}
           >
             {editIndex !== null ? 'Update Item' : 'Add Item'}

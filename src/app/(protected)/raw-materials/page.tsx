@@ -244,7 +244,7 @@ export default function RawMaterialsPage() {
       key: 'expected_kg' as keyof RawMaterialBag,
       label: 'Expected KG',
       render: (row) => {
-        const expected = row._allBags?.reduce((sum, bag) => sum + Number(bag.expected_kg || 0), 0) ?? row.expected_kg;
+        const expected = row._allBags?.reduce((sum: number, bag: RawMaterialBag) => sum + Number(bag.expected_kg || 0), 0) ?? row.expected_kg;
 
         return <Typography sx={monoTextSx}>{expected.toFixed(2)}</Typography>;
       },
@@ -253,7 +253,7 @@ export default function RawMaterialsPage() {
       key: 'actual_kg' as keyof RawMaterialBag,
       label: 'Actual KG',
       render: (row) => {
-        const actual = row._allBags?.reduce((sum, bag) => sum + Number(bag.actual_kg || 0), 0) ?? row.actual_kg;
+        const actual = row._allBags?.reduce((sum: number, bag: RawMaterialBag) => sum + Number(bag.actual_kg || 0), 0) ?? row.actual_kg;
 
         return (
           <Typography sx={{ ...monoTextSx, fontWeight: 700 }}>
@@ -268,7 +268,7 @@ export default function RawMaterialsPage() {
       render: (row) => {
         const remaining = row._allBags
           ? row._allBags.reduce(
-              (sum, bag) => sum + (Number(bag.expected_kg || 0) - Number(bag.actual_kg || 0)),
+              (sum: number, bag: RawMaterialBag) => sum + (Number(bag.expected_kg || 0) - Number(bag.actual_kg || 0)),
               0,
             )
           : Number(row.expected_kg || 0) - Number(row.actual_kg || 0);

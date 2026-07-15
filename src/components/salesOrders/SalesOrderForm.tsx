@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import {
   Box,
-  Container,
   Button,
   CircularProgress,
   Alert,
@@ -174,7 +173,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId, mode = 'e
   const handleBack = () => setActiveStep((p) => Math.max(p - 1, 0));
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f8f9fc', fontFamily: "'DM Sans', sans-serif" }}>
       {loading && (
         <LinearProgress
           sx={{
@@ -183,118 +182,224 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId, mode = 'e
             left: 0,
             right: 0,
             zIndex: 9999,
-            bgcolor: '#e2e8f0',
-            '& .MuiLinearProgress-bar': { bgcolor: '#0f172a' },
+            bgcolor: '#eeeff5',
+            '& .MuiLinearProgress-bar': { bgcolor: '#4f63d2' },
           }}
         />
       )}
 
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        {/* ── Header ── */}
-        <Stack direction="row" alignItems="center" justifyContent="space-between" mb={4}>
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <Button
-              startIcon={<ArrowBackIcon />}
-              onClick={() => router.back()}
-              sx={{
-                color: '#64748b',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                textTransform: 'none',
-                borderRadius: 2,
-                px: 2,
-                py: 0.75,
-                '&:hover': { bgcolor: '#f1f5f9', color: '#0f172a' },
-              }}
-            >
-              Back
-            </Button>
-            {/* Debug: show route params for verification */}
-            <Chip
-              label={`id:${salesOrderId || 'none'} mode:${mode}`}
-              size="small"
-              sx={{ ml: 1, bgcolor: '#f1f5f9', color: '#475569' }}
-            />
-            <Box sx={{ width: 1, height: 24, bgcolor: '#e2e8f0' }} />
-            <Box>
-              <Stack direction="row" alignItems="center" spacing={1.5}>
-                <Typography
-                  sx={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em' }}
-                >
-                  {isViewMode ? 'View Sales Order' : isEditMode ? 'Edit Sales Order' : 'New Sales Order'}
-                </Typography>
-                {isEditMode && formik.values.sales_order_no && (
-                  <Chip
-                    label={formik.values.sales_order_no}
-                    size="small"
-                    sx={{
-                      bgcolor: '#f1f5f9',
-                      color: '#475569',
-                      fontSize: '0.75rem',
-                      fontWeight: 600,
-                      border: '1px solid #e2e8f0',
-                      height: 24,
-                    }}
-                  />
-                )}
-              </Stack>
-              <Typography sx={{ fontSize: '0.85rem', color: '#94a3b8', mt: 0.25 }}>
-                {isViewMode ? 'Review order details below' : isEditMode ? 'Update order details below' : 'Fill in the details to create a new order'}
-              </Typography>
-            </Box>
-          </Stack>
+      <Box sx={{ width: '100%' }}>
+        {/* ── Sticky page header ── */}
+<Box
+  sx={{
+    position: "sticky",
+    top: 0,
+    zIndex: 10,
+    px: 3,
+    pt: 2.5,
+    pb: 2,
+    bgcolor: "#ffffff",
+    borderBottom: "1px solid #f0f0f5",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 2,
+  }}
+>
+  {/* Left side */}
+  <Box
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      gap: 2,
+      minWidth: 0,
+    }}
+  >
+    {/* Icon badge */}
+    <Box
+      sx={{
+        width: 42,
+        height: 42,
+        borderRadius: "12px",
+        background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: "0 4px 14px rgba(14,165,233,0.3)",
+        flexShrink: 0,
+      }}
+    >
+      <ShoppingCartOutlinedIcon sx={{ fontSize: 20, color: "#ffffff" }} />
+    </Box>
 
-          <Button
-            variant="contained"
-            startIcon={loading || isSubmitting ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : <SaveIcon />}
-            onClick={() => formik.handleSubmit()}
-            disabled={loading || isSubmitting || isViewMode}
+    <Box sx={{ minWidth: 0 }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          minWidth: 0,
+        }}
+      >
+        <Typography
+          noWrap
+          sx={{
+            fontSize: "1.25rem",
+            fontWeight: 800,
+            color: "#1a1d2e",
+            fontFamily: "'DM Sans', sans-serif",
+            letterSpacing: "-0.3px",
+            lineHeight: 1.2,
+          }}
+        >
+          {isViewMode
+            ? "View Sales Order"
+            : isEditMode
+              ? "Edit Sales Order"
+              : "New Sales Order"}
+        </Typography>
+
+        {isEditMode && formik.values.sales_order_no && (
+          <Chip
+            label={formik.values.sales_order_no}
+            size="small"
             sx={{
-              bgcolor: '#0f172a',
-              borderRadius: 2.5,
-              px: 3,
-              py: 1.25,
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              textTransform: 'none',
-              boxShadow: '0 4px 14px rgba(15,23,42,0.25)',
-              '&:hover': { bgcolor: '#1e293b', transform: 'translateY(-1px)', boxShadow: '0 6px 20px rgba(15,23,42,0.35)' },
-              '&:disabled': { bgcolor: '#cbd5e1', boxShadow: 'none' },
-              transition: 'all 0.2s ease',
-              display: isViewMode ? 'none' : 'inline-flex',
+              height: 22,
+              bgcolor: "#f0f4ff",
+              color: "#4f63d2",
+              border: "1px solid #dbe4ff",
+              borderRadius: "6px",
+              fontSize: "0.68rem",
+              fontWeight: 700,
+              fontFamily: "'DM Sans', sans-serif",
+              flexShrink: 0,
+              "& .MuiChip-label": {
+                px: 1,
+              },
             }}
-          >
-            {isEditMode ? 'Update Order' : 'Create Order'}
-          </Button>
-        </Stack>
+          />
+        )}
+      </Box>
+
+      <Typography
+        noWrap
+        sx={{
+          fontSize: "0.78rem",
+          color: "#9ca3af",
+          fontFamily: "'DM Sans', sans-serif",
+          mt: 0.2,
+        }}
+      >
+        {isViewMode
+          ? "Review sales order information"
+          : isEditMode
+            ? "Update sales order information"
+            : "Add a new sales order to your system"}
+      </Typography>
+    </Box>
+  </Box>
+
+  {/* Header actions */}
+  <Box
+    sx={{
+      display: "flex",
+      gap: 1.5,
+      alignItems: "center",
+      flexShrink: 0,
+    }}
+  >
+    <Button
+      variant="outlined"
+      onClick={() => router.back()}
+      startIcon={<ArrowBackIcon sx={{ fontSize: 16 }} />}
+      disabled={loading || isSubmitting}
+      sx={{
+        borderRadius: "10px",
+        textTransform: "none",
+        fontFamily: "'DM Sans', sans-serif",
+        fontWeight: 600,
+        fontSize: "0.875rem",
+        color: "#6b7280",
+        borderColor: "#e5e7eb",
+        px: 2,
+        "&:hover": {
+          borderColor: "#d1d5db",
+          bgcolor: "#f9fafb",
+        },
+      }}
+    >
+      Cancel
+    </Button>
+
+    {!isViewMode && (
+      <Button
+        variant="contained"
+        startIcon={
+          loading || isSubmitting ? (
+            <CircularProgress size={16} sx={{ color: "#ffffff" }} />
+          ) : (
+            <SaveIcon sx={{ fontSize: "17px !important" }} />
+          )
+        }
+        onClick={() => formik.handleSubmit()}
+        disabled={loading || isSubmitting}
+        sx={{
+          borderRadius: "10px",
+          textTransform: "none",
+          fontFamily: "'DM Sans', sans-serif",
+          fontWeight: 700,
+          fontSize: "0.875rem",
+          px: 2.5,
+          background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
+          boxShadow: "0 4px 14px rgba(14,165,233,0.35)",
+          "&:hover": {
+            background: "linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)",
+            boxShadow: "0 6px 20px rgba(14,165,233,0.45)",
+            transform: "translateY(-1px)",
+          },
+          "&.Mui-disabled": {
+            color: "#ffffff",
+            opacity: 0.65,
+            background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
+          },
+          transition: "all 0.2s ease",
+        }}
+      >
+        {isEditMode ? "Update Order" : "Create Order"}
+      </Button>
+    )}
+  </Box>
+</Box>
 
         {/* ── Error ── */}
         {pageError && (
           <Alert
             severity="error"
             onClose={() => setPageError(null)}
-            sx={{ mb: 3, borderRadius: 2, border: '1px solid #fecaca' }}
+            sx={{ mb: 3, borderRadius: '10px', border: '1px solid #fecaca' }}
           >
             {pageError}
           </Alert>
         )}
 
-        <Stack direction={{ xs: 'column', lg: 'row' }} spacing={3} alignItems="flex-start">
+        <Stack direction={{ xs: 'column', lg: 'row' }} spacing={2.5} alignItems="flex-start" sx={{ px: 3, pb: 4 }}>
           {/* ── Step Sidebar ── */}
           <Card
             elevation={0}
             sx={{
-              border: '1px solid #f1f5f9',
-              borderRadius: 3,
+              border: '1px solid #eeeff5',
+              borderRadius: '16px',
+              bgcolor: '#ffffff',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
               width: { xs: '100%', lg: 240 },
               flexShrink: 0,
               position: { lg: 'sticky' },
-              top: { lg: 24 },
+              top: { lg: 96 },
             }}
           >
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Typography
-                sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 2, px: 0.5 }}
+                sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 2, px: 0.5 }}
               >
                 Form Steps
               </Typography>
@@ -313,11 +418,11 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId, mode = 'e
                         gap: 1.5,
                         px: 1.5,
                         py: 1.25,
-                        borderRadius: 2,
+                        borderRadius: '10px',
                         cursor: 'pointer',
-                        bgcolor: isActive ? '#0f172a' : 'transparent',
+                        background: isActive ? 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)' : 'transparent',
                         transition: 'all 0.15s ease',
-                        '&:hover': { bgcolor: isActive ? '#0f172a' : '#f8fafc' },
+                        '&:hover': { background: isActive ? 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)' : '#f0f4ff' },
                       }}
                     >
                       <Box
@@ -328,8 +433,8 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId, mode = 'e
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          bgcolor: isActive ? 'rgba(255,255,255,0.15)' : isDone ? '#f0fdf4' : '#f1f5f9',
-                          color: isActive ? '#fff' : isDone ? '#16a34a' : '#94a3b8',
+                          bgcolor: isActive ? 'rgba(255,255,255,0.15)' : isDone ? '#f0fdf4' : '#f0f0f5',
+                          color: isActive ? '#fff' : isDone ? '#16a34a' : '#9ca3af',
                           flexShrink: 0,
                         }}
                       >
@@ -340,14 +445,14 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId, mode = 'e
                           sx={{
                             fontSize: '0.825rem',
                             fontWeight: 600,
-                            color: isActive ? '#fff' : '#334155',
+                            color: isActive ? '#fff' : '#1a1d2e',
                             lineHeight: 1.2,
                           }}
                         >
                           {step.label}
                         </Typography>
                         <Typography
-                          sx={{ fontSize: '0.72rem', color: isActive ? 'rgba(255,255,255,0.6)' : '#94a3b8', mt: 0.15 }}
+                          sx={{ fontSize: '0.72rem', color: isActive ? 'rgba(255,255,255,0.6)' : '#9ca3af', mt: 0.15 }}
                         >
                           {step.description}
                         </Typography>
@@ -360,18 +465,18 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId, mode = 'e
               {/* Progress */}
               <Box sx={{ mt: 3, px: 0.5 }}>
                 <Stack direction="row" justifyContent="space-between" mb={0.75}>
-                  <Typography sx={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600 }}>Progress</Typography>
-                  <Typography sx={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
+                  <Typography sx={{ fontSize: '0.72rem', color: '#9ca3af', fontWeight: 600 }}>Progress</Typography>
+                  <Typography sx={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 700 }}>
                     {Math.round(((completedSteps.size) / STEPS.length) * 100)}%
                   </Typography>
                 </Stack>
-                <Box sx={{ height: 4, bgcolor: '#f1f5f9', borderRadius: 2, overflow: 'hidden' }}>
+                <Box sx={{ height: 4, bgcolor: '#f0f0f5', borderRadius: '10px', overflow: 'hidden' }}>
                   <Box
                     sx={{
                       height: '100%',
                       width: `${(completedSteps.size / STEPS.length) * 100}%`,
-                      bgcolor: '#0f172a',
-                      borderRadius: 2,
+                      background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+                      borderRadius: '10px',
                       transition: 'width 0.3s ease',
                     }}
                   />
@@ -401,15 +506,15 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId, mode = 'e
                   onClick={handleBack}
                   disabled={activeStep === 0}
                   sx={{
-                    borderRadius: 2,
+                    borderRadius: '10px',
                     px: 2.5,
                     py: 0.875,
                     fontSize: '0.875rem',
                     fontWeight: 600,
                     textTransform: 'none',
-                    color: '#64748b',
-                    bgcolor: '#f1f5f9',
-                    '&:hover': { bgcolor: '#e2e8f0' },
+                    color: '#6b7280',
+                    bgcolor: '#f0f0f5',
+                    '&:hover': { bgcolor: '#eeeff5' },
                     '&:disabled': { opacity: 0.4 },
                   }}
                 >
@@ -420,15 +525,15 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId, mode = 'e
                   <Button
                     onClick={handleNext}
                     sx={{
-                      borderRadius: 2,
+                      borderRadius: '10px',
                       px: 2.5,
                       py: 0.875,
                       fontSize: '0.875rem',
                       fontWeight: 600,
                       textTransform: 'none',
                       color: '#fff',
-                      bgcolor: '#0f172a',
-                      '&:hover': { bgcolor: '#1e293b' },
+                      background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+                      '&:hover': { background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)' },
                     }}
                   >
                     Next →
@@ -439,16 +544,16 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId, mode = 'e
                     disabled={loading}
                     startIcon={<SaveIcon sx={{ fontSize: '17px !important' }} />}
                     sx={{
-                      borderRadius: 2,
+                      borderRadius: '10px',
                       px: 2.5,
                       py: 0.875,
                       fontSize: '0.875rem',
                       fontWeight: 600,
                       textTransform: 'none',
                       color: '#fff',
-                      bgcolor: '#0f172a',
-                      '&:hover': { bgcolor: '#1e293b' },
-                      '&:disabled': { bgcolor: '#cbd5e1' },
+                      background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+                      '&:hover': { background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)' },
+                      '&:disabled': { bgcolor: '#d1d5db' },
                     }}
                   >
                     {isEditMode ? 'Update Order' : 'Create Order'}
@@ -458,7 +563,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ salesOrderId, mode = 'e
             )}
           </Box>
         </Stack>
-      </Container>
+      </Box>
 
       <CreateSalespersonDialog
         open={openCreateSalesperson}

@@ -102,17 +102,17 @@ function FieldLabel({ children, required }: { children: React.ReactNode; require
     <label style={{
       fontSize: 12,
       fontWeight: 600,
-      color: "#57534E",
+      color: "#374151",
       letterSpacing: "0.04em",
       textTransform: "uppercase" as const,
       display: "flex",
       alignItems: "center",
       gap: 6,
       marginBottom: 6,
-      fontFamily: "'Sora', sans-serif",
+      fontFamily: "'DM Sans', sans-serif",
     }}>
       {required && (
-        <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#D4A373", display: "inline-block" }} />
+        <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#0ea5e9", display: "inline-block" }} />
       )}
       {children}
     </label>
@@ -124,8 +124,8 @@ function AutoBadge() {
     <span style={{
       display: "inline-flex",
       alignItems: "center",
-      background: "#F0EBE0",
-      color: "#78716C",
+      background: "#f0f4ff",
+      color: "#6b7280",
       fontSize: 10,
       fontWeight: 600,
       padding: "2px 7px",
@@ -143,8 +143,8 @@ function InfoChip({ children }: { children: React.ReactNode }) {
       display: "inline-flex",
       alignItems: "center",
       gap: 4,
-      background: "#EDF4ED",
-      color: "#2D6A4F",
+      background: "#ecfdf5",
+      color: "#047857",
       fontSize: 11,
       fontWeight: 600,
       padding: "2px 9px",
@@ -157,7 +157,7 @@ function InfoChip({ children }: { children: React.ReactNode }) {
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4, fontSize: 11.5, color: "#C0542A" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4, fontSize: 11.5, color: "#dc2626" }}>
       <AlertCircle size={12} /> {message}
     </div>
   );
@@ -165,7 +165,7 @@ function FieldError({ message }: { message?: string }) {
 
 function FieldHint({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4, fontSize: 11.5, color: "#A8A29E" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4, fontSize: 11.5, color: "#9ca3af" }}>
       <Info size={11} /> {children}
     </div>
   );
@@ -174,13 +174,13 @@ function FieldHint({ children }: { children: React.ReactNode }) {
 const inputStyle = (error?: boolean, disabled?: boolean): React.CSSProperties => ({
   height: 44,
   width: "100%",
-  border: `1.5px solid ${error ? "#D4704A" : "#E8E3D8"}`,
+  border: `1.5px solid ${error ? "#ef4444" : "#eeeff5"}`,
   borderRadius: 10,
   padding: "0 14px",
   fontSize: 14,
-  fontFamily: "'Sora', sans-serif",
-  color: disabled ? "#A8A29E" : "#1C1917",
-  background: disabled ? "#F5F0E8" : error ? "#FDF6F3" : "#FDFCF9",
+  fontFamily: "'DM Sans', sans-serif",
+  color: disabled ? "#9ca3af" : "#1a1d2e",
+  background: disabled ? "#f8f9ff" : error ? "#fff5f5" : "#fafbff",
   outline: "none",
   boxSizing: "border-box" as const,
   cursor: disabled ? "not-allowed" : "text",
@@ -197,7 +197,7 @@ function SelectArrow() {
       top: "50%",
       transform: "translateY(-50%)",
       pointerEvents: "none",
-      color: "#78716C",
+      color: "#6b7280",
       fontSize: 10,
     }}>▼</span>
   );
@@ -243,21 +243,67 @@ export default function CreateShipmentPage() {
     }
   }, [formData.sales_order_id]);
 
+  const normalizeDropdownItems = (response: unknown): any[] => {
+    if (Array.isArray(response)) {
+      return response;
+    }
+
+    if (response && typeof response === "object") {
+      const asAny = response as Record<string, unknown>;
+
+      if (Array.isArray(asAny.data)) {
+        return asAny.data;
+      }
+
+      if (
+        asAny.data &&
+        typeof asAny.data === "object" &&
+        Array.isArray((asAny.data as Record<string, unknown>).data)
+      ) {
+        return (asAny.data as Record<string, unknown>).data as any[];
+      }
+
+      if (Array.isArray(asAny.packages)) {
+        return asAny.packages as any[];
+      }
+
+      if (Array.isArray(asAny.customers)) {
+        return asAny.customers as any[];
+      }
+    }
+
+    return [];
+  };
+
   const fetchDropdownData = async () => {
     setLoadingDropdowns(true);
+
+    const failures: string[] = [];
+
     try {
-      const [pkgRes, custRes] = await Promise.all([
-        apiService.get("/packages"),
-        apiService.get("/customers"),
-      ]);
-      if (pkgRes.data)  setPackages(pkgRes.data);
-      if (custRes.data) setCustomers(custRes.data);
+      const pkgRes = await apiService.get("/packages");
+      setPackages(normalizeDropdownItems(pkgRes));
     } catch (err) {
-      console.error("Error fetching dropdown data:", err);
-      showToastMessage("Failed to load dropdown data", "error");
-    } finally {
-      setLoadingDropdowns(false);
+      console.error("Error fetching packages:", err);
+      failures.push("packages");
     }
+
+    try {
+      const custRes = await apiService.get("/customers");
+      setCustomers(normalizeDropdownItems(custRes));
+    } catch (err) {
+      console.error("Error fetching customers:", err);
+      failures.push("customers");
+    }
+
+    if (failures.length > 0) {
+      showToastMessage(
+        `Failed to load dropdown data for: ${failures.join(", ")}`,
+        "error",
+      );
+    }
+
+    setLoadingDropdowns(false);
   };
 
   const fetchSalesOrder = async (salesOrderId: string) => {
@@ -382,27 +428,28 @@ export default function CreateShipmentPage() {
 
   /* ── Styles ── */
   const sectionCard: React.CSSProperties = {
-    background: "#fff",
-    border: "1px solid #E8E3D8",
+    background: "#ffffff",
+    border: "1px solid #eeeff5",
     borderRadius: 16,
-    marginBottom: 16,
+    marginBottom: 20,
     overflow: "hidden",
+    boxShadow: "0 4px 24px rgba(0,0,0,0.04)",
   };
 
   const sectionHead: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
     gap: 12,
-    padding: "18px 24px",
-    borderBottom: "1px solid #F0EBE0",
-    background: "#FDFCF9",
+    padding: "16px 24px",
+    borderBottom: "1px solid #f0f0f5",
+    background: "#fafbff",
   };
 
   const sectionBody: React.CSSProperties = { padding: 24 };
 
   const formGrid: React.CSSProperties = {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     gap: 16,
   };
 
@@ -417,123 +464,171 @@ export default function CreateShipmentPage() {
         * { box-sizing: border-box; }
 
         .shp-input:focus {
-          border-color: #1C1917 !important;
+          border-color: #4f63d2 !important;
           background: #fff !important;
-          box-shadow: 0 0 0 3px rgba(28,25,23,0.06);
+          box-shadow: 0 0 0 3px rgba(79,99,210,0.10);
           outline: none;
         }
 
+        .shp-select {
+          cursor: pointer;
+          appearance: none;
+          -webkit-appearance: none;
+          -moz-appearance: none;
+        }
+
         .shp-select:focus {
-          border-color: #1C1917 !important;
+          border-color: #4f63d2 !important;
           background: #fff !important;
-          box-shadow: 0 0 0 3px rgba(28,25,23,0.06);
+          box-shadow: 0 0 0 3px rgba(79,99,210,0.10);
           outline: none;
         }
 
         .carrier-btn { transition: all 0.15s ease; }
         .carrier-btn:hover {
-          border-color: #1C1917 !important;
-          background: #F7F5F0 !important;
-          color: #1C1917 !important;
+          border-color: #4f63d2 !important;
+          background: #f8f9fc !important;
+          color: #1a1d2e !important;
         }
 
         .btn-cancel:hover {
-          border-color: #C4B99A !important;
-          color: #1C1917 !important;
-          background: #F7F5F0 !important;
+          border-color: #c7d2fe !important;
+          color: #1a1d2e !important;
+          background: #f8f9fc !important;
         }
 
         .btn-submit:hover {
-          background: #3C3530 !important;
+          background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%) !important;
           transform: translateY(-1px);
         }
 
         .btn-submit:active { transform: translateY(0); }
 
         .back-btn:hover {
-          background: #F5F0E8 !important;
-          color: #1C1917 !important;
+          background: #f8f9ff !important;
+          color: #1a1d2e !important;
         }
       `}</style>
 
-      <div style={{ minHeight: "100vh", background: "#F7F5F0", fontFamily: "'Sora', sans-serif", paddingBottom: 48 }}>
+      <div style={{ minHeight: "100vh", background: "#f8f9fc", fontFamily: "'DM Sans', sans-serif", paddingBottom: 48 }}>
 
-        {/* ── Header ── */}
-        <div style={{
-          background: "#fff",
-          borderBottom: "1px solid #E8E3D8",
-          padding: "20px 32px 24px",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-        }}>
-          {/* Breadcrumb */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#A8A29E", marginBottom: 12, fontFamily: "'DM Mono', monospace" }}>
-            <span style={{ color: "#78716C", cursor: "pointer" }} onClick={() => router.push("/")}>Logistics</span>
-            <span style={{ color: "#C4B99A" }}>/</span>
-            <span style={{ color: "#78716C", cursor: "pointer" }} onClick={() => router.push("/shipments")}>Shipments</span>
-            <span style={{ color: "#C4B99A" }}>/</span>
-            <span>New</span>
+        {/* ── Customer-style sticky header ── */}
+        <div
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+            padding: "20px 24px 16px",
+            background: "#ffffff",
+            borderBottom: "1px solid #f0f0f5",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0 }}>
+            <div
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 12,
+                background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 4px 14px rgba(14,165,233,0.3)",
+                flexShrink: 0,
+              }}
+            >
+              <Truck size={20} color="#ffffff" />
+            </div>
+
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: 20,
+                  fontWeight: 800,
+                  color: "#1a1d2e",
+                  fontFamily: "'DM Sans', sans-serif",
+                  letterSpacing: "-0.3px",
+                  lineHeight: 1.2,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Create Shipment
+              </div>
+              <div
+                style={{
+                  fontSize: 12.5,
+                  color: "#9ca3af",
+                  fontFamily: "'DM Sans', sans-serif",
+                  marginTop: 2,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Add a new shipment record to track package delivery
+              </div>
+            </div>
           </div>
 
-          {/* Back button */}
-          <button
-            className="back-btn"
-            onClick={() => router.back()}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 13,
-              fontWeight: 500,
-              color: "#78716C",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "6px 10px 6px 4px",
-              borderRadius: 8,
-              marginBottom: 16,
-              fontFamily: "'Sora', sans-serif",
-            }}
-          >
-            <ArrowLeft size={15} /> Back
-          </button>
-
-          {/* Title row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{
-              width: 52,
-              height: 52,
-              borderRadius: 14,
-              background: "#1C1917",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}>
-              <Truck size={24} color="#F7F5F0" />
-            </div>
-            <div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: "#1C1917", letterSpacing: -0.5 }}>Create Shipment</div>
-              <div style={{ fontSize: 13, color: "#A8A29E", marginTop: 3 }}>Add a new shipment record to track package delivery</div>
-            </div>
-            <div style={{ marginLeft: "auto" }}>
-              <span style={{
-                fontFamily: "'DM Mono', monospace",
-                fontSize: 12,
-                color: "#78716C",
-                background: "#F0EBE0",
-                padding: "3px 10px",
-                borderRadius: 6,
-                fontWeight: 500,
-              }}>
-                {new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" }).format(new Date())}
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexShrink: 0 }}>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              disabled={loading}
+              style={{
+                height: 38,
+                padding: "0 18px",
+                borderRadius: 10,
+                border: "1px solid #e5e7eb",
+                background: "#ffffff",
+                color: "#6b7280",
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 600,
+                fontSize: 14,
+                cursor: loading ? "not-allowed" : "pointer",
+              }}
+            >
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                <ArrowLeft size={16} /> Cancel
               </span>
-            </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                (document.getElementById("shipment-form") as HTMLFormElement | null)?.requestSubmit()
+              }
+              disabled={loading}
+              style={{
+                height: 38,
+                padding: "0 20px",
+                borderRadius: 10,
+                border: "none",
+                background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
+                boxShadow: "0 4px 14px rgba(14,165,233,0.35)",
+                color: "#ffffff",
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 700,
+                fontSize: 14,
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.65 : 1,
+                transition: "all 0.2s ease",
+              }}
+            >
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                {loading ? (
+                  <><Loader2 size={15} style={{ animation: "spin 0.6s linear infinite" }} /> Creating...</>
+                ) : (
+                  <><Save size={15} /> Create Shipment</>
+                )}
+              </span>
+            </button>
           </div>
         </div>
 
-        <div style={{ padding: "28px 32px", maxWidth: 900 }}>
+        <div style={{ padding: "24px 32px 40px", width: "100%", maxWidth: 1400, margin: "0 auto" }}>
 
           {/* ── Step indicator ── */}
           <div style={{ display: "flex", alignItems: "center", marginBottom: 28 }}>
@@ -549,17 +644,17 @@ export default function CreateShipmentPage() {
                     borderRadius: "50%",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 12, fontWeight: 600,
-                    background: step.active ? "#1C1917" : "#fff",
-                    color:      step.active ? "#F7F5F0" : "#C4B99A",
-                    border: step.active ? "none" : "1.5px solid #E8E3D8",
+                    background: step.active ? "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)" : "#fff",
+                    color: step.active ? "#ffffff" : "#9ca3af",
+                    border: step.active ? "none" : "1.5px solid #eeeff5",
                     flexShrink: 0,
                   }}>{step.n}</div>
                   <span style={{
                     fontSize: 12, fontWeight: step.active ? 600 : 500,
-                    color: step.active ? "#1C1917" : "#78716C",
+                    color: step.active ? "#4f63d2" : "#9ca3af",
                   }}>{step.label}</span>
                 </div>
-                {i < 2 && <div style={{ flex: 1, height: 1, background: "#E8E3D8", margin: "0 12px" }} />}
+                {i < 2 && <div style={{ flex: 1, height: 1, background: "#eeeff5", margin: "0 12px" }} />}
               </div>
             ))}
           </div>
@@ -568,9 +663,9 @@ export default function CreateShipmentPage() {
           {error && (
             <div style={{
               display: "flex", alignItems: "center", gap: 10,
-              background: "#FDF6F3", border: "1px solid #F0C4B0",
+              background: "#fff5f5", border: "1px solid #fee2e2",
               borderRadius: 12, padding: "12px 18px", marginBottom: 16,
-              fontSize: 14, color: "#C0542A",
+              fontSize: 14, color: "#dc2626",
             }}>
               <AlertCircle size={16} /> {error}
             </div>
@@ -579,8 +674,8 @@ export default function CreateShipmentPage() {
           {/* ── Live summary strip ── */}
           {hasSummary && (
             <div style={{
-              background: "#F0EBE0",
-              border: "1px solid #D4C9A8",
+              background: "#f0f4ff",
+              border: "1px solid #dbe4ff",
               borderRadius: 12,
               padding: "14px 20px",
               display: "flex",
@@ -597,30 +692,30 @@ export default function CreateShipmentPage() {
               ].map((item, i, arr) => (
                 <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 20 }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    <div style={{ fontSize: 10, fontWeight: 600, color: "#A8A29E", textTransform: "uppercase", letterSpacing: "0.06em" }}>{item.label}</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1C1917", fontFamily: "'DM Mono', monospace" }}>{item.value}</div>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em" }}>{item.label}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1d2e", fontFamily: "'DM Mono', monospace" }}>{item.value}</div>
                   </div>
-                  {i < arr.length - 1 && <div style={{ width: 1, height: 32, background: "#D4C9A8" }} />}
+                  {i < arr.length - 1 && <div style={{ width: 1, height: 32, background: "#dbe4ff" }} />}
                 </div>
               ))}
             </div>
           )}
 
           {/* ══ SECTION 1 — Required Info ══ */}
-          <form onSubmit={handleSave}>
+          <form id="shipment-form" onSubmit={handleSave}>
             <div style={sectionCard}>
               <div style={sectionHead}>
                 <div style={{
                   width: 26, height: 26, borderRadius: 8,
-                  background: "#1C1917", color: "#F7F5F0",
+                  background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)", color: "#ffffff",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace", flexShrink: 0,
                 }}>01</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#1C1917", letterSpacing: "0.02em", textTransform: "uppercase" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1d2e", letterSpacing: "0.02em", textTransform: "uppercase" }}>
                   Required Information
                 </div>
-                <span style={{ marginLeft: "auto", fontSize: 11, color: "#A8A29E", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
-                  <span style={{ color: "#D4A373" }}>●</span> Required fields
+                <span style={{ marginLeft: "auto", fontSize: 11, color: "#9ca3af", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ color: "#0ea5e9" }}>●</span> Required fields
                 </span>
               </div>
               <div style={sectionBody}>
@@ -707,17 +802,17 @@ export default function CreateShipmentPage() {
                 <div style={sectionHead}>
                   <div style={{
                     width: 26, height: 26, borderRadius: 8,
-                    background: "#1C1917", color: "#F7F5F0",
+                    background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)", color: "#ffffff",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace", flexShrink: 0,
                   }}>📦</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1C1917", letterSpacing: "0.02em", textTransform: "uppercase" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1d2e", letterSpacing: "0.02em", textTransform: "uppercase" }}>
                     Line Items from {salesOrder.sales_order_no}
                   </div>
                 </div>
                 <div style={sectionBody}>
                   {loadingSalesOrder ? (
-                    <div style={{ textAlign: "center", color: "#A8A29E", padding: "20px 0" }}>
+                    <div style={{ textAlign: "center", color: "#9ca3af", padding: "20px 0" }}>
                       <Loader2 size={18} style={{ margin: "0 auto", animation: "spin 0.6s linear infinite" }} />
                       <div style={{ marginTop: 8 }}>Loading line items...</div>
                     </div>
@@ -729,13 +824,13 @@ export default function CreateShipmentPage() {
                         fontSize: 13,
                       }}>
                         <thead>
-                          <tr style={{ borderBottom: "2px solid #E8E3D8" }}>
-                            <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 600, color: "#57534E", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>Select</th>
-                            <th style={{ textAlign: "left", padding: "8px 12px", fontWeight: 600, color: "#57534E", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>Product</th>
-                            <th style={{ textAlign: "center", padding: "8px 12px", fontWeight: 600, color: "#57534E", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>SKU</th>
-                            <th style={{ textAlign: "right", padding: "8px 12px", fontWeight: 600, color: "#57534E", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>Total Qty</th>
-                            <th style={{ textAlign: "right", padding: "8px 12px", fontWeight: 600, color: "#57534E", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>Delivered</th>
-                            <th style={{ textAlign: "right", padding: "8px 12px", fontWeight: 600, color: "#57534E", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>Ship Now</th>
+                          <tr style={{ borderBottom: "2px solid #eeeff5" }}>
+                            <th style={{ textAlign: "left", padding: "8px 0", fontWeight: 600, color: "#374151", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>Select</th>
+                            <th style={{ textAlign: "left", padding: "8px 12px", fontWeight: 600, color: "#374151", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>Product</th>
+                            <th style={{ textAlign: "center", padding: "8px 12px", fontWeight: 600, color: "#374151", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>SKU</th>
+                            <th style={{ textAlign: "right", padding: "8px 12px", fontWeight: 600, color: "#374151", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>Total Qty</th>
+                            <th style={{ textAlign: "right", padding: "8px 12px", fontWeight: 600, color: "#374151", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>Delivered</th>
+                            <th style={{ textAlign: "right", padding: "8px 12px", fontWeight: 600, color: "#374151", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>Ship Now</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -747,8 +842,8 @@ export default function CreateShipmentPage() {
                             
                             return (
                               <tr key={item.id} style={{
-                                borderBottom: "1px solid #F0EBE0",
-                                background: isChecked ? "#F0EBE0" : "#FDFCF9",
+                                borderBottom: "1px solid #f0f4ff",
+                                background: isChecked ? "#f0f4ff" : "#fafbff",
                                 transition: "background 0.13s",
                               }}>
                                 <td style={{ padding: "12px 0" }}>
@@ -777,23 +872,23 @@ export default function CreateShipmentPage() {
                                     }}
                                     style={{
                                       width: 18, height: 18, cursor: "pointer",
-                                      accentColor: "#1C1917",
+                                      accentColor: "#1a1d2e",
                                     }}
                                   />
                                 </td>
-                                <td style={{ padding: "12px", color: "#1C1917", fontWeight: 500 }}>
+                                <td style={{ padding: "12px", color: "#1a1d2e", fontWeight: 500 }}>
                                   <div>{item.product_name}</div>
-                                  <div style={{ fontSize: 11, color: "#A8A29E", marginTop: 2 }}>
+                                  <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>
                                     {item.variant_details && Object.entries(item.variant_details).map(([k, v]) => `${k}: ${v}`).join(", ")}
                                   </div>
                                 </td>
-                                <td style={{ padding: "12px", color: "#78716C", fontSize: 12, fontFamily: "'DM Mono', monospace", textAlign: "center", fontWeight: 500 }}>
+                                <td style={{ padding: "12px", color: "#6b7280", fontSize: 12, fontFamily: "'DM Mono', monospace", textAlign: "center", fontWeight: 500 }}>
                                   {item.variant_sku}
                                 </td>
-                                <td style={{ padding: "12px", color: "#57534E", textAlign: "right", fontWeight: 600 }}>
+                                <td style={{ padding: "12px", color: "#374151", textAlign: "right", fontWeight: 600 }}>
                                   {item.quantity.toLocaleString()}
                                 </td>
-                                <td style={{ padding: "12px", color: "#A8A29E", textAlign: "right" }}>
+                                <td style={{ padding: "12px", color: "#9ca3af", textAlign: "right" }}>
                                   {item.delivered_quantity || 0}
                                 </td>
                                 <td style={{ padding: "12px", textAlign: "right" }}>
@@ -817,7 +912,7 @@ export default function CreateShipmentPage() {
                                       }}
                                     />
                                   ) : pendingQty > 0 ? (
-                                    <span style={{ color: "#C4B99A" }}>—</span>
+                                    <span style={{ color: "#c7d2fe" }}>—</span>
                                   ) : (
                                     <span style={{ color: "#10B981", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
                                       <CheckCircle2 size={14} /> Shipped
@@ -840,13 +935,13 @@ export default function CreateShipmentPage() {
               <div style={sectionHead}>
                 <div style={{
                   width: 26, height: 26, borderRadius: 8,
-                  background: "#F0EBE0", color: "#78716C",
+                  background: "#f0f4ff", color: "#4f63d2",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace", flexShrink: 0,
                 }}>02</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#1C1917", letterSpacing: "0.02em", textTransform: "uppercase" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1d2e", letterSpacing: "0.02em", textTransform: "uppercase" }}>
                   Carrier & Tracking{" "}
-                  <span style={{ fontWeight: 400, color: "#A8A29E", fontSize: 11, textTransform: "none", letterSpacing: 0 }}>Optional</span>
+                  <span style={{ fontWeight: 400, color: "#9ca3af", fontSize: 11, textTransform: "none", letterSpacing: 0 }}>Optional</span>
                 </div>
               </div>
               <div style={sectionBody}>
@@ -862,15 +957,15 @@ export default function CreateShipmentPage() {
                         className="carrier-btn"
                         onClick={() => handleCarrierSelect(c.id)}
                         style={{
-                          border: `1.5px solid ${formData.carrier_id === c.id ? "#1C1917" : "#E8E3D8"}`,
+                          border: `1.5px solid ${formData.carrier_id === c.id ? "#4f63d2" : "#eeeff5"}`,
                           borderRadius: 10,
                           padding: "10px 8px",
-                          background: formData.carrier_id === c.id ? "#1C1917" : "#FDFCF9",
+                          background: formData.carrier_id === c.id ? "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)" : "#fafbff",
                           cursor: "pointer",
                           fontSize: 12,
                           fontWeight: 600,
-                          color: formData.carrier_id === c.id ? "#F7F5F0" : "#78716C",
-                          fontFamily: "'Sora', sans-serif",
+                          color: formData.carrier_id === c.id ? "#ffffff" : "#6b7280",
+                          fontFamily: "'DM Sans', sans-serif",
                           textAlign: "center",
                           display: "flex",
                           flexDirection: "column",
@@ -890,16 +985,16 @@ export default function CreateShipmentPage() {
                   <div>
                     <FieldLabel>Tracking Number <AutoBadge /></FieldLabel>
                     <div style={{
-                      background: "#F0EBE0",
+                      background: "#f0f4ff",
                       borderRadius: 8,
                       padding: "0 14px",
-                      border: "1px dashed #D4C9A8",
+                      border: "1px dashed #dbe4ff",
                       height: 44,
                       display: "flex",
                       alignItems: "center",
                       fontFamily: "'DM Mono', monospace",
                       fontSize: 13,
-                      color: formData.tracking_no ? "#57534E" : "#C4B99A",
+                      color: formData.tracking_no ? "#374151" : "#c7d2fe",
                       letterSpacing: "0.04em",
                       fontStyle: formData.tracking_no ? "normal" : "italic",
                     }}>
@@ -929,13 +1024,13 @@ export default function CreateShipmentPage() {
               <div style={sectionHead}>
                 <div style={{
                   width: 26, height: 26, borderRadius: 8,
-                  background: "#F0EBE0", color: "#78716C",
+                  background: "#f0f4ff", color: "#4f63d2",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace", flexShrink: 0,
                 }}>03</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#1C1917", letterSpacing: "0.02em", textTransform: "uppercase" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1d2e", letterSpacing: "0.02em", textTransform: "uppercase" }}>
                   Charges & Notes{" "}
-                  <span style={{ fontWeight: 400, color: "#A8A29E", fontSize: 11, textTransform: "none", letterSpacing: 0 }}>Optional</span>
+                  <span style={{ fontWeight: 400, color: "#9ca3af", fontSize: 11, textTransform: "none", letterSpacing: 0 }}>Optional</span>
                 </div>
               </div>
               <div style={sectionBody}>
@@ -947,7 +1042,7 @@ export default function CreateShipmentPage() {
                       <span style={{
                         position: "absolute", left: 14, top: "50%",
                         transform: "translateY(-50%)",
-                        fontSize: 13, color: "#78716C", fontWeight: 500, pointerEvents: "none",
+                        fontSize: 13, color: "#6b7280", fontWeight: 500, pointerEvents: "none",
                       }}>₹</span>
                       <input
                         className="shp-input"
@@ -990,8 +1085,8 @@ export default function CreateShipmentPage() {
                 alignItems: "center",
                 justifyContent: "space-between",
                 padding: "20px 24px",
-                background: "#FDFCF9",
-                borderTop: "1px solid #F0EBE0",
+                background: "#fafbff",
+                borderTop: "1px solid #f0f4ff",
               }}>
                 <button
                   type="button"
@@ -1000,14 +1095,14 @@ export default function CreateShipmentPage() {
                   style={{
                     height: 44,
                     padding: "0 20px",
-                    border: "1.5px solid #E8E3D8",
+                    border: "1.5px solid #eeeff5",
                     borderRadius: 10,
                     background: "#fff",
                     fontSize: 14,
                     fontWeight: 600,
-                    color: "#78716C",
+                    color: "#6b7280",
                     cursor: "pointer",
-                    fontFamily: "'Sora', sans-serif",
+                    fontFamily: "'DM Sans', sans-serif",
                   }}
                 >
                   Cancel
@@ -1015,7 +1110,7 @@ export default function CreateShipmentPage() {
 
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   {Object.keys(validationErrors).length > 0 && (
-                    <span style={{ fontSize: 12, color: "#C0542A", display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontSize: 12, color: "#dc2626", display: "flex", alignItems: "center", gap: 4 }}>
                       <AlertCircle size={13} /> Fill in all required fields
                     </span>
                   )}
@@ -1028,12 +1123,12 @@ export default function CreateShipmentPage() {
                       padding: "0 28px",
                       border: "none",
                       borderRadius: 10,
-                      background: "#1C1917",
+                      background: "linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)",
                       fontSize: 14,
                       fontWeight: 600,
-                      color: "#F7F5F0",
+                      color: "#ffffff",
                       cursor: loading ? "not-allowed" : "pointer",
-                      fontFamily: "'Sora', sans-serif",
+                      fontFamily: "'DM Sans', sans-serif",
                       display: "flex",
                       alignItems: "center",
                       gap: 8,

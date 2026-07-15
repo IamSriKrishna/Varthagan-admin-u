@@ -37,24 +37,24 @@ interface TaxOption {
 
 const fieldSx = {
   '& .MuiOutlinedInput-root': {
-    borderRadius: 2,
+    borderRadius: '10px',
     fontSize: '0.9rem',
-    bgcolor: '#fff',
-    '& fieldset': { borderColor: '#e2e8f0' },
-    '&:hover fieldset': { borderColor: '#cbd5e1' },
-    '&.Mui-focused fieldset': { borderColor: '#0f172a', borderWidth: 1.5 },
+    bgcolor: '#ffffff',
+    '& fieldset': { borderColor: '#eeeff5' },
+    '&:hover fieldset': { borderColor: '#d1d5db' },
+    '&.Mui-focused fieldset': { borderColor: '#4f63d2', borderWidth: 1.5 },
   },
-  '& .MuiInputLabel-root.Mui-focused': { color: '#0f172a' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#4f63d2' },
 };
 
 function FieldLabel({ label, optional }: { label: string; optional?: boolean }) {
   return (
     <Stack direction="row" alignItems="center" spacing={0.75} mb={0.75}>
-      <Typography sx={{ fontSize: '0.775rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+      <Typography sx={{ fontSize: '0.775rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {label}
       </Typography>
       {optional && (
-        <Typography sx={{ fontSize: '0.7rem', color: '#cbd5e1', fontWeight: 500 }}>(optional)</Typography>
+        <Typography sx={{ fontSize: '0.7rem', color: '#d1d5db', fontWeight: 500 }}>(optional)</Typography>
       )}
     </Stack>
   );
@@ -79,7 +79,7 @@ function SummaryRow({
         sx={{
           fontSize: large ? '0.9rem' : '0.85rem',
           fontWeight: large ? 700 : 500,
-          color: muted ? '#94a3b8' : large ? '#0f172a' : '#475569',
+          color: muted ? '#9ca3af' : large ? '#4f63d2' : '#374151',
         }}
       >
         {label}
@@ -88,7 +88,7 @@ function SummaryRow({
         sx={{
           fontSize: large ? '1.1rem' : '0.875rem',
           fontWeight: large ? 800 : 600,
-          color: positive ? '#16a34a' : large ? '#0f172a' : '#1e293b',
+          color: positive ? '#16a34a' : large ? '#4f63d2' : '#3d52c7',
           fontVariantNumeric: 'tabular-nums',
           letterSpacing: large ? '-0.02em' : 0,
         }}
@@ -129,30 +129,30 @@ export default function SalesOrderBilling({ formik, isViewMode }: SalesOrderBill
   const lineCount = formik.values.line_items?.length || 0;
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={3} sx={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* ── Charges Card ── */}
-      <Card elevation={0} sx={{ border: '1px solid #f1f5f9', borderRadius: 3 }}>
+      <Card elevation={0} sx={{ border: '1px solid #eeeff5', borderRadius: '16px' }}>
         <CardContent sx={{ p: 3 }}>
           <Stack direction="row" alignItems="center" spacing={1.5} mb={3}>
             <Box
               sx={{
                 width: 36,
                 height: 36,
-                borderRadius: 2,
-                bgcolor: '#f1f5f9',
+                borderRadius: '10px',
+                bgcolor: '#f0f0f5',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#64748b',
+                color: '#6b7280',
               }}
             >
               <PaymentOutlinedIcon sx={{ fontSize: 19 }} />
             </Box>
             <Box>
-              <Typography sx={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>
+              <Typography sx={{ fontSize: '0.9rem', fontWeight: 700, color: '#4f63d2' }}>
                 Billing & Charges
               </Typography>
-              <Typography sx={{ fontSize: '0.775rem', color: '#94a3b8' }}>
+              <Typography sx={{ fontSize: '0.775rem', color: '#9ca3af' }}>
                 Tax rate, shipping, and adjustments
               </Typography>
             </Box>
@@ -190,7 +190,7 @@ export default function SalesOrderBilling({ formik, isViewMode }: SalesOrderBill
                     </Box>
                     <Box>
                       <Typography sx={{ fontSize: '0.875rem', fontWeight: 500 }}>{option.name}</Typography>
-                      <Typography sx={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                      <Typography sx={{ fontSize: '0.75rem', color: '#9ca3af' }}>
                         {option.rate}% · {option.tax_type}
                       </Typography>
                     </Box>
@@ -223,7 +223,7 @@ export default function SalesOrderBilling({ formik, isViewMode }: SalesOrderBill
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Typography sx={{ fontSize: '0.875rem', color: '#94a3b8', fontWeight: 600 }}>₹</Typography>
+                      <Typography sx={{ fontSize: '0.875rem', color: '#9ca3af', fontWeight: 600 }}>₹</Typography>
                     </InputAdornment>
                   ),
                 }}
@@ -248,7 +248,7 @@ export default function SalesOrderBilling({ formik, isViewMode }: SalesOrderBill
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Typography sx={{ fontSize: '0.875rem', color: '#94a3b8', fontWeight: 600 }}>₹</Typography>
+                      <Typography sx={{ fontSize: '0.875rem', color: '#9ca3af', fontWeight: 600 }}>₹</Typography>
                     </InputAdornment>
                   ),
                 }}
@@ -262,28 +262,28 @@ export default function SalesOrderBilling({ formik, isViewMode }: SalesOrderBill
       </Card>
 
       {/* ── Order Summary Card ── */}
-      <Card elevation={0} sx={{ border: '1px solid #f1f5f9', borderRadius: 3 }}>
+      <Card elevation={0} sx={{ border: '1px solid #eeeff5', borderRadius: '16px' }}>
         <CardContent sx={{ p: 3 }}>
           <Stack direction="row" alignItems="center" spacing={1.5} mb={3}>
             <Box
               sx={{
                 width: 36,
                 height: 36,
-                borderRadius: 2,
-                bgcolor: '#f1f5f9',
+                borderRadius: '10px',
+                bgcolor: '#f0f0f5',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#64748b',
+                color: '#6b7280',
               }}
             >
               <CheckCircleOutlineIcon sx={{ fontSize: 19 }} />
             </Box>
             <Box>
-              <Typography sx={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>
+              <Typography sx={{ fontSize: '0.9rem', fontWeight: 700, color: '#4f63d2' }}>
                 Order Summary
               </Typography>
-              <Typography sx={{ fontSize: '0.775rem', color: '#94a3b8' }}>
+              <Typography sx={{ fontSize: '0.775rem', color: '#9ca3af' }}>
                 {lineCount} line item{lineCount !== 1 ? 's' : ''} · all amounts in INR
               </Typography>
             </Box>
@@ -311,7 +311,7 @@ export default function SalesOrderBilling({ formik, isViewMode }: SalesOrderBill
               />
             )}
 
-            <Divider sx={{ borderColor: '#f1f5f9', my: 0.5 }} />
+            <Divider sx={{ borderColor: '#f0f0f5', my: 0.5 }} />
 
             {/* Total highlight */}
             <Box
@@ -321,8 +321,8 @@ export default function SalesOrderBilling({ formik, isViewMode }: SalesOrderBill
                 justifyContent: 'space-between',
                 px: 2.5,
                 py: 2,
-                bgcolor: '#0f172a',
-                borderRadius: 2.5,
+                bgcolor: '#4f63d2',
+                borderRadius: '10px',
               }}
             >
               <Stack>
