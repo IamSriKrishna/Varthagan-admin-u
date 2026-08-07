@@ -71,6 +71,7 @@ export const popoverPaperSx: SxProps<Theme> = {
   borderRadius: 2,
   boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
   overflow: "visible",
+  zIndex: 1600,
 };
 
 // Popover content box

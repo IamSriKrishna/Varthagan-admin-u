@@ -27,6 +27,14 @@ export default function ProfileMenu({ drawerOpen, userName, userType, handleLogo
     setAnchorEl(null);
   };
 
+  const handleTogglePopover = (event: MouseEvent<HTMLElement>) => {
+    if (anchorEl) {
+      handlePopoverClose();
+    } else {
+      setAnchorEl(event.currentTarget);
+    }
+  };
+
   const open = Boolean(anchorEl);
 
   const handleProfileClick = () => {
@@ -41,7 +49,11 @@ export default function ProfileMenu({ drawerOpen, userName, userType, handleLogo
 
   return (
     <Box sx={classes.profileBoxContainer}>
-      <Box onMouseEnter={handlePopoverOpen} sx={classes.profileBox(drawerOpen)}>
+      <Box
+        onMouseEnter={handlePopoverOpen}
+        onClick={handleTogglePopover}
+        sx={classes.profileBox(drawerOpen)}
+      >
         <Avatar src={userAvatar || userlogo.src} sx={classes.avatarSx} />
 
         {drawerOpen && (
