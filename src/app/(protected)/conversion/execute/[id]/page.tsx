@@ -19,6 +19,7 @@ import {
   Avatar,
   IconButton,
   Tooltip,
+  Checkbox,
 } from '@mui/material';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -210,6 +211,41 @@ export default function ExecuteConversionPage() {
     (sum, bag) => sum + Number(bag.remaining_kg || 0) * 1000,
     0
   );
+
+  const handleBagSelection = (newValue: RawMaterialBag[]) => {
+    const nextQuantities = { ...finishedQuantities };
+
+    newValue.forEach((bag) => {
+      const availableKg = Number(bag.remaining_kg || 0);
+      const currentQty = Number(nextQuantities[bag.id] || 0);
+
+      if (!currentQty || currentQty <= 0) {
+        nextQuantities[bag.id] = getPossibleFinishedQty(availableKg);
+      }
+    });
+
+    Object.keys(nextQuantities).forEach((bagId) => {
+      if (!newValue.some((bag) => bag.id === bagId)) {
+        delete nextQuantities[bagId];
+      }
+    });
+
+    setSelectedBags(newValue);
+    setFinishedQuantities(nextQuantities);
+  };
+
+  type SelectAllOption = {
+    id: string;
+    label: string;
+    isSelectAll: true;
+  };
+
+  const bagOptions: Array<SelectAllOption | RawMaterialBag> = [
+    { id: 'select-all', label: 'Select all bags', isSelectAll: true },
+    ...bags,
+  ];
+
+  const isAllBagsSelected = bags.length > 0 && selectedBags.length === bags.length;
 
   const onSubmit = async (data: IConversionExecutionRequest) => {
     try {
@@ -465,33 +501,59 @@ export default function ExecuteConversionPage() {
 
                 <Autocomplete
                   multiple
-                  options={bags}
+                  options={bagOptions}
                   value={selectedBags}
                   loading={bagsLoading}
-                  getOptionLabel={(option) =>
-                    `Bag ${option.bag_number} - ${option.remaining_kg.toFixed(3)} KG remaining`
-                  }
+                  disableCloseOnSelect
+                  getOptionLabel={(option) => {
+                    if ('isSelectAll' in option) return option.label;
+                    return `Bag ${option.bag_number} - ${option.remaining_kg.toFixed(3)} KG remaining`;
+                  }}
                   onChange={(_, newValue) => {
-                    setSelectedBags(newValue);
+                    const selectedBagValues = newValue.filter(
+                      (option): option is RawMaterialBag => !('isSelectAll' in option)
+                    );
 
-                    const newQuantities = { ...finishedQuantities };
+                    if (selectedBagValues.length === bags.length && selectedBagValues.length > 0) {
+                      handleBagSelection([...bags]);
+                      return;
+                    }
 
-                    newValue.forEach((bag) => {
-                      const availableKg = Number(bag.remaining_kg || 0);
-                      const maxQty = getPossibleFinishedQty(availableKg);
+                    if (selectedBagValues.length === 0 && bags.length > 0) {
+                      handleBagSelection([]);
+                      return;
+                    }
 
-                      if (!(bag.id in newQuantities) || newQuantities[bag.id] === 0) {
-                        newQuantities[bag.id] = maxQty;
-                      }
-                    });
+                    handleBagSelection(selectedBagValues);
+                  }}
+                  renderOption={(props, option, { selected }) => {
+                    if ('isSelectAll' in option) {
+                      return (
+                        <li
+                          {...props}
+                          key={option.id}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleBagSelection(isAllBagsSelected ? [] : [...bags]);
+                          }}
+                        >
+                          <Checkbox checked={isAllBagsSelected} indeterminate={selectedBags.length > 0 && !isAllBagsSelected} />
+                          <Typography sx={{ fontWeight: 700 }}>Select all bags</Typography>
+                        </li>
+                      );
+                    }
 
-                    Object.keys(newQuantities).forEach((bagId) => {
-                      if (!newValue.find((bag) => bag.id === bagId)) {
-                        delete newQuantities[bagId];
-                      }
-                    });
-
-                    setFinishedQuantities(newQuantities);
+                    return (
+                      <li {...props} key={option.id}>
+                        <Checkbox checked={selected} />
+                        <Box>
+                          <Typography sx={{ fontWeight: 700 }}>Bag {option.bag_number}</Typography>
+                          <Typography sx={{ fontSize: 12, color: '#9ca3af' }}>
+                            {option.remaining_kg.toFixed(3)} KG remaining
+                          </Typography>
+                        </Box>
+                      </li>
+                    );
                   }}
                   renderInput={(params) => (
                     <TextField
@@ -512,7 +574,7 @@ export default function ExecuteConversionPage() {
                     />
                   )}
                   renderTags={(value, getTagProps) =>
-                    value.map((option, index) => (
+                    (value as Array<RawMaterialBag>).map((option, index) => (
                       <Chip
                         label={`Bag ${option.bag_number} (${option.remaining_kg.toFixed(3)} KG)`}
                         {...getTagProps({ index })}

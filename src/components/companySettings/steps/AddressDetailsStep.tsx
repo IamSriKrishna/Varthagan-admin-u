@@ -17,6 +17,8 @@ export default function AddressDetailsStep({ data, onChange }: AddressDetailsSte
   const [loading, setLoading]           = useState(true);
   const [statesLoading, setStatesLoading] = useState(false);
   const [error, setError]               = useState<string | null>(null);
+  const [countryTouched, setCountryTouched] = useState(false);
+  const [stateTouched, setStateTouched] = useState(false);
 
   useEffect(() => { fetchCountries(); }, []);
   useEffect(() => { if (data.country_id) fetchStates(data.country_id); }, [data.country_id]);
@@ -124,8 +126,11 @@ export default function AddressDetailsStep({ data, onChange }: AddressDetailsSte
         <StyledSelect
           label="Country *"
           value={data.country_id || 0}
-          error={data.country_id === 0}
+          error={countryTouched && data.country_id === 0}
+          onBlur={() => setCountryTouched(true)}
+          onFocus={() => setCountryTouched(true)}
           onChange={(e) => {
+            setCountryTouched(true);
             set("country_id", e.target.value as number);
             set("state_id", 0);
             setStates([]);
@@ -144,8 +149,13 @@ export default function AddressDetailsStep({ data, onChange }: AddressDetailsSte
         <StyledSelect
           label="State / Province *"
           value={data.state_id || 0}
-          error={data.state_id === 0 && data.country_id !== 0}
-          onChange={(e) => set("state_id", e.target.value as number)}
+          error={stateTouched && data.state_id === 0 && data.country_id !== 0}
+          onBlur={() => setStateTouched(true)}
+          onFocus={() => setStateTouched(true)}
+          onChange={(e) => {
+            setStateTouched(true);
+            set("state_id", e.target.value as number);
+          }}
           disabled={statesLoading || !data.country_id}
           helperText={statesLoading ? "Loading states…" : ""}
         >

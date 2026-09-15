@@ -10,7 +10,7 @@ import ContactDetailsStep from "./steps/ContactDetailsStep";
 import AddressDetailsStep from "./steps/AddressDetailsStep";
 import PaymentDetailsStep from "./steps/PaymentDetailsStep";
 import SettingsStep from "./steps/SettingsStep";
-import ReviewStep from "./steps/ReviewStep";
+// import ReviewStep from "./steps/ReviewStep";
 
 /* ─────────────────────────────────────────────────────────────
    Step definitions
@@ -21,7 +21,7 @@ const STEPS = [
   { label: "Address", sublabel: "Location",          icon: "📍" },
   { label: "Payment", sublabel: "Banking & UPI",    icon: "💳" },
   { label: "Settings", sublabel: "Preferences",     icon: "⚙️" },
-  { label: "Review",  sublabel: "Confirm & submit", icon: "✅" },
+  // { label: "Review",  sublabel: "Confirm & submit", icon: "✅" },
 ];
 
 /* ─────────────────────────────────────────────────────────────
@@ -483,7 +483,7 @@ export default function CompanySetupWizard({ company, onClose, onSuccess }: Comp
               {activeStep === 2 && <AddressDetailsStep {...stepProps} data={formData.address} onChange={(d) => handleFormDataChange("address", d)} />}
               {activeStep === 3 && <PaymentDetailsStep {...stepProps} bankData={formData.bank_details} upiData={formData.upi_details} onBankChange={(d) => handleFormDataChange("bank_details", d)} onUPIChange={(d) => handleFormDataChange("upi_details", d)} />}
               {activeStep === 4 && <SettingsStep {...stepProps} invoiceData={formData.invoice_settings} taxData={formData.tax_settings} regionalData={formData.regional_settings} onInvoiceChange={(d) => handleFormDataChange("invoice_settings", d)} onTaxChange={(d) => handleFormDataChange("tax_settings", d)} onRegionalChange={(d) => handleFormDataChange("regional_settings", d)} />}
-              {activeStep === 5 && <ReviewStep {...stepProps} formData={formData} />}
+              {/* {activeStep === 5 && <ReviewStep {...stepProps} formData={formData} />} */}
             </Box>
 
             {/* Footer nav */}

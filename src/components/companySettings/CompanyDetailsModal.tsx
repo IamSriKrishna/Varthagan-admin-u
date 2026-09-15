@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import { X as CloseIcon } from "lucide-react";
 import { CompanyData, companyApi } from "@/lib/api/companyApi";
+import { bankService } from "@/lib/api/bankService";
 
 interface CompanyDetailsModalProps {
   open: boolean;
@@ -47,6 +48,58 @@ export default function CompanyDetailsModal({
       setCompany(initialData);
     }
   }, [open, companyId, initialData]);
+
+  // When company loads, if bank_details exist but bank name is missing,
+  // fetch bank info for each bank_id and attach it to the bank_details entries.
+  useEffect(() => {
+    const attachBankNames = async () => {
+      if (!company?.bank_details || company.bank_details.length === 0) return;
+
+      const detailsNeedingFetch = company.bank_details.filter(
+        (bd) => !bd.bank || !bd.bank.bank_name
+      );
+
+      if (detailsNeedingFetch.length === 0) return;
+
+      try {
+        const promises = detailsNeedingFetch.map((bd) =>
+          bankService.getBank(bd.bank_id).then((res) => ({ id: bd.id, bank: res.data }))
+        );
+
+        const results = await Promise.allSettled(promises);
+
+        const bankMap: Record<number, any> = {};
+        results.forEach((r) => {
+          if (r.status === "fulfilled") {
+            const payload = r.value;
+            if (payload && payload.bank) {
+              bankMap[payload.bank.id] = payload.bank;
+            }
+          }
+        });
+
+        if (Object.keys(bankMap).length > 0) {
+          setCompany((prev) => {
+            if (!prev) return prev;
+            const updated = {
+              ...prev,
+              bank_details: prev.bank_details?.map((bd) => ({
+                ...bd,
+                bank: bankMap[bd.bank_id] || bd.bank,
+              })),
+            } as CompanyData;
+
+            return updated;
+          });
+        }
+      } catch (e) {
+        // silently ignore bank name fetch errors; UI will keep showing fallback
+        console.error("Failed to fetch bank names:", e);
+      }
+    };
+
+    attachBankNames();
+  }, [company?.bank_details]);
 
   const fetchCompanyDetails = async () => {
     if (!companyId) return;
@@ -241,7 +294,7 @@ export default function CompanyDetailsModal({
                         Bank Name
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {bank.bank?.name || bank.bank?.bank_name || 'N/A'}
+                        {bank.bank_name || bank.bank?.bank_name || 'N/A'}
                       </Typography>
                     </Box>
                     <Box>
@@ -265,7 +318,7 @@ export default function CompanyDetailsModal({
                         IFSC Code
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {bank.bank?.ifsc_code || 'N/A'}
+                        {bank.ifsc_code || bank.bank?.ifsc_code || 'N/A'}
                       </Typography>
                     </Box>
                     {bank.is_primary && (

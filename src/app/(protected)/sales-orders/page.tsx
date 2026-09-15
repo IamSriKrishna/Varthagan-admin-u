@@ -752,7 +752,7 @@ export default function SalesOrdersPage() {
 
                       <TableCell align="right">
                         <Chip
-                          label={order.line_items_count || 0}
+                          label={order.line_items?.length || 0}
                           size="small"
                           sx={{
                             height: 24,

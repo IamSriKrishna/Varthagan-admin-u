@@ -353,9 +353,9 @@ export default function DashboardRootLayout({
   return (
     <>
       <StyleTag />
-      <div className="page-transition-in">
-        <MainLayout>{children}</MainLayout>
-      </div>
+      <MainLayout>
+        <div className="page-transition-in">{children}</div>
+      </MainLayout>
     </>
   );
 }

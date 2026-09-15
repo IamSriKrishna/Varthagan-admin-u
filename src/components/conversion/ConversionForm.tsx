@@ -291,7 +291,7 @@ export default function ConversionForm({
 
         setRawMaterials(products.filter((p) => p.is_raw === true));
         const filteredFinishedProducts = products.filter(
-          (p) => p.is_raw === false && /bottle/i.test(p.name || '')
+          (p) => p.is_raw === false && !p.is_resource && /bottle/i.test(p.name || '')
         );
         setFinishedProducts(filteredFinishedProducts);
       } catch {

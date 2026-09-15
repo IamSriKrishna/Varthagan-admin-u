@@ -29,6 +29,7 @@ interface SettingsStepProps {
 export default function SettingsStep({ invoiceData, taxData, regionalData, onInvoiceChange, onTaxChange, onRegionalChange }: SettingsStepProps) {
   const [taxTypes, setTaxTypes] = useState<TaxType[]>([]);
   const [loading, setLoading]   = useState(true);
+  const [taxTypeTouched, setTaxTypeTouched] = useState(false);
 
   const inv = invoiceData ?? { invoice_prefix: "INV", invoice_start_number: 1, show_logo: true, show_signature: false, round_off_total: true };
   const tax = taxData     ?? { gst_enabled: true, tax_type_id: 0 };
@@ -128,9 +129,14 @@ export default function SettingsStep({ invoiceData, taxData, regionalData, onInv
         <StyledSelect
           label="Tax Type *"
           value={tax.tax_type_id}
-          error={tax.tax_type_id === 0}
-          onChange={(e) => setTax("tax_type_id", e.target.value)}
-          helperText={tax.tax_type_id === 0 ? "Please select a tax type to proceed" : ""}
+          error={taxTypeTouched && tax.tax_type_id === 0}
+          onBlur={() => setTaxTypeTouched(true)}
+          onFocus={() => setTaxTypeTouched(true)}
+          onChange={(e) => {
+            setTaxTypeTouched(true);
+            setTax("tax_type_id", e.target.value);
+          }}
+          helperText={taxTypeTouched && tax.tax_type_id === 0 ? "Please select a tax type to proceed" : ""}
         >
           <MenuItem value={0} sx={{ fontFamily: dt.font, color: dt.textMuted }}>
             Select tax type…

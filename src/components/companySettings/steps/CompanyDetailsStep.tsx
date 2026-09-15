@@ -15,6 +15,7 @@ export default function CompanyDetailsStep({ data, onChange }: CompanyDetailsSte
   const [businessTypes, setBusinessTypes] = useState<BusinessType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [businessTypeTouched, setBusinessTypeTouched] = useState(false);
 
   useEffect(() => { fetchBusinessTypes(); }, []);
 
@@ -30,6 +31,7 @@ export default function CompanyDetailsStep({ data, onChange }: CompanyDetailsSte
   };
 
   const set = (field: string, value: any) => onChange({ ...data, [field]: value });
+  const showBusinessTypeError = businessTypeTouched && data.business_type_id === 0;
 
   if (loading) return <LoadingPane />;
 
@@ -66,9 +68,14 @@ export default function CompanyDetailsStep({ data, onChange }: CompanyDetailsSte
       <StyledSelect
         label="Business Type *"
         value={data.business_type_id || 0}
-        error={data.business_type_id === 0}
-        onChange={(e) => set("business_type_id", e.target.value as number)}
-        helperText={data.business_type_id === 0 ? "Please select your business structure" : ""}
+        error={showBusinessTypeError}
+        onBlur={() => setBusinessTypeTouched(true)}
+        onFocus={() => setBusinessTypeTouched(true)}
+        onChange={(e) => {
+          setBusinessTypeTouched(true);
+          set("business_type_id", e.target.value as number);
+        }}
+        helperText={showBusinessTypeError ? "Please select your business structure" : ""}
       >
         <MenuItem value={0} disabled sx={{ fontFamily: dt.font, color: dt.textMuted }}>
           Select a business type…
